@@ -1,0 +1,989 @@
+<template>
+  <InternalLayout title="学生档案">
+    <section class="student-page">
+      <header class="surface-heading student-heading">
+        <div>
+          <span>学生档案与成员账号</span>
+          <h1>学生信息、账号绑定与归档资料</h1>
+          <p>学生档案用于保存研究方向、导师、论文和开题报告等资料；成员管理负责登录账号和角色。二者通过“关联成员账号”打通。</p>
+        </div>
+        <el-button v-if="canManageStudents" type="primary" @click="startCreate">新建学生档案</el-button>
+      </header>
+
+      <section class="student-workspace">
+        <aside class="card student-list">
+          <div class="side-heading">
+            <h2>学生列表</h2>
+            <span>{{ students.length }} 人</span>
+          </div>
+          <button
+            v-for="student in students"
+            :key="student.id"
+            :class="{ active: selectedStudent?.id === student.id }"
+            @click="selectStudent(student.id)"
+          >
+            <strong>{{ student.name }}</strong>
+            <span>{{ student.degree_label }} · {{ student.grade || '未填写年级' }}</span>
+            <small>{{ student.user_email || student.user_username || '未绑定账号' }}</small>
+          </button>
+          <div v-if="!students.length" class="empty-note">暂无学生档案。</div>
+        </aside>
+
+        <main class="archive-panel">
+          <section v-if="selectedStudent" class="card profile-card">
+            <div class="profile-heading">
+              <div>
+                <span>学生信息</span>
+                <h1>{{ selectedStudent.name }}</h1>
+                <p>{{ selectedStudent.research_direction || selectedStudent.research_topic || '研究方向待补充' }}</p>
+              </div>
+              <div class="profile-actions">
+                <el-button v-if="selectedStudent.can_edit" plain @click="startEdit(selectedStudent)">编辑档案</el-button>
+                <el-button v-if="selectedStudent.can_delete" plain type="danger" @click="confirmDeleteProfile(selectedStudent)">删除档案</el-button>
+                <el-button v-if="selectedStudent.can_edit" type="primary" @click="openUpload">上传资料</el-button>
+              </div>
+            </div>
+
+            <dl class="profile-list">
+              <div>
+                <dt>身份</dt>
+                <dd>{{ selectedStudent.degree_label }} {{ selectedStudent.grade || '' }}</dd>
+              </div>
+              <div>
+                <dt>导师</dt>
+                <dd>{{ selectedStudent.supervisor_name || '-' }}</dd>
+              </div>
+              <div>
+                <dt>研究题目</dt>
+                <dd>{{ selectedStudent.research_topic || '-' }}</dd>
+              </div>
+              <div>
+                <dt>可见范围</dt>
+                <dd>{{ selectedStudent.visibility_label }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section v-if="selectedStudent" class="card account-card">
+            <div class="panel-heading">
+              <div>
+                <h2>关联成员账号</h2>
+                <p>学生本人登录后，会根据这个绑定关系进入自己的档案并上传材料。</p>
+              </div>
+              <span class="status-tag normal">已绑定</span>
+            </div>
+            <div class="account-grid">
+              <div>
+                <small>成员账号</small>
+                <strong>{{ selectedStudent.user_username }}</strong>
+                <span>{{ selectedStudent.user_email || selectedStudent.user_username }}</span>
+              </div>
+              <div>
+                <small>权限来源</small>
+                <strong>成员管理</strong>
+                <span>账号审核、角色分配和管理员权限在“成员管理”中维护。</span>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="selectedStudent" class="card files-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>归档资料</h2>
+                <p>用于保存毕业论文、开题报告、答辩材料、论文和原始数据说明等个人资料。</p>
+              </div>
+              <span class="status-tag normal">{{ displayFiles.length }} 份资料</span>
+            </div>
+
+            <div v-if="displayFiles.length" class="file-grid">
+              <article v-for="file in displayFiles" :key="file.id" class="file-card">
+                <div class="file-icon" :class="archiveKind(file)">
+                  <el-icon><component :is="archiveIcon(file)" /></el-icon>
+                </div>
+                <div class="file-main">
+                  <div class="file-title-row">
+                    <strong>{{ file.title }}</strong>
+                    <span>{{ archiveTypeLabel(file) }}</span>
+                  </div>
+                  <div class="file-meta">
+                    <span>{{ file.file_type_label }}</span>
+                    <span>{{ file.version }}</span>
+                    <span>{{ file.visibility_label }}</span>
+                  </div>
+                  <p>{{ file.description || file.original_filename || '未记录原始文件名' }}</p>
+                </div>
+                <div class="file-actions">
+                  <a
+                    v-if="file.can_view && canPreviewArchive(file)"
+                    class="file-primary-action"
+                    :href="previewStudentArchiveFileUrl(file)"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <el-icon><View /></el-icon>
+                    {{ archivePreviewLabel(file) }}
+                  </a>
+                  <span v-else-if="file.can_view" class="file-preview-note">{{ archivePreviewStatus(file) }}</span>
+                  <a v-if="file.can_view" class="file-secondary-action" :href="downloadStudentArchiveFileUrl(file)">
+                    <el-icon><Download /></el-icon>
+                    下载原文件
+                  </a>
+                  <el-button v-if="file.can_delete" size="small" plain type="danger" @click="confirmDeleteArchiveFile(file)">删除</el-button>
+                  <el-button v-else-if="!file.can_view" disabled>无权限</el-button>
+                </div>
+              </article>
+            </div>
+            <div v-else class="empty-note">暂无归档资料。</div>
+          </section>
+        </main>
+
+        <aside class="card edit-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>{{ editingId ? '编辑学生档案' : '学生档案设置' }}</h2>
+              <p>{{ canManageStudents ? '管理员和硕博导师可绑定成员账号。' : '你可以维护自己的学生档案。' }}</p>
+            </div>
+          </div>
+
+          <el-form v-if="formVisible" label-position="top" class="profile-form">
+            <el-form-item label="关联成员账号">
+              <el-select v-model="profileForm.user" filterable placeholder="选择学生登录账号" :disabled="!canManageStudents && Boolean(editingId)">
+                <el-option
+                  v-for="user in studentUserOptions"
+                  :key="user.id"
+                  :label="userOptionLabel(user)"
+                  :value="user.id"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="姓名">
+              <el-input v-model="profileForm.name" />
+            </el-form-item>
+            <div class="form-pair">
+              <el-form-item label="学位类型">
+                <el-select v-model="profileForm.degree_type">
+                  <el-option label="硕士" value="master" />
+                  <el-option label="博士" value="phd" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="年级">
+                <el-input v-model="profileForm.grade" placeholder="如 2024级" />
+              </el-form-item>
+            </div>
+            <el-form-item label="导师">
+              <el-select v-model="profileForm.supervisor" clearable filterable placeholder="选择导师账号">
+                <el-option
+                  v-for="user in supervisorOptions"
+                  :key="user.id"
+                  :label="userOptionLabel(user)"
+                  :value="user.id"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="研究方向">
+              <el-input v-model="profileForm.research_direction" />
+            </el-form-item>
+            <el-form-item label="研究题目">
+              <el-input v-model="profileForm.research_topic" type="textarea" :rows="3" />
+            </el-form-item>
+            <el-form-item label="可见范围">
+              <el-select v-model="profileForm.visibility">
+                <el-option label="本人可见" value="private" />
+                <el-option label="本人/导师可见" value="supervisor" />
+                <el-option label="硕博导师/管理员可见" value="pi" />
+                <el-option label="成员可见" value="members" />
+              </el-select>
+            </el-form-item>
+            <div class="form-actions">
+              <el-button @click="cancelEdit">取消</el-button>
+              <el-button type="primary" :loading="savingProfile" @click="saveProfile">保存档案</el-button>
+            </div>
+          </el-form>
+
+          <div v-else class="relation-note">
+            <strong>当前逻辑</strong>
+            <p>成员账号决定能不能登录；学生档案决定这个账号对应哪位学生、能上传哪些个人资料。</p>
+            <el-button v-if="selectedStudent?.can_edit" plain @click="startEdit(selectedStudent)">编辑当前档案</el-button>
+          </div>
+        </aside>
+      </section>
+
+      <el-dialog v-model="uploadVisible" title="上传学生资料" width="560px">
+        <el-form label-position="top">
+          <el-form-item label="资料类型">
+            <el-select v-model="uploadForm.file_type">
+              <el-option label="开题报告" value="proposal_report" />
+              <el-option label="开题 PPT" value="proposal_ppt" />
+              <el-option label="毕业论文" value="thesis" />
+              <el-option label="答辩 PPT" value="defense_ppt" />
+              <el-option label="原始数据说明" value="raw_data_note" />
+              <el-option label="代码" value="code" />
+              <el-option label="发表论文" value="paper" />
+              <el-option label="毕业交接材料" value="handover" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="标题">
+            <el-input v-model="uploadForm.title" placeholder="例如：硕士毕业论文终稿" />
+          </el-form-item>
+          <el-form-item label="说明">
+            <el-input v-model="uploadForm.description" type="textarea" :rows="3" />
+          </el-form-item>
+          <el-form-item label="文件">
+            <input class="file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="handleFileChange" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="uploadVisible = false">取消</el-button>
+          <el-button type="primary" :loading="uploading" @click="submitArchiveFile">保存资料</el-button>
+        </template>
+      </el-dialog>
+    </section>
+  </InternalLayout>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
+import { Download, Document, Files, PictureFilled, View } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+import { fetchUsers, type CurrentUser } from '../../api/accounts'
+import {
+  createStudentProfile,
+  deleteStudentArchiveFile,
+  deleteStudentProfile,
+  downloadStudentArchiveFileUrl,
+  fetchStudentProfiles,
+  previewStudentArchiveFileUrl,
+  type StudentArchiveFile,
+  type StudentProfile,
+  type StudentProfilePayload,
+  updateStudentProfile,
+  uploadStudentArchiveFile,
+} from '../../api/students'
+import InternalLayout from '../../layouts/InternalLayout.vue'
+import { useSessionStore } from '../../stores/session'
+
+const session = useSessionStore()
+const students = ref<StudentProfile[]>([])
+const users = ref<CurrentUser[]>([])
+const selectedId = ref<number | null>(null)
+const uploadVisible = ref(false)
+const uploading = ref(false)
+const formVisible = ref(false)
+const savingProfile = ref(false)
+const editingId = ref<number | null>(null)
+
+const profileForm = reactive<StudentProfilePayload>({
+  user: 0,
+  name: '',
+  degree_type: 'master',
+  grade: '',
+  supervisor: null,
+  research_topic: '',
+  research_direction: '',
+  enrollment_date: null,
+  graduation_date: null,
+  destination: '',
+  visibility: 'supervisor',
+})
+
+const uploadForm = reactive({
+  file_type: 'proposal_report',
+  title: '',
+  version: 'v1.0',
+  visibility: 'supervisor',
+  description: '',
+  file: undefined as File | undefined,
+})
+
+const selectedStudent = computed(() => students.value.find((item) => item.id === selectedId.value) || students.value[0])
+const displayFiles = computed<StudentArchiveFile[]>(() => selectedStudent.value?.archive_files || [])
+const canManageStudents = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
+const usedUserIds = computed(() => new Set(students.value.filter((item) => item.id !== editingId.value).map((item) => item.user)))
+const studentUserOptions = computed(() => {
+  const candidates = canManageStudents.value ? users.value : users.value.filter((user) => user.id === session.user?.id)
+  return candidates.filter((user) => !usedUserIds.value.has(user.id) || user.id === profileForm.user)
+})
+const supervisorOptions = computed(() =>
+  users.value.filter((user) => user.is_superuser || user.roles.includes('admin') || user.roles.includes('pi')),
+)
+
+function userOptionLabel(user: CurrentUser) {
+  const name = user.profile?.real_name || user.first_name || user.username
+  return `${name}（${user.email || user.username}）`
+}
+
+function archiveFilename(file: StudentArchiveFile) {
+  return (file.original_filename || file.file || file.title).toLowerCase()
+}
+
+function archiveKind(file: StudentArchiveFile) {
+  const filename = archiveFilename(file)
+  if (filename.endsWith('.pdf')) return 'pdf'
+  if (filename.endsWith('.doc') || filename.endsWith('.docx')) return 'word'
+  if (filename.endsWith('.ppt') || filename.endsWith('.pptx')) return 'ppt'
+  if (filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image'
+  return 'file'
+}
+
+function archiveTypeLabel(file: StudentArchiveFile) {
+  const labels: Record<string, string> = {
+    pdf: 'PDF',
+    word: 'Word',
+    ppt: 'PPT',
+    image: '图片',
+    file: '文件',
+  }
+  return labels[archiveKind(file)]
+}
+
+function archivePreviewLabel(file: StudentArchiveFile) {
+  const kind = archiveKind(file)
+  if (kind === 'pdf' || kind === 'word' || kind === 'ppt') return '在线查看'
+  if (kind === 'image') return '查看图片'
+  return '查看文件'
+}
+
+function canPreviewArchive(file: StudentArchiveFile) {
+  const kind = archiveKind(file)
+  if (kind === 'word' || kind === 'ppt') return file.preview_status === 'ready'
+  return true
+}
+
+function archivePreviewStatus(file: StudentArchiveFile) {
+  if (file.preview_status === 'pending') return '正在生成预览'
+  if (file.preview_status === 'failed') return '预览生成失败'
+  if (archiveKind(file) === 'ppt' || archiveKind(file) === 'word') return '暂无在线预览'
+  return '不可查看'
+}
+
+function archiveIcon(file: StudentArchiveFile) {
+  const kind = archiveKind(file)
+  if (kind === 'ppt') return Files
+  if (kind === 'image') return PictureFilled
+  return Document
+}
+
+function selectStudent(id: number) {
+  selectedId.value = id
+  formVisible.value = false
+}
+
+function fillProfileForm(student?: StudentProfile) {
+  editingId.value = student?.id ?? null
+  profileForm.user = student?.user || session.user?.id || 0
+  profileForm.name = student?.name || session.displayName || ''
+  profileForm.degree_type = student?.degree_type || 'master'
+  profileForm.grade = student?.grade || ''
+  profileForm.supervisor = student?.supervisor || null
+  profileForm.research_topic = student?.research_topic || ''
+  profileForm.research_direction = student?.research_direction || ''
+  profileForm.enrollment_date = student?.enrollment_date || null
+  profileForm.graduation_date = student?.graduation_date || null
+  profileForm.destination = student?.destination || ''
+  profileForm.visibility = student?.visibility || 'supervisor'
+}
+
+function startCreate() {
+  fillProfileForm()
+  formVisible.value = true
+}
+
+function startEdit(student: StudentProfile) {
+  fillProfileForm(student)
+  formVisible.value = true
+}
+
+function cancelEdit() {
+  formVisible.value = false
+  editingId.value = null
+}
+
+async function saveProfile() {
+  if (!profileForm.user) {
+    ElMessage.warning('请选择要绑定的成员账号。')
+    return
+  }
+  if (!profileForm.name.trim()) {
+    ElMessage.warning('请填写学生姓名。')
+    return
+  }
+  savingProfile.value = true
+  const payload = { ...profileForm, name: profileForm.name.trim() }
+  try {
+    const saved = editingId.value
+      ? await updateStudentProfile(editingId.value, payload)
+      : await createStudentProfile(payload)
+    ElMessage.success('学生档案已保存。')
+    formVisible.value = false
+    await loadStudents(saved.id)
+  } catch (error: any) {
+    const detail = error?.response?.data?.detail || Object.values(error?.response?.data || {})?.[0]
+    ElMessage.error(String(detail || '保存失败，请检查账号是否已绑定其他学生档案。'))
+  } finally {
+    savingProfile.value = false
+  }
+}
+
+function openUpload() {
+  uploadForm.file = undefined
+  uploadVisible.value = true
+}
+
+function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  uploadForm.file = input.files?.[0]
+}
+
+async function submitArchiveFile() {
+  if (!selectedStudent.value || !uploadForm.file) {
+    ElMessage.warning('请先选择文件。')
+    return
+  }
+  if (!uploadForm.title.trim()) {
+    ElMessage.warning('请填写资料标题。')
+    return
+  }
+  uploading.value = true
+  try {
+    await uploadStudentArchiveFile({
+      student: selectedStudent.value.id,
+      file_type: uploadForm.file_type,
+      title: uploadForm.title.trim(),
+      file: uploadForm.file,
+      version: uploadForm.version || 'v1.0',
+      visibility: uploadForm.visibility,
+      description: uploadForm.description,
+    })
+    ElMessage.success('学生资料已上传。')
+    uploadVisible.value = false
+    uploadForm.title = ''
+    uploadForm.version = 'v1.0'
+    uploadForm.description = ''
+    uploadForm.file = undefined
+    await loadStudents(selectedStudent.value.id)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '上传失败，请确认权限和表单内容。')
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function confirmDeleteProfile(student: StudentProfile) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除“${student.name}”的学生档案吗？该档案下的归档资料也会一起删除。`,
+      '删除学生档案',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+  try {
+    await deleteStudentProfile(student.id)
+    ElMessage.success('学生档案已删除。')
+    formVisible.value = false
+    await loadStudents()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '删除失败，请确认权限。')
+  }
+}
+
+async function confirmDeleteArchiveFile(file: StudentArchiveFile) {
+  try {
+    await ElMessageBox.confirm(`确定删除资料“${file.title}”吗？`, '删除归档资料', {
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+  try {
+    await deleteStudentArchiveFile(file.id)
+    ElMessage.success('归档资料已删除。')
+    await loadStudents(selectedStudent.value?.id)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '删除失败，请确认权限。')
+  }
+}
+
+async function loadStudents(preferredId?: number) {
+  students.value = await fetchStudentProfiles()
+  selectedId.value = preferredId || students.value[0]?.id || null
+}
+
+async function loadUsers() {
+  if (!session.initialized) await session.loadCurrentUser()
+  try {
+    users.value = canManageStudents.value ? await fetchUsers() : session.user ? [session.user] : []
+  } catch {
+    users.value = session.user ? [session.user] : []
+  }
+}
+
+onMounted(async () => {
+  await loadUsers()
+  await loadStudents()
+})
+</script>
+
+<style scoped>
+.student-page,
+.archive-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.student-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.student-workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 340px;
+  gap: 20px;
+}
+
+.student-list,
+.profile-card,
+.account-card,
+.files-panel,
+.edit-panel {
+  padding: 22px;
+}
+
+.student-list,
+.edit-panel {
+  position: sticky;
+  top: 96px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.student-list:hover,
+.profile-card:hover,
+.account-card:hover,
+.files-panel:hover,
+.edit-panel:hover {
+  transform: none;
+}
+
+.side-heading,
+.panel-heading,
+.profile-heading,
+.profile-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panel-heading,
+.side-heading {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 12px;
+}
+
+.panel-heading.compact {
+  margin-bottom: 14px;
+}
+
+.side-heading h2,
+.panel-heading h2,
+.profile-heading h1 {
+  margin: 0;
+  color: var(--color-deep-green);
+  font-weight: 650;
+}
+
+.side-heading h2,
+.panel-heading h2 {
+  font-size: 19px;
+}
+
+.side-heading span,
+.panel-heading p,
+.profile-heading p,
+.profile-heading span,
+.student-list small,
+.account-grid span,
+.account-grid small,
+.relation-note p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.profile-heading span {
+  color: var(--color-cau-green);
+  font-weight: 700;
+}
+
+.profile-heading h1 {
+  margin-top: 4px;
+  font-size: clamp(28px, 3vw, 34px);
+  line-height: 1.2;
+}
+
+.profile-actions {
+  flex: 0 0 auto;
+}
+
+.student-list button {
+  display: block;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  margin-bottom: 7px;
+  padding: 12px 13px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.student-list button.active,
+.student-list button:hover {
+  border-color: rgba(0, 135, 60, 0.14);
+  background: var(--color-eco-green);
+}
+
+.student-list button.active {
+  color: var(--color-cau-green);
+}
+
+.student-list strong,
+.student-list span,
+.student-list small {
+  display: block;
+}
+
+.student-list span {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.profile-list {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  border-top: 1px solid var(--color-line);
+  padding-top: 20px;
+}
+
+.profile-list div {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+  background: var(--color-panel);
+}
+
+.profile-list dt,
+.profile-list dd {
+  margin: 0;
+}
+
+.profile-list dt {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.profile-list dd {
+  color: var(--color-text);
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.account-grid > div {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--color-panel);
+}
+
+.account-grid strong,
+.account-grid span,
+.account-grid small {
+  display: block;
+}
+
+.file-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.file-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: flex-start;
+  gap: 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--color-panel);
+}
+
+.file-card:hover {
+  border-color: rgba(0, 135, 60, 0.18);
+  background: #fff;
+}
+
+.file-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-academic-blue);
+  font-size: 19px;
+}
+
+.file-icon.pdf {
+  background: #fff5f5;
+  color: #9f312f;
+}
+
+.file-icon.word {
+  background: #eff6ff;
+  color: #315f8f;
+}
+
+.file-icon.ppt {
+  background: #fff7ed;
+  color: #a65f2b;
+}
+
+.file-icon.image {
+  background: var(--color-eco-green);
+  color: var(--color-cau-green);
+}
+
+.file-main {
+  min-width: 0;
+}
+
+.file-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-title-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-deep-green);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-title-row span {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.file-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.file-meta span {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.file-meta span + span::before {
+  margin-right: 8px;
+  color: var(--color-line);
+  content: "/";
+}
+
+.file-card p {
+  margin: 7px 0 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.file-primary-action,
+.file-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid rgba(0, 135, 60, 0.18);
+  border-radius: var(--radius-sm);
+  min-height: 32px;
+  padding: 6px 10px;
+  background: #fff;
+  color: var(--color-cau-green);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.file-primary-action {
+  background: var(--color-cau-green);
+  color: #fff;
+}
+
+.file-primary-action:hover {
+  color: #fff;
+  background: #007234;
+}
+
+.file-secondary-action {
+  border-color: var(--color-line);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.file-secondary-action:hover {
+  border-color: rgba(0, 135, 60, 0.18);
+  color: var(--color-cau-green);
+}
+
+.file-preview-note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.file-actions {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 112px;
+  gap: 7px;
+  justify-items: end;
+}
+
+.profile-form {
+  display: grid;
+}
+
+.form-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.relation-note {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--color-panel);
+}
+
+.relation-note strong {
+  color: var(--color-deep-green);
+}
+
+.empty-note {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.file-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+  background: #fff;
+}
+
+@media (max-width: 1280px) {
+  .student-workspace {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .edit-panel {
+    position: static;
+    grid-column: 1 / -1;
+    max-height: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .student-heading,
+  .student-workspace,
+  .profile-list,
+  .account-grid,
+  .form-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .student-heading {
+    display: grid;
+  }
+
+  .student-list {
+    position: static;
+    max-height: none;
+  }
+
+  .profile-heading {
+    display: grid;
+  }
+
+  .profile-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .file-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .file-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(110px, max-content));
+    justify-content: flex-start;
+    justify-items: stretch;
+  }
+}
+</style>

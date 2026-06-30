@@ -1,0 +1,120 @@
+import { http } from './http'
+
+export interface UserProfile {
+  real_name: string
+  phone: string
+  role_type: string
+  bio: string
+  is_approved: boolean
+}
+
+export interface CurrentUser {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  is_active: boolean
+  is_staff: boolean
+  is_superuser: boolean
+  profile: UserProfile
+  roles: string[]
+}
+
+export interface Role {
+  id: number
+  name: string
+  code: string
+  description: string
+  is_system: boolean
+  created_at: string
+}
+
+export interface AdminUserCreatePayload {
+  username?: string
+  email: string
+  password: string
+  real_name?: string
+  phone?: string
+  role_type: string
+  is_approved: boolean
+  system_roles: string[]
+}
+
+export interface AdminUserUpdatePayload {
+  username?: string
+  email?: string
+  real_name?: string
+  phone?: string
+  role_type?: string
+  is_approved?: boolean
+  is_active?: boolean
+}
+
+export async function login(username: string, password: string) {
+  const response = await http.post<CurrentUser>('/accounts/auth/login/', { username, password })
+  return response.data
+}
+
+export async function logout() {
+  await http.post('/accounts/auth/logout/')
+}
+
+export async function fetchCurrentUser() {
+  const response = await http.get<CurrentUser>('/accounts/auth/me/')
+  return response.data
+}
+
+export async function fetchRoles() {
+  const response = await http.get<Role[]>('/accounts/roles/')
+  return response.data
+}
+
+export async function seedRoles() {
+  const response = await http.post<{ created: number }>('/accounts/roles/seed/')
+  return response.data
+}
+
+export async function fetchUsers() {
+  const response = await http.get<CurrentUser[]>('/accounts/users/')
+  return response.data
+}
+
+export async function fetchPendingUsers() {
+  const response = await http.get<CurrentUser[]>('/accounts/users/pending/')
+  return response.data
+}
+
+export async function createUser(payload: AdminUserCreatePayload) {
+  const response = await http.post<CurrentUser>('/accounts/users/create/', payload)
+  return response.data
+}
+
+export async function updateUser(id: number, payload: AdminUserUpdatePayload) {
+  const response = await http.patch<CurrentUser>(`/accounts/users/${id}/update/`, payload)
+  return response.data
+}
+
+export async function deleteUser(id: number) {
+  await http.delete(`/accounts/users/${id}/delete/`)
+}
+
+export async function resetUserPassword(id: number, password: string) {
+  const response = await http.post<CurrentUser>(`/accounts/users/${id}/reset-password/`, { password })
+  return response.data
+}
+
+export async function approveUser(id: number, payload: { is_approved: boolean; role_type?: string }) {
+  const response = await http.post<CurrentUser>(`/accounts/users/${id}/approve/`, payload)
+  return response.data
+}
+
+export async function assignUserRole(id: number, role_code: string) {
+  const response = await http.post<CurrentUser>(`/accounts/users/${id}/roles/`, { role_code })
+  return response.data
+}
+
+export async function removeUserRole(id: number, role_code: string) {
+  const response = await http.delete<CurrentUser>(`/accounts/users/${id}/roles/${role_code}/`)
+  return response.data
+}
