@@ -33,6 +33,9 @@ export interface StudentProfile {
   supervisor?: number | null
   supervisor_name: string
   supervisor_email?: string
+  advisors: number[]
+  advisor_names: string[]
+  advisor_emails: string[]
   research_topic: string
   research_direction: string
   enrollment_date?: string | null
@@ -51,6 +54,7 @@ export interface StudentProfilePayload {
   degree_type: string
   grade?: string
   supervisor?: number | null
+  advisors?: number[]
   research_topic?: string
   research_direction?: string
   enrollment_date?: string | null

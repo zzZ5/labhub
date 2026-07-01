@@ -1,6 +1,6 @@
 import { http } from './http'
 import type { Instrument } from './instruments'
-import type { Member, NewsArticle, NewsCategory, Publication, ResearchDirection } from './publicPortal'
+import type { Member, NewsArticle, NewsCategory, Patent, Project, Publication, ResearchDirection } from './publicPortal'
 
 export interface InstrumentCategory {
   id: number
@@ -15,7 +15,10 @@ export type CmsResource =
   | 'members'
   | 'news-categories'
   | 'news-articles'
+  | 'news-images'
   | 'publications'
+  | 'projects'
+  | 'patents'
   | 'instrument-categories'
   | 'instruments'
 
@@ -60,6 +63,14 @@ export interface CmsNewsArticle extends Omit<NewsArticle, 'category'> {
   is_pinned: boolean
 }
 
+export interface CmsNewsImage {
+  id: number
+  article: number
+  image: string
+  caption: string
+  sort_order: number
+}
+
 export const cmsApi = {
   listResearch: () => list<ResearchDirection>('research-directions'),
   createResearch: (payload: Record<string, unknown>) => create<ResearchDirection>('research-directions', payload),
@@ -80,11 +91,23 @@ export const cmsApi = {
   createNews: (payload: Record<string, unknown>) => create<CmsNewsArticle>('news-articles', payload),
   updateNews: (slug: string, payload: Record<string, unknown>) => update<CmsNewsArticle>('news-articles', slug, payload),
   deleteNews: (slug: string) => remove('news-articles', slug),
+  createNewsImage: (payload: Record<string, unknown>) => create<CmsNewsImage>('news-images', payload),
+  deleteNewsImage: (id: number) => remove('news-images', id),
 
   listPublications: () => list<Publication>('publications'),
   createPublication: (payload: Record<string, unknown>) => create<Publication>('publications', payload),
   updatePublication: (id: number, payload: Record<string, unknown>) => update<Publication>('publications', id, payload),
   deletePublication: (id: number) => remove('publications', id),
+
+  listProjects: () => list<Project>('projects'),
+  createProject: (payload: Record<string, unknown>) => create<Project>('projects', payload),
+  updateProject: (id: number, payload: Record<string, unknown>) => update<Project>('projects', id, payload),
+  deleteProject: (id: number) => remove('projects', id),
+
+  listPatents: () => list<Patent>('patents'),
+  createPatent: (payload: Record<string, unknown>) => create<Patent>('patents', payload),
+  updatePatent: (id: number, payload: Record<string, unknown>) => update<Patent>('patents', id, payload),
+  deletePatent: (id: number) => remove('patents', id),
 
   listInstrumentCategories: () => list<InstrumentCategory>('instrument-categories'),
   createInstrumentCategory: (payload: Record<string, unknown>) => create<InstrumentCategory>('instrument-categories', payload),

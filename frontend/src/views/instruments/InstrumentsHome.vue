@@ -6,7 +6,7 @@
           <span>Instrument Platform</span>
           <h1>仪器设备台账</h1>
           <p>
-            查看课题组仪器设备状态、位置、图片和使用说明。实际使用记录按实验室线下台账执行。
+            查看课题组仪器设备状态、位置、图片和使用说明，便于组内成员快速了解设备情况。
           </p>
         </div>
         <span class="heading-note">内部平台</span>
@@ -21,12 +21,22 @@
       </section>
 
       <section class="content-grid">
+        <div class="instrument-toolbar card">
+          <input v-model="keyword" type="search" placeholder="搜索仪器名称、型号、房间或说明" />
+          <select v-model="statusFilter">
+            <option value="">全部状态</option>
+            <option value="normal">正常</option>
+            <option value="maintenance">维护中</option>
+            <option value="disabled">停用</option>
+          </select>
+          <button v-if="canManageInstruments" type="button" @click="openCreate">新建设备</button>
+        </div>
         <div class="instrument-grid">
-          <RouterLink
-            v-for="instrument in displayInstruments"
+          <article
+            v-for="instrument in filteredInstruments"
             :key="instrument.id"
             class="card instrument-card"
-            :to="{ name: 'instrument-detail', params: { id: instrument.id } }"
+            @click="goDetail(instrument.id)"
           >
             <img :src="instrument.image || fallbackImage(instrument.status)" :alt="instrument.name" />
             <div class="instrument-body">
@@ -44,25 +54,75 @@
                 </div>
                 <div>
                   <dt>说明</dt>
-                  <dd>{{ instrument.notes || '请按实验室线下设备记录和安全规程使用。' }}</dd>
+                  <dd>{{ instrument.notes || '暂无详细说明，可补充使用方法、注意事项和安全要求。' }}</dd>
                 </div>
               </dl>
-              <span class="detail-link">查看设备详情</span>
+              <div class="instrument-actions">
+                <span class="detail-link">查看设备详情</span>
+                <button v-if="canManageInstruments && instrument.id > 0" type="button" class="delete-action" @click.stop="confirmDelete(instrument)">删除</button>
+              </div>
             </div>
-          </RouterLink>
+          </article>
         </div>
+        <div v-if="!filteredInstruments.length" class="card empty-panel">没有找到匹配的仪器设备。</div>
       </section>
+
+      <el-dialog v-model="formVisible" title="新建设备" width="620px">
+        <el-form label-position="top" class="instrument-form">
+          <el-form-item label="仪器名称"><el-input v-model="instrumentForm.name" /></el-form-item>
+          <div class="form-two-col">
+            <el-form-item label="型号"><el-input v-model="instrumentForm.model" /></el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="instrumentForm.status">
+                <el-option label="正常" value="normal" />
+                <el-option label="维护中" value="maintenance" />
+                <el-option label="停用" value="disabled" />
+              </el-select>
+            </el-form-item>
+          </div>
+          <div class="form-two-col">
+            <el-form-item label="房间"><el-input v-model="instrumentForm.room" /></el-form-item>
+            <el-form-item label="详细位置"><el-input v-model="instrumentForm.location_detail" /></el-form-item>
+          </div>
+          <el-form-item label="设备图片">
+            <input class="file-input" type="file" accept="image/*" @change="setInstrumentImage" />
+          </el-form-item>
+          <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="4" /></el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="formVisible = false">取消</el-button>
+          <el-button type="primary" :loading="saving" @click="saveInstrument">保存设备</el-button>
+        </template>
+      </el-dialog>
     </section>
   </InternalLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import { fetchInstruments, type Instrument } from '../../api/instruments'
+import { createInstrument, deleteInstrument, fetchInstruments, type Instrument } from '../../api/instruments'
+import { useSessionStore } from '../../stores/session'
 
+const session = useSessionStore()
+const router = useRouter()
 const instruments = ref<Instrument[]>([])
+const keyword = ref('')
+const statusFilter = ref('')
+const formVisible = ref(false)
+const saving = ref(false)
+const instrumentForm = reactive({
+  name: '',
+  model: '',
+  room: '',
+  location_detail: '',
+  status: 'normal',
+  notes: '',
+  image: undefined as File | undefined,
+})
 
 const fallbackInstruments: Instrument[] = [
   {
@@ -79,6 +139,14 @@ const fallbackInstruments: Instrument[] = [
 ]
 
 const displayInstruments = computed(() => (instruments.value.length ? instruments.value : fallbackInstruments))
+const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'instrument_manager'])))
+const filteredInstruments = computed(() => {
+  const q = keyword.value.trim().toLowerCase()
+  return displayInstruments.value.filter((item) => {
+    const haystack = `${item.name} ${item.model || ''} ${item.room || ''} ${item.location_detail || ''} ${item.notes || ''}`.toLowerCase()
+    return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
+  })
+})
 const statusSummary = computed(() => {
   const items = displayInstruments.value
   return [
@@ -93,6 +161,63 @@ async function loadInstruments() {
     instruments.value = await fetchInstruments()
   } catch {
     instruments.value = []
+  }
+}
+
+function openCreate() {
+  Object.assign(instrumentForm, {
+    name: '',
+    model: '',
+    room: '',
+    location_detail: '',
+    status: 'normal',
+    notes: '',
+    image: undefined,
+  })
+  formVisible.value = true
+}
+
+function setInstrumentImage(event: Event) {
+  const input = event.target as HTMLInputElement
+  instrumentForm.image = input.files?.[0]
+}
+
+async function saveInstrument() {
+  if (!instrumentForm.name.trim()) {
+    ElMessage.warning('请填写仪器名称。')
+    return
+  }
+  saving.value = true
+  try {
+    await createInstrument({ ...instrumentForm, name: instrumentForm.name.trim() })
+    ElMessage.success('设备已保存。')
+    formVisible.value = false
+    await loadInstruments()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '保存失败，请确认权限和表单内容。')
+  } finally {
+    saving.value = false
+  }
+}
+
+function goDetail(id: number) {
+  void router.push({ name: 'instrument-detail', params: { id } })
+}
+
+async function confirmDelete(instrument: Instrument) {
+  try {
+    await ElMessageBox.confirm(`确定删除“${instrument.name}”吗？删除后不可恢复。`, '删除设备', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      confirmButtonClass: 'el-button--danger',
+    })
+    await deleteInstrument(instrument.id)
+    ElMessage.success('设备已删除。')
+    await loadInstruments()
+  } catch (error: any) {
+    if (error === 'cancel' || error === 'close') return
+    ElMessage.error(error?.response?.data?.detail || '删除失败，请确认权限后重试。')
   }
 }
 
@@ -117,13 +242,16 @@ function fallbackImage(status: string) {
   return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=700&q=80'
 }
 
-onMounted(loadInstruments)
+onMounted(async () => {
+  if (!session.initialized) await session.loadCurrentUser()
+  await loadInstruments()
+})
 </script>
 
 <style scoped>
 .instrument-page {
   display: grid;
-  gap: 24px;
+  gap: 14px;
 }
 
 .page-heading {
@@ -133,7 +261,7 @@ onMounted(loadInstruments)
   gap: 20px;
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-lg);
-  padding: 30px 32px;
+  padding: 22px 26px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 60%, rgba(234, 245, 238, 0.86)),
     #fff;
@@ -147,9 +275,9 @@ onMounted(loadInstruments)
 }
 
 .page-heading h1 {
-  margin: 6px 0 8px;
+  margin: 5px 0 6px;
   color: var(--color-deep-green);
-  font-size: clamp(27px, 3vw, 34px);
+  font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
   line-height: 1.2;
 }
@@ -160,6 +288,11 @@ onMounted(loadInstruments)
 .offline-note p {
   margin: 0;
   color: var(--color-muted);
+}
+
+.page-heading p {
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .heading-note {
@@ -176,11 +309,17 @@ onMounted(loadInstruments)
 .status-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 10px;
 }
 
 .status-card {
-  padding: 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
 .status-card:hover {
@@ -188,26 +327,78 @@ onMounted(loadInstruments)
 }
 
 .status-card span {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-muted);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-card strong {
-  display: block;
-  margin: 8px 0;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
   color: var(--color-deep-green);
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 650;
   line-height: 1;
 }
 
 .status-card p {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .content-grid {
-  display: block;
+  display: grid;
+  gap: 14px;
+}
+
+.instrument-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.instrument-toolbar input,
+.instrument-toolbar select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.instrument-toolbar input:focus,
+.instrument-toolbar select:focus {
+  border-color: rgba(0, 135, 60, 0.35);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 135, 60, 0.08);
+}
+
+.instrument-toolbar button {
+  border: 1px solid var(--color-cau-green);
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  padding: 0 14px;
+  background: var(--color-cau-green);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .instrument-grid {
@@ -277,14 +468,61 @@ onMounted(loadInstruments)
   color: var(--color-muted);
 }
 
-.detail-link {
-  display: block;
+.instrument-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: 18px;
   border-top: 1px solid var(--color-line);
   padding-top: 14px;
+}
+
+.detail-link {
   color: var(--color-cau-green);
   font-size: 14px;
   font-weight: 700;
+}
+
+.delete-action {
+  border: 1px solid rgba(159, 47, 47, 0.18);
+  border-radius: var(--radius-sm);
+  min-height: 30px;
+  padding: 0 10px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.delete-action:hover {
+  border-color: rgba(159, 47, 47, 0.34);
+  background: #fae0e0;
+}
+
+.empty-panel {
+  padding: 24px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.instrument-form {
+  display: grid;
+}
+
+.form-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.file-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+  background: #fff;
 }
 
 @media (max-width: 1080px) {
@@ -299,10 +537,17 @@ onMounted(loadInstruments)
   }
 
   .status-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(110px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .instrument-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .instrument-toolbar,
+  .form-two-col {
     grid-template-columns: 1fr;
   }
 }

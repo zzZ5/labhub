@@ -5,7 +5,7 @@
         <div>
           <span>学生档案与成员账号</span>
           <h1>学生信息、账号绑定与归档资料</h1>
-          <p>学生档案用于保存研究方向、导师、论文和开题报告等资料；成员管理负责登录账号和角色。二者通过“关联成员账号”打通。</p>
+          <p>学生档案用于保存研究方向、多位导师、论文和开题报告等资料；成员管理负责登录账号和系统角色。二者通过“关联成员账号”打通。</p>
         </div>
         <el-button v-if="canManageStudents" type="primary" @click="startCreate">新建学生档案</el-button>
       </header>
@@ -51,7 +51,7 @@
               </div>
               <div>
                 <dt>导师</dt>
-                <dd>{{ selectedStudent.supervisor_name || '-' }}</dd>
+                <dd>{{ advisorText(selectedStudent) }}</dd>
               </div>
               <div>
                 <dt>研究题目</dt>
@@ -141,7 +141,7 @@
           <div class="panel-heading compact">
             <div>
               <h2>{{ editingId ? '编辑学生档案' : '学生档案设置' }}</h2>
-              <p>{{ canManageStudents ? '管理员和硕博导师可绑定成员账号。' : '你可以维护自己的学生档案。' }}</p>
+              <p>{{ canManageStudents ? '管理员和硕博导师可绑定学生账号和导师关系。' : '你可以维护自己的学生档案。' }}</p>
             </div>
           </div>
 
@@ -171,7 +171,7 @@
               </el-form-item>
             </div>
             <el-form-item label="导师">
-              <el-select v-model="profileForm.supervisor" clearable filterable placeholder="选择导师账号">
+              <el-select v-model="profileForm.advisors" multiple collapse-tags collapse-tags-tooltip clearable filterable placeholder="可选择多位导师">
                 <el-option
                   v-for="user in supervisorOptions"
                   :key="user.id"
@@ -279,6 +279,7 @@ const profileForm = reactive<StudentProfilePayload>({
   degree_type: 'master',
   grade: '',
   supervisor: null,
+  advisors: [],
   research_topic: '',
   research_direction: '',
   enrollment_date: null,
@@ -307,6 +308,11 @@ const studentUserOptions = computed(() => {
 const supervisorOptions = computed(() =>
   users.value.filter((user) => user.is_superuser || user.roles.includes('admin') || user.roles.includes('pi')),
 )
+
+function advisorText(student: StudentProfile) {
+  if (student.advisor_names?.length) return student.advisor_names.join('、')
+  return student.supervisor_name || '-'
+}
 
 function userOptionLabel(user: CurrentUser) {
   const name = user.profile?.real_name || user.first_name || user.username
@@ -375,7 +381,8 @@ function fillProfileForm(student?: StudentProfile) {
   profileForm.name = student?.name || session.displayName || ''
   profileForm.degree_type = student?.degree_type || 'master'
   profileForm.grade = student?.grade || ''
-  profileForm.supervisor = student?.supervisor || null
+  profileForm.advisors = student?.advisors?.length ? [...student.advisors] : student?.supervisor ? [student.supervisor] : []
+  profileForm.supervisor = profileForm.advisors[0] || null
   profileForm.research_topic = student?.research_topic || ''
   profileForm.research_direction = student?.research_direction || ''
   profileForm.enrollment_date = student?.enrollment_date || null
@@ -409,7 +416,7 @@ async function saveProfile() {
     return
   }
   savingProfile.value = true
-  const payload = { ...profileForm, name: profileForm.name.trim() }
+  const payload = { ...profileForm, name: profileForm.name.trim(), supervisor: profileForm.advisors?.[0] || null }
   try {
     const saved = editingId.value
       ? await updateStudentProfile(editingId.value, payload)

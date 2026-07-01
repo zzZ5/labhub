@@ -32,7 +32,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = StudentProfile.objects.select_related("user", "supervisor", "supervisor__profile").prefetch_related("archive_files")
+        queryset = StudentProfile.objects.select_related("user", "supervisor", "supervisor__profile").prefetch_related("advisors", "advisors__profile", "archive_files")
         return visible_students_for_user(self.request.user, queryset).distinct()
 
     def perform_create(self, serializer):

@@ -13,12 +13,17 @@ import PortalHome from '../views/portal/PortalHome.vue'
 import ResearchPage from '../views/portal/ResearchPage.vue'
 import TeamPage from '../views/portal/TeamPage.vue'
 import PublicationsPage from '../views/portal/PublicationsPage.vue'
+import PublicationDetailPage from '../views/portal/PublicationDetailPage.vue'
 import NewsPage from '../views/portal/NewsPage.vue'
+import NewsDetailPage from '../views/portal/NewsDetailPage.vue'
 import StudentsHome from '../views/students/StudentsHome.vue'
 import { useSessionStore } from '../stores/session'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition || { top: 0 }
+  },
   routes: [
     {
       path: '/',
@@ -64,9 +69,19 @@ const router = createRouter({
       component: PublicationsPage,
     },
     {
+      path: '/publications/:id',
+      name: 'publication-detail',
+      component: PublicationDetailPage,
+    },
+    {
       path: '/news',
       name: 'news',
       component: NewsPage,
+    },
+    {
+      path: '/news/:slug',
+      name: 'news-detail',
+      component: NewsDetailPage,
     },
     {
       path: '/platform',

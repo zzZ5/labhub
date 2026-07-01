@@ -14,6 +14,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
     list_display = ("name", "degree_type", "grade", "supervisor", "research_topic", "visibility", "updated_at")
     list_filter = ("degree_type", "grade", "visibility")
     search_fields = ("name", "research_topic", "research_direction", "user__username")
+    filter_horizontal = ("advisors",)
     inlines = [StudentArchiveFileInline]
 
 

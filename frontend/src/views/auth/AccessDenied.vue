@@ -1,7 +1,7 @@
 <template>
   <InternalLayout title="无权访问">
     <section class="denied-card card">
-      <p class="section-kicker">Permission</p>
+      <p class="section-kicker">访问权限</p>
       <h1>当前账号没有访问该页面的权限</h1>
       <p>该模块仅对管理员、硕博导师或指定管理角色开放。你仍可使用已授权的内部功能。</p>
       <RouterLink class="primary-link" to="/dashboard">返回工作台</RouterLink>

@@ -12,7 +12,10 @@
               <h1>{{ instrument.name }}</h1>
               <p>{{ instrument.model || '型号待补充' }}</p>
             </div>
-            <span :class="['status-tag', statusClass(instrument.status)]">{{ statusText(instrument.status) }}</span>
+            <div class="detail-tools">
+              <span :class="['status-tag', statusClass(instrument.status)]">{{ statusText(instrument.status) }}</span>
+              <button v-if="canManageInstruments && instrument.id > 0" type="button" class="delete-detail" @click="confirmDelete">删除设备</button>
+            </div>
           </div>
 
           <section class="info-section">
@@ -22,12 +25,7 @@
 
           <section class="info-section">
             <h2>使用说明</h2>
-            <p>{{ instrument.notes || '请按实验室线下设备记录和安全规程使用。' }}</p>
-          </section>
-
-          <section class="offline-note">
-            <h2>线下记录</h2>
-            <p>本系统不提供线上预约。仪器使用、样品交接、异常情况和维护记录以实验室线下登记表为准。</p>
+            <p>{{ instrument.notes || '暂无详细说明，可在仪器台账中补充使用方法、注意事项和安全要求。' }}</p>
           </section>
         </div>
       </article>
@@ -43,13 +41,17 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 
 import EmptyState from '../../components/EmptyState.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import { fetchInstruments, type Instrument } from '../../api/instruments'
+import { deleteInstrument, fetchInstruments, type Instrument } from '../../api/instruments'
+import { useSessionStore } from '../../stores/session'
 
 const route = useRoute()
+const router = useRouter()
+const session = useSessionStore()
 const instruments = ref<Instrument[]>([])
 
 const fallbackInstruments: Instrument[] = [
@@ -71,12 +73,31 @@ const instrument = computed(() => {
   const id = Number(route.params.id)
   return displayInstruments.value.find((item) => item.id === id) || null
 })
+const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'instrument_manager'])))
 
 async function loadInstruments() {
   try {
     instruments.value = await fetchInstruments()
   } catch {
     instruments.value = []
+  }
+}
+
+async function confirmDelete() {
+  if (!instrument.value) return
+  try {
+    await ElMessageBox.confirm(`确定删除“${instrument.value.name}”吗？删除后不可恢复。`, '删除设备', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      confirmButtonClass: 'el-button--danger',
+    })
+    await deleteInstrument(instrument.value.id)
+    ElMessage.success('设备已删除。')
+    await router.replace('/instruments')
+  } catch (error: any) {
+    if (error === 'cancel' || error === 'close') return
+    ElMessage.error(error?.response?.data?.detail || '删除失败，请确认权限后重试。')
   }
 }
 
@@ -101,7 +122,10 @@ function fallbackImage(status: string) {
   return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=1200&q=82'
 }
 
-onMounted(loadInstruments)
+onMounted(async () => {
+  if (!session.initialized) await session.loadCurrentUser()
+  await loadInstruments()
+})
 </script>
 
 <style scoped>
@@ -164,35 +188,48 @@ onMounted(loadInstruments)
 }
 
 .detail-heading p,
-.info-section p,
-.offline-note p {
+.info-section p {
   margin: 0;
   color: var(--color-muted);
 }
 
-.info-section,
-.offline-note {
+.info-section {
   margin-top: 22px;
 }
 
-.info-section h2,
-.offline-note h2 {
+.info-section h2 {
   margin: 0 0 8px;
   color: var(--color-deep-green);
   font-size: 20px;
   font-weight: 650;
 }
 
-.info-section p,
-.offline-note p {
+.info-section p {
   line-height: 1.85;
 }
 
-.offline-note {
-  border-left: 3px solid var(--color-cau-green);
+.detail-tools {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.delete-detail {
+  border: 1px solid rgba(159, 47, 47, 0.2);
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  background: var(--color-eco-green);
+  min-height: 32px;
+  padding: 0 11px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.delete-detail:hover {
+  border-color: rgba(159, 47, 47, 0.34);
+  background: #fae0e0;
 }
 
 @media (max-width: 760px) {

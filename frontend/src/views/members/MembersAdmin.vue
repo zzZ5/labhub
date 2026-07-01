@@ -150,7 +150,7 @@
       <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
         <el-form label-position="top" class="create-form">
           <el-form-item label="姓名">
-            <el-input v-model="accountForm.real_name" placeholder="如：李同学" />
+            <el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" />
           </el-form-item>
           <el-form-item label="邮箱">
             <el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" />
@@ -283,6 +283,7 @@ const schoolIdentityOptions = [
   { value: 'member', label: '课题组成员' },
   { value: 'master', label: '硕士生' },
   { value: 'phd', label: '博士生' },
+  { value: 'postdoc', label: '博士后' },
   { value: 'pi', label: '硕博导师' },
 ]
 
@@ -353,6 +354,7 @@ function roleDescription(code: string) {
     member: '普通内部成员，可访问基础内部资料。',
     master: '硕士生身份，可维护本人学生档案和归档资料。',
     phd: '博士生身份，可维护本人学生档案和归档资料。',
+    postdoc: '博士后身份，可访问成员内部资料和科研管理信息。',
     pi: '硕博导师，可查看和管理学生档案。',
     editor: '维护门户内容、新闻、成员展示和科研成果。',
     document_manager: '上传、维护和归档内部资料。',

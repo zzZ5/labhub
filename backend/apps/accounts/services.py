@@ -9,6 +9,7 @@ ROLE_HIERARCHY = {
     RoleCode.DOCUMENT_MANAGER: 70,
     RoleCode.INSTRUMENT_MANAGER: 70,
     RoleCode.PHD: 50,
+    RoleCode.POSTDOC: 50,
     RoleCode.MASTER: 40,
     RoleCode.MEMBER: 30,
 }
@@ -17,6 +18,7 @@ SYSTEM_ROLES = [
     (RoleCode.MEMBER, "课题组成员", "可访问普通内部资料、仪器平台和学生可见信息。"),
     (RoleCode.MASTER, "硕士生", "继承成员权限，可管理自己的学生信息与归档资料。"),
     (RoleCode.PHD, "博士生", "继承成员权限，可访问更高等级实验方法资料。"),
+    (RoleCode.POSTDOC, "博士后", "课题组博士后身份，可访问成员内部资料和科研管理信息。"),
     (RoleCode.INSTRUMENT_MANAGER, "仪器管理员", "维护仪器设备状态、图片、位置和使用说明。"),
     (RoleCode.DOCUMENT_MANAGER, "资料管理员", "上传、编辑、归档资料与版本。"),
     (RoleCode.EDITOR, "网站编辑", "维护门户内容、新闻、成果和成员信息。"),

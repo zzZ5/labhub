@@ -1,7 +1,7 @@
 <template>
   <section class="state-page">
     <div class="card state-card">
-      <p class="section-kicker">Account Review</p>
+      <p class="section-kicker">账号审核</p>
       <h1>账号等待审核</h1>
       <p>你的账号已登录，但尚未通过课题组管理员审核。审核通过后即可访问内部资料、仪器平台和学生档案等功能。</p>
       <div class="state-actions">

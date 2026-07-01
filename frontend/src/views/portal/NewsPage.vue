@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">News</p>
+        <p class="section-kicker">新闻活动</p>
         <h1>新闻活动</h1>
         <p>记录组会、田间采样、学术交流、实验培训与学生答辩等课题组动态。</p>
       </div>
@@ -21,14 +21,14 @@
           </button>
         </div>
         <div class="news-grid">
-          <article v-for="item in displayNews" :key="item.title" class="card news-card">
+          <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
             <img :src="item.cover_image || fallbackImage" :alt="item.title" />
             <div>
               <span>{{ item.event_date || '近期' }} · {{ item.category?.name || '新闻活动' }}</span>
               <h2>{{ item.title }}</h2>
               <p>{{ item.summary || '新闻摘要待补充。' }}</p>
             </div>
-          </article>
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -44,7 +44,7 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 const news = ref<NewsArticle[]>([])
 const categories = ref<NewsCategory[]>([])
 const activeCategory = ref('')
-const fallbackImage = 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=700&q=80'
+const fallbackImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80'
 
 const fallbackNews = [
   { id: 0, title: '课题组完成夏季堆肥产品田间施用试验采样', slug: 'field-sampling', summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。', cover_image: fallbackImage, event_date: '2026-06-18', category: { name: '田间试验' } },
@@ -77,34 +77,42 @@ onMounted(async () => {
 <style scoped>
 .portal-page-head {
   position: relative;
-  border-bottom: 4px solid var(--color-cau-green);
-  padding: 56px 0 42px;
-  background:`n    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.98) 56%, rgba(248, 247, 242, 0.96)),`n    radial-gradient(circle at 88% 26%, rgba(0, 135, 60, 0.08), transparent 28%),`n    var(--color-white);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  padding: 28px 0 24px;
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.76), rgba(255, 255, 255, 0.96) 48%, rgba(248, 247, 242, 0.92)),
+    var(--color-white);
 }
 
 .portal-page-head::before {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 34%;
-  height: 4px;
+  top: 30px;
+  bottom: 26px;
+  left: max(20px, calc((100vw - var(--container)) / 2));
+  width: 3px;
+  border-radius: 999px;
   content: "";
-  background: var(--color-soil);
+  background: var(--color-cau-green);
+}
+
+.portal-page-head .container {
+  padding-left: 22px;
 }
 
 .portal-page-head h1 {
-  margin: 0 0 14px;
+  margin: 0 0 9px;
   color: var(--color-deep-green);
-  font-size: clamp(38px, 4.5vw, 56px);
+  font-size: clamp(28px, 3.1vw, 38px);
   font-weight: 650;
+  line-height: 1.18;
 }
 
 .portal-page-head p:last-child {
-  max-width: 780px;
+  max-width: 820px;
   margin: 0;
   color: var(--color-muted);
-  font-size: 17px;
-  line-height: 1.8;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .portal-page-head .section-kicker {
@@ -112,6 +120,7 @@ onMounted(async () => {
 }
 
 .page-section {
+  padding-top: 30px;
   background: var(--color-rice);
 }
 
@@ -146,6 +155,7 @@ onMounted(async () => {
 .news-card {
   overflow: hidden;
   border-color: rgba(31, 61, 43, 0.1);
+  color: inherit;
   box-shadow: none;
 }
 

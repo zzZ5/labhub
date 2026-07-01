@@ -3,7 +3,7 @@
     <RouterLink class="back-link" to="/">返回官网</RouterLink>
     <div class="login-card card">
       <div>
-        <p class="section-kicker">中农雨磷 Internal</p>
+        <p class="section-kicker">中农雨磷内部平台</p>
         <h1>内部科研管理平台</h1>
         <p>请使用课题组账号登录。新注册账号需要通过管理员审核后，才能访问内部资料、仪器平台和学生档案等功能。</p>
       </div>

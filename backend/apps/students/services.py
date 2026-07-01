@@ -1,4 +1,6 @@
-﻿from apps.accounts.models import RoleCode
+from django.db.models import Q
+
+from apps.accounts.models import RoleCode
 from apps.accounts.services import is_approved_member, user_has_role
 
 from .models import StudentProfile, StudentVisibility
@@ -15,7 +17,11 @@ def can_manage_student_archives(user) -> bool:
 
 
 def is_student_supervisor(user, student: StudentProfile) -> bool:
-    return bool(user and user.is_authenticated and student.supervisor_id == user.id)
+    if not user or not user.is_authenticated:
+        return False
+    if student.supervisor_id == user.id:
+        return True
+    return student.advisors.filter(id=user.id).exists()
 
 
 def can_view_student_profile(user, student: StudentProfile) -> bool:
@@ -60,4 +66,4 @@ def visible_students_for_user(user, queryset):
         return queryset.filter(user=user) if user and user.is_authenticated else queryset.none()
     if can_manage_student_archives(user):
         return queryset
-    return queryset.filter(user=user) | queryset.filter(supervisor=user) | queryset.filter(visibility=StudentVisibility.MEMBERS)
+    return queryset.filter(Q(user=user) | Q(supervisor=user) | Q(advisors=user) | Q(visibility=StudentVisibility.MEMBERS))

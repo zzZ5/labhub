@@ -28,9 +28,17 @@ export interface NewsArticle {
   title: string
   slug: string
   summary: string
+  content?: string
   cover_image: string
+  word_file?: string
+  word_html?: string
   event_date: string | null
+  location?: string
   category: { name: string } | null
+  tags?: { id: number; name: string; slug: string }[]
+  images?: { id: number; image: string; caption: string; sort_order: number }[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface NewsCategory {
@@ -47,11 +55,20 @@ export interface Publication {
   authors: string
   journal: string
   year: number
+  volume?: string
+  issue?: string
+  pages?: string
   doi: string
+  impact_factor?: string | number | null
+  jcr_partition?: string
+  cas_partition?: string
   abstract: string
   pdf_file: string
   visibility: string
   is_representative: boolean
+  sort_order?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface PublicationStats {
@@ -70,6 +87,7 @@ export interface Project {
   start_date: string | null
   end_date: string | null
   status: string
+  visibility?: string
   description: string
 }
 
@@ -81,6 +99,7 @@ export interface Patent {
   application_date: string | null
   authorization_date: string | null
   status: string
+  visibility?: string
 }
 
 export async function fetchResearchDirections() {
@@ -98,6 +117,11 @@ export async function fetchNews(params: { category__slug?: string } = {}) {
   return response.data
 }
 
+export async function fetchNewsArticle(slug: string) {
+  const response = await http.get<NewsArticle>(`/news/articles/${slug}/`)
+  return response.data
+}
+
 export async function fetchNewsCategories() {
   const response = await http.get<NewsCategory[]>('/news/categories/')
   return response.data
@@ -112,6 +136,11 @@ export async function fetchRepresentativePublications() {
 
 export async function fetchPublications(params: { year?: number; is_representative?: boolean } = {}) {
   const response = await http.get<Publication[]>('/publications/publications/', { params })
+  return response.data
+}
+
+export async function fetchPublication(id: number | string) {
+  const response = await http.get<Publication>(`/publications/publications/${id}/`)
   return response.data
 }
 

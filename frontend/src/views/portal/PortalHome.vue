@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <PortalLayout>
     <section class="hero">
       <div class="container hero-inner">
@@ -28,7 +28,7 @@
     <section class="page-section intro-section">
       <div class="container intro-grid">
         <SectionHeader
-          kicker="About"
+          kicker="课题组简介"
           title="把农业废弃物转化为可持续生态资源"
           description="中农雨磷以团队协作为基础，连接微生物生态机制、有机废弃物转化、产品开发和田间应用评价，推动农业废弃物从环境负担转化为生态资源。"
         />
@@ -43,7 +43,7 @@
 
     <section class="page-section research-section">
       <div class="container">
-        <SectionHeader kicker="Research" title="研究方向" description="从微生物生态机制到有机废弃物转化，再到高值产品开发与田间生态评价，形成完整研究链条。" />
+        <SectionHeader kicker="研究方向" title="从过程机制到资源化应用" description="围绕农业有机废弃物转化，连接微生物机制、堆肥腐殖化、养分循环、产品开发和田间生态评价。" />
         <div class="research-flow" aria-label="研究链条">
           <span>农业有机废弃物</span>
           <span>微生物过程</span>
@@ -65,7 +65,7 @@
     <section class="page-section publication-section">
       <div class="container publication-grid">
         <div>
-          <SectionHeader kicker="Outputs" title="代表成果" description="以论文成果、科研项目、专利转化和学术交流支撑农业资源环境领域的长期积累。" />
+          <SectionHeader kicker="科研成果" title="近期发表" description="组内论文统一纳入成果统计，首页展示近期发表的研究进展。" />
           <div class="stats-row">
             <div v-for="item in displayStats" :key="item.label">
               <strong>{{ item.value }}</strong>
@@ -73,22 +73,23 @@
             </div>
           </div>
         </div>
-        <div class="timeline card">
-          <article v-for="paper in displayPapers" :key="paper.title">
+        <div class="latest-paper-panel">
+          <RouterLink v-for="paper in displayPapers" :key="paper.title" class="paper-compact" :to="`/publications/${paper.id}`">
             <time>{{ paper.year }}</time>
             <div>
               <h3>{{ paper.title }}</h3>
               <p>{{ paper.source }}</p>
+              <span>查看详情</span>
             </div>
-          </article>
-          <RouterLink class="section-link compact" to="/publications">更多成果</RouterLink>
+          </RouterLink>
+          <RouterLink class="section-link compact" to="/publications">查看全部论文</RouterLink>
         </div>
       </div>
     </section>
 
     <section class="page-section team-section">
       <div class="container">
-        <SectionHeader kicker="Team" title="团队成员" description="课题组由导师、博士研究生、硕士研究生和毕业学生共同组成，围绕资源环境与生态过程开展协同研究。" />
+        <SectionHeader kicker="团队成员" title="团队成员" description="课题组由导师、博士研究生、硕士研究生和毕业学生共同组成，围绕资源环境与生态过程开展协同研究。" />
         <div class="member-grid">
           <article v-for="member in displayMembers" :key="member.name" class="card member-card">
             <img :src="member.avatar" :alt="member.name" />
@@ -103,16 +104,16 @@
 
     <section class="page-section news-section">
       <div class="container">
-        <SectionHeader kicker="News" title="新闻活动" description="记录田间采样、学术交流、实验培训与组内科研动态。" />
+        <SectionHeader kicker="新闻活动" title="新闻活动" description="记录田间采样、学术交流、实验培训与组内科研动态。" />
         <div class="news-grid">
-          <article v-for="item in displayNews" :key="item.title" class="card news-card">
+          <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
             <img :src="item.image" :alt="item.title" />
             <div>
               <span>{{ item.date }} · {{ item.category }}</span>
               <h3>{{ item.title }}</h3>
               <p>{{ item.summary }}</p>
             </div>
-          </article>
+          </RouterLink>
         </div>
         <RouterLink class="section-link" to="/news">查看新闻活动</RouterLink>
       </div>
@@ -121,7 +122,7 @@
     <section class="join-section">
       <div class="container join-card">
         <div>
-          <p class="section-kicker">Join Us</p>
+          <p class="section-kicker">加入我们</p>
           <h2>欢迎对微生物生态与农业资源循环感兴趣的同学加入</h2>
           <p>长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。</p>
         </div>
@@ -141,7 +142,7 @@ import {
   fetchMembers,
   fetchNews,
   fetchPublicationStats,
-  fetchRepresentativePublications,
+  fetchPublications,
   fetchResearchDirections,
   type Member,
   type NewsArticle,
@@ -167,6 +168,7 @@ const apiMembers = ref<Member[]>([])
 const apiNews = ref<NewsArticle[]>([])
 const apiPapers = ref<Publication[]>([])
 const apiStats = ref<PublicationStats | null>(null)
+const papersReady = ref(false)
 
 const fallbackResearchDirections = [
   { title: '微生物生态', description: '解析有机废弃物转化、土壤生态过程中的关键微生物群落与功能机制。', icon: DataAnalysis },
@@ -184,9 +186,9 @@ const fallbackStats = [
 ]
 
 const fallbackPapers = [
-  { year: '方向一', title: '微生物生态与有机废弃物资源化机制研究', source: '围绕功能菌群、物质转化和生态过程开展长期研究' },
-  { year: '方向二', title: '农业废弃物低碳转化技术与装备', source: '支撑堆肥、臭气减排、腐殖化和产品品质提升' },
-  { year: '方向三', title: '高值产品开发与农业生态应用评价', source: '服务有机肥、水溶肥和资源循环利用场景' },
+  { id: 0, year: '2026', title: 'Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting', source: 'Environmental Research' },
+  { id: 1, year: '2026', title: 'Effect of Different Organic-to-inorganic Phosphorus Ratios on Organic Phosphorus Mineralization and Microbial Functions During Composting', source: 'Journal of Environmental Chemical Engineering' },
+  { id: 2, year: '2026', title: 'A Compost-Derived Functional Microbial Consortium Fortifies Humification During Bio-Organic Fertilizer Production', source: 'Journal of Environmental Chemical Engineering' },
 ]
 
 const fallbackMembers = [
@@ -197,9 +199,9 @@ const fallbackMembers = [
 ]
 
 const fallbackNews = [
-  { date: '2026-06-18', category: '田间试验', title: '课题组完成夏季堆肥产品田间施用试验采样', summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。', image: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=700&q=80' },
-  { date: '2026-05-29', category: '学术交流', title: '实验室举办农业废弃物资源化专题组会', summary: '师生围绕腐殖化过程调控和智能监测模型进行讨论。', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=700&q=80' },
-  { date: '2026-05-12', category: '实验培训', title: '完成堆肥反应器与气体采样系统操作培训', summary: '面向新进学生开展仪器安全、样品记录和数据归档培训。', image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=700&q=80' },
+  { slug: 'field-sampling', date: '2026-06-18', category: '田间试验', title: '课题组完成夏季堆肥产品田间施用试验采样', summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。', image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80' },
+  { slug: 'seminar', date: '2026-05-29', category: '学术交流', title: '实验室举办农业废弃物资源化专题组会', summary: '师生围绕腐殖化过程调控和智能监测模型进行讨论。', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=700&q=80' },
+  { slug: 'training', date: '2026-05-12', category: '实验培训', title: '完成堆肥反应器与气体采样系统操作培训', summary: '面向新进学生开展仪器安全、样品记录和数据归档培训。', image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=700&q=80' },
 ]
 
 const displayResearchDirections = computed(() => {
@@ -224,8 +226,10 @@ const displayStats = computed(() => {
 })
 
 const displayPapers = computed(() => {
+  if (!papersReady.value && !apiPapers.value.length) return []
   if (!apiPapers.value.length) return fallbackPapers
   return apiPapers.value.slice(0, 3).map((paper) => ({
+    id: paper.id,
     year: `${paper.year}`,
     title: paper.title,
     source: paper.journal || paper.authors,
@@ -245,11 +249,12 @@ const displayMembers = computed(() => {
 const displayNews = computed(() => {
   if (!apiNews.value.length) return fallbackNews
   return apiNews.value.slice(0, 3).map((item) => ({
+    slug: item.slug,
     date: item.event_date || '近期',
     category: item.category?.name || '新闻活动',
     title: item.title,
     summary: item.summary || '新闻摘要待补充。',
-    image: item.cover_image || 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=700&q=80',
+    image: item.cover_image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80',
   }))
 })
 
@@ -258,13 +263,14 @@ onMounted(async () => {
     fetchResearchDirections(),
     fetchMembers(),
     fetchNews(),
-    fetchRepresentativePublications(),
+    fetchPublications(),
     fetchPublicationStats(),
   ])
   if (research.status === 'fulfilled') apiResearchDirections.value = research.value
   if (members.status === 'fulfilled') apiMembers.value = members.value
   if (news.status === 'fulfilled') apiNews.value = news.value
   if (papers.status === 'fulfilled') apiPapers.value = papers.value
+  papersReady.value = true
   if (stats.status === 'fulfilled') apiStats.value = stats.value
 })
 </script>
@@ -273,68 +279,79 @@ onMounted(async () => {
 .hero {
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.08);
   color: var(--color-text);
   background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.62), rgba(248, 247, 242, 0.96) 58%, rgba(255, 255, 255, 0.98)),
-    var(--color-rice);
+    linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%),
+    linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08)),
+    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1900&q=88") center right / cover no-repeat;
 }
 
 .hero::before {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
+  bottom: 0;
+  left: max(20px, calc((100vw - var(--container)) / 2));
+  width: min(720px, calc(100vw - 40px));
   content: "";
-  background: var(--color-cau-green);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0)),
+    repeating-linear-gradient(135deg, rgba(0, 135, 60, 0.045) 0 1px, transparent 1px 18px);
+  opacity: 0.72;
+  mask-image: linear-gradient(90deg, #000, transparent 78%);
 }
 
 .hero::after {
   position: absolute;
-  inset: 4px 0 0 auto;
-  display: block;
-  width: min(58vw, 860px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 5px;
   content: "";
-  background: url("https://images.unsplash.com/photo-1492496913980-501348b61469?auto=format&fit=crop&w=1800&q=84") center / cover no-repeat;
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 28%, #000 72%);
-  opacity: 0.38;
+  background: linear-gradient(90deg, var(--color-cau-green), rgba(0, 135, 60, 0.42), rgba(166, 120, 78, 0.28), transparent);
 }
 
 .hero-inner {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 760px);
+  grid-template-columns: minmax(0, 720px);
   align-items: center;
   gap: 70px;
-  min-height: 430px;
-  padding: 70px 0 58px;
+  min-height: 438px;
+  padding: 68px 0 58px;
 }
 
 .hero-copy {
   position: relative;
   z-index: 2;
-  max-width: 660px;
-  border-left: 4px solid var(--color-cau-green);
-  padding-left: 24px;
+  max-width: 680px;
+  border-left: 0;
+  padding-left: 0;
 }
 
 .hero-copy::before {
-  display: none;
+  display: block;
+  width: 54px;
+  height: 3px;
+  margin-bottom: 22px;
+  border-radius: 999px;
+  background: var(--color-cau-green);
+  content: "";
 }
 
 .hero-copy h1 {
   margin: 0;
   color: var(--color-deep-green);
-  font-size: clamp(40px, 4.7vw, 58px);
+  font-size: clamp(42px, 4.6vw, 56px);
   font-weight: 650;
-  line-height: 1.08;
+  line-height: 1.06;
+  letter-spacing: 0;
 }
 
 .hero-lead {
   max-width: 650px;
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   color: var(--color-deep-green);
   font-size: clamp(20px, 2vw, 25px);
   font-weight: 600;
@@ -343,8 +360,8 @@ onMounted(async () => {
 
 .hero-text {
   max-width: 620px;
-  margin: 16px 0 0;
-  color: var(--color-muted);
+  margin: 15px 0 0;
+  color: rgba(47, 52, 55, 0.72);
   font-size: 17px;
   line-height: 1.85;
 }
@@ -353,30 +370,32 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 26px;
+  margin-top: 28px;
 }
 
 .hero-strip {
   position: relative;
   z-index: 2;
-  border-top: 1px solid var(--color-border);
+  border-top: 0;
   border-bottom: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.94);
+  background: #fff;
 }
 
 .hero-strip-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
+  gap: 18px;
   margin-top: 0;
   border: 0;
+  padding: 15px 0;
 }
 
 .hero-strip-grid span {
   display: block;
   min-height: auto;
-  border-right: 1px solid var(--color-border);
-  padding: 13px 20px;
+  border-left: 2px solid rgba(0, 135, 60, 0.28);
+  border-right: 0;
+  padding: 2px 0 2px 14px;
   background: transparent;
   color: var(--color-muted);
   box-shadow: none;
@@ -384,9 +403,9 @@ onMounted(async () => {
 
 .hero-strip-grid strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--color-cau-green);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -399,18 +418,6 @@ onMounted(async () => {
   padding: 11px 22px;
 }
 
-.hero .secondary-action {
-  border-color: rgba(0, 135, 60, 0.34);
-  background: #fff;
-  color: var(--color-cau-green);
-  backdrop-filter: none;
-}
-
-.hero .secondary-action:hover {
-  border-color: var(--color-cau-green);
-  background: var(--color-eco-green);
-}
-
 .hero .section-kicker {
   color: var(--color-cau-green);
 }
@@ -418,9 +425,14 @@ onMounted(async () => {
 .intro-grid,
 .publication-grid {
   display: grid;
+  grid-template-columns: minmax(240px, 0.38fr) minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+
+.intro-grid {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.48fr);
   gap: 52px;
-  align-items: start;
 }
 
 .publication-section,
@@ -539,7 +551,7 @@ onMounted(async () => {
 .news-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
   border: 0;
   background: transparent;
 }
@@ -552,7 +564,7 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: -8px 0 20px;
+  margin: -2px 0 22px;
 }
 
 .research-flow span {
@@ -573,7 +585,7 @@ onMounted(async () => {
 }
 
 .research-card,
-.timeline,
+.latest-paper-panel,
 .member-card {
   border: 0;
   border-radius: 0;
@@ -581,20 +593,23 @@ onMounted(async () => {
   box-shadow: none;
 }
 
-.timeline {
-  border-top: 1px solid rgba(31, 61, 43, 0.14);
-  border-bottom: 1px solid rgba(31, 61, 43, 0.14);
+.latest-paper-panel {
+  display: grid;
+  gap: 8px;
+  border-left: 0;
+  padding: 0;
   background: transparent;
 }
 
 .research-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  min-height: 172px;
   background: #fff;
 }
 
 .research-card:hover,
-.timeline:hover,
+.latest-paper-panel:hover,
 .member-card:hover,
 .news-card:hover {
   transform: none;
@@ -611,7 +626,6 @@ onMounted(async () => {
 }
 
 .research-card h3,
-.timeline h3,
 .member-card h3,
 .news-card h3 {
   margin: 12px 0 7px;
@@ -621,24 +635,54 @@ onMounted(async () => {
 }
 
 .research-card p,
-.timeline p,
 .member-card p,
 .news-card p {
   margin: 0;
   color: var(--color-muted);
+  line-height: 1.7;
 }
 
-.timeline article {
+.paper-compact {
   display: grid;
-  grid-template-columns: 72px 1fr;
-  gap: 20px;
-  padding: 18px 0;
-  border-bottom: 1px solid rgba(31, 61, 43, 0.12);
+  grid-template-columns: 58px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  color: inherit;
+  cursor: pointer;
 }
 
-.timeline time {
+.paper-compact:hover h3 {
   color: var(--color-cau-green);
+}
+
+.paper-compact time {
+  align-self: start;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: var(--color-eco-green);
+  color: var(--color-cau-green);
+  font-size: 13px;
   font-weight: 700;
+}
+
+.paper-compact h3 {
+  display: -webkit-box;
+  margin: 0 0 6px;
+  overflow: hidden;
+  color: var(--color-deep-green);
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.48;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.paper-compact p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .member-grid {
@@ -675,6 +719,7 @@ onMounted(async () => {
   border-radius: var(--radius-md);
   overflow: hidden;
   background: #fff;
+  color: inherit;
   box-shadow: none;
 }
 
@@ -758,12 +803,14 @@ onMounted(async () => {
 @media (max-width: 980px) {
   .hero {
     background:
-      linear-gradient(90deg, rgba(255, 255, 255, 0.98), rgba(234, 245, 238, 0.94)),
-      var(--color-white);
+      linear-gradient(180deg, rgba(248, 247, 242, 0.98), rgba(234, 245, 238, 0.88)),
+      url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=86") center / cover no-repeat;
   }
 
   .hero::before {
-    opacity: 0.18;
+    left: 20px;
+    width: calc(100vw - 40px);
+    opacity: 0.36;
   }
 
   .hero-inner,
@@ -774,10 +821,12 @@ onMounted(async () => {
 
   .hero-inner {
     min-height: auto;
+    padding: 58px 0 48px;
   }
 
   .hero-strip-grid {
     margin-top: 0;
+    gap: 10px;
   }
 
   .hero-strip-grid span:nth-child(2),
@@ -815,3 +864,4 @@ onMounted(async () => {
   }
 }
 </style>
+

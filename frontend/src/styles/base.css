@@ -6,6 +6,7 @@
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  scroll-padding-top: calc(var(--nav-height) + 16px);
 }
 
 * {

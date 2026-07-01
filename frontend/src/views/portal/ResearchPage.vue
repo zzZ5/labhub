@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">Research</p>
+        <p class="section-kicker">研究方向</p>
         <h1>研究方向</h1>
         <p>围绕农业废弃物资源化、生态环境过程调控、微生物生态机制和智能堆肥技术，形成从基础机制到工程应用的研究链条。</p>
       </div>
@@ -31,12 +31,12 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 const directions = ref<ResearchDirection[]>([])
 
 const fallback = [
-  { title: '有机废弃物资源化利用', summary: '研究秸秆、畜禽粪污、园林废弃物等农业有机废弃物的高值转化路径。' },
-  { title: '好氧堆肥与腐殖化调控', summary: '解析堆肥过程碳氮转化、腐殖质形成与臭气排放控制机制。' },
-  { title: '农业生态环境过程', summary: '关注土壤、作物、微生物和污染风险之间的生态环境过程耦合。' },
-  { title: '微生物生态与功能机制', summary: '识别关键功能菌群及其环境响应机制，支撑过程调控。' },
-  { title: '智能堆肥与过程建模', summary: '构建堆肥过程监测、预测和调控模型，服务工程化应用。' },
-  { title: '养分循环与污染风险控制', summary: '评估有机肥还田、氮磷循环和潜在环境风险。' },
+  { title: '微生物生态', summary: '解析有机废弃物转化、土壤生态过程中的关键微生物群落与功能机制。' },
+  { title: '有机废弃物资源转化', summary: '面向农业和食品加工废弃物，研究低碳转化、稳定化和资源化利用路径。' },
+  { title: '高值产品开发', summary: '围绕有机肥、水溶肥和生态产品，推进从工艺优化到应用评价的转化研究。' },
+  { title: '堆肥腐殖化调控', summary: '研究堆肥过程中腐殖酸形成、臭气减排和品质提升的过程调控机制。' },
+  { title: '养分循环与土壤健康', summary: '评价有机物料还田、养分循环利用及其对土壤生态功能的影响。' },
+  { title: '农业低碳生态转化', summary: '服务农业废弃物低碳处理和绿色农业场景，探索可推广的技术模式。' },
 ]
 
 const displayDirections = computed(() =>
@@ -60,34 +60,42 @@ onMounted(async () => {
 <style scoped>
 .portal-page-head {
   position: relative;
-  border-bottom: 4px solid var(--color-cau-green);
-  padding: 56px 0 42px;
-  background:`n    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.98) 56%, rgba(248, 247, 242, 0.96)),`n    radial-gradient(circle at 88% 26%, rgba(0, 135, 60, 0.08), transparent 28%),`n    var(--color-white);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  padding: 28px 0 24px;
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.76), rgba(255, 255, 255, 0.96) 48%, rgba(248, 247, 242, 0.92)),
+    var(--color-white);
 }
 
 .portal-page-head::before {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 34%;
-  height: 4px;
+  top: 30px;
+  bottom: 26px;
+  left: max(20px, calc((100vw - var(--container)) / 2));
+  width: 3px;
+  border-radius: 999px;
   content: "";
-  background: var(--color-soil);
+  background: var(--color-cau-green);
+}
+
+.portal-page-head .container {
+  padding-left: 22px;
 }
 
 .portal-page-head h1 {
-  margin: 0 0 14px;
+  margin: 0 0 9px;
   color: var(--color-deep-green);
-  font-size: clamp(38px, 4.5vw, 56px);
+  font-size: clamp(28px, 3.1vw, 38px);
   font-weight: 650;
+  line-height: 1.18;
 }
 
 .portal-page-head p:last-child {
-  max-width: 780px;
+  max-width: 820px;
   margin: 0;
   color: var(--color-muted);
-  font-size: 17px;
-  line-height: 1.8;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .portal-page-head .section-kicker {
@@ -95,6 +103,7 @@ onMounted(async () => {
 }
 
 .page-section {
+  padding-top: 30px;
   background: var(--color-rice);
 }
 

@@ -125,7 +125,7 @@
 .surface-heading {
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-lg);
-  padding: 28px 30px;
+  padding: 22px 26px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(251, 253, 251, 0.94) 58%, rgba(234, 245, 238, 0.86) 100%),
     #fff;
@@ -140,9 +140,9 @@
 }
 
 .surface-heading h1 {
-  margin: 7px 0 8px;
+  margin: 5px 0 6px;
   color: var(--color-deep-green);
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
   line-height: 1.25;
 }
@@ -151,7 +151,8 @@
   margin: 0;
   max-width: 760px;
   color: var(--color-muted);
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .outline-action,

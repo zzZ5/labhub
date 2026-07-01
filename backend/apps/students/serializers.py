@@ -51,6 +51,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_username = serializers.CharField(source="user.username", read_only=True)
     supervisor_email = serializers.EmailField(source="supervisor.email", read_only=True)
+    advisor_names = serializers.SerializerMethodField()
+    advisor_emails = serializers.SerializerMethodField()
     archive_files = StudentArchiveFileSerializer(many=True, read_only=True)
     can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
@@ -70,6 +72,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "supervisor",
             "supervisor_name",
             "supervisor_email",
+            "advisors",
+            "advisor_names",
+            "advisor_emails",
             "research_topic",
             "research_direction",
             "enrollment_date",
@@ -98,14 +103,41 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return getattr(profile, "real_name", "") or obj.user.get_full_name() or obj.user.get_username()
 
     def create(self, validated_data):
+        advisors = validated_data.pop("advisors", [])
+        if not advisors and validated_data.get("supervisor"):
+            advisors = [validated_data["supervisor"]]
+        if advisors and not validated_data.get("supervisor"):
+            validated_data["supervisor"] = advisors[0]
         instance = super().create(validated_data)
+        instance.advisors.set(advisors)
         self._sync_user_profile_name(instance)
         return instance
 
     def update(self, instance, validated_data):
+        advisors = validated_data.pop("advisors", None)
+        if advisors and not validated_data.get("supervisor"):
+            validated_data["supervisor"] = advisors[0]
         instance = super().update(instance, validated_data)
+        if advisors is not None:
+            instance.advisors.set(advisors)
         self._sync_user_profile_name(instance)
         return instance
+
+    def get_advisor_names(self, obj):
+        names = []
+        for user in obj.advisors.all():
+            profile = getattr(user, "profile", None)
+            names.append(getattr(profile, "real_name", "") or user.get_full_name() or user.get_username())
+        if not names and obj.supervisor:
+            profile = getattr(obj.supervisor, "profile", None)
+            names.append(getattr(profile, "real_name", "") or obj.supervisor.get_full_name() or obj.supervisor.get_username())
+        return names
+
+    def get_advisor_emails(self, obj):
+        emails = [user.email for user in obj.advisors.all() if user.email]
+        if not emails and obj.supervisor and obj.supervisor.email:
+            emails.append(obj.supervisor.email)
+        return emails
 
     def _sync_user_profile_name(self, instance):
         profile = getattr(instance.user, "profile", None)

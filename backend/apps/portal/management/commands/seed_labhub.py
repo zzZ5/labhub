@@ -83,7 +83,74 @@ class Command(BaseCommand):
                 },
             )
 
-        Publication.objects.filter(title__startswith="Agricultural organic waste recycling study").update(is_representative=False)
+        for index, publication in enumerate(
+            Publication.objects.filter(title__startswith="Agricultural organic waste recycling study").order_by("year", "id"),
+            start=1,
+        ):
+            publication.title = f"中农雨磷团队农业废弃物资源化研究方向 {index}"
+            publication.authors = "中农雨磷团队"
+            publication.journal = "代表性研究方向"
+            publication.is_representative = True
+            publication.save(update_fields=["title", "authors", "journal", "is_representative", "updated_at"])
+        Publication.objects.filter(title__startswith="中农雨磷团队农业废弃物资源化研究方向").update(visibility=Visibility.ADMINS)
+
+        latest_publications = [
+            (
+                "Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting",
+                "Su Chang; Yi Zheng; Baoju Liu; Wenjie Chen; Yuquan Wei; Long D. Nghiem; Mohan Bai; Guochun Ding; Huike Ye; Yan Xu; Ji Li",
+                "Environmental Research",
+                2026,
+                "AMiner ID: 69e3486a9be8eb7c4b65172e",
+            ),
+            (
+                "Effect of Different Organic-to-inorganic Phosphorus Ratios on Organic Phosphorus Mineralization and Microbial Functions During Composting",
+                "Zhen Wu; Yuquan Wei; Tong Guo; Long D. Nghiem; Zimin Wei; Yue Zhao",
+                "Journal of Environmental Chemical Engineering",
+                2026,
+                "AMiner ID: 69f23d5b0a96f8c83c54164e",
+            ),
+            (
+                "A Compost-Derived Functional Microbial Consortium Fortifies Humification During Bio-Organic Fertilizer Production",
+                "Yang Yang; Yuxin Sun; Jiaqi Liu; Xueqing Jia; Tao Wang; Qing Chen; Yanming Li; Yuyun Wang; Zhi Xu; Yuquan Wei; Ruixue Chang",
+                "Journal of Environmental Chemical Engineering",
+                2026,
+                "AMiner ID: 6a3ef2ee0a96f8c83c09aa02",
+            ),
+            (
+                "Mineral-driven Accumulation of Microbial Necromass Enhanced Humification During Composting",
+                "Wenjie Chen; Yan Yang; Kui Zhang; Su Chang; Yuan Chang; Ji Li; Xia Liang; Yifan Liu; Long D. Nghiem; Mohan Bai; Huike Ye; Zichao Zhao; Yuquan Wei",
+                "Journal of Environmental Chemical Engineering",
+                2026,
+                "AMiner ID: 69cf11a29be8eb7c4bf9892d",
+            ),
+            (
+                "The Impacts of Aeration Modes and Rates on Nitrogen Conversion and Bacterial Community Composition in a 90-M3 Silo Composting Reactor",
+                "Pengxiang Xu; Shaoqi Xu; Yuquan Wei; Yongdi Liu; Sheng Hang; Yue Wang; Longli Zhang; Ji Li",
+                "Environmental Technology & Innovation",
+                2025,
+                "AMiner ID: 686e214f163c01c850ea34d3",
+            ),
+            (
+                "Neutral Initial pH Enhances the Formation of Humic Acid by Inhibiting the Growth of Lactobacillus in Food Waste Composting",
+                "Min Xu; Yuquan Wei; Yunfeng Chen; Haibin Zhou; Shuangshuang Ma; Yabin Zhan",
+                "Environmental Technology & Innovation",
+                2025,
+                "AMiner ID: 686e2165163c01c850ea6a69",
+            ),
+        ]
+        for sort_order, (title, authors, journal, year, abstract) in enumerate(latest_publications, start=1):
+            Publication.objects.update_or_create(
+                title=title,
+                defaults={
+                    "authors": authors,
+                    "journal": journal,
+                    "year": year,
+                    "abstract": abstract,
+                    "visibility": Visibility.PUBLIC,
+                    "is_representative": False,
+                    "sort_order": sort_order,
+                },
+            )
 
         for index in range(1, 3):
             Project.objects.update_or_create(

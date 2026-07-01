@@ -175,8 +175,8 @@ async function handleLogout() {
   min-height: 74px;
   border-bottom: 1px solid var(--color-border);
   padding: 0 34px;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(8px);
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(31, 61, 43, 0.03);
 }
 
 .internal-topbar small,

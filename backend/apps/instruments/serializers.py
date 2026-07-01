@@ -25,6 +25,13 @@ class InstrumentImageSerializer(serializers.ModelSerializer):
 
 class InstrumentSerializer(serializers.ModelSerializer):
     category = InstrumentCategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=InstrumentCategory.objects.all(),
+        source="category",
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     manager_name = serializers.CharField(source="manager.profile.real_name", read_only=True)
     training_passed = serializers.SerializerMethodField()
@@ -37,6 +44,7 @@ class InstrumentSerializer(serializers.ModelSerializer):
             "model",
             "serial_number",
             "category",
+            "category_id",
             "room",
             "location_detail",
             "manager_name",

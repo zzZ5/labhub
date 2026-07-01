@@ -2,7 +2,7 @@
   <InternalLayout title="内部资料库">
     <section class="library-hero">
       <div>
-        <span>LabHub Documents</span>
+        <span>内部资料</span>
         <h1>课题组内部资料库</h1>
         <p>集中管理 SOP、实验记录模板、数据分析教程、论文开题与毕业材料，支持在线阅读、权限查看和版本追踪。</p>
       </div>
@@ -437,11 +437,11 @@ onMounted(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: 28px;
+  gap: 22px;
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: 14px;
-  margin-bottom: 22px;
-  padding: 28px 30px;
+  margin-bottom: 16px;
+  padding: 20px 24px;
   background:
     linear-gradient(135deg, rgba(234, 245, 238, 0.72), rgba(255, 255, 255, 0.82) 48%, rgba(248, 247, 242, 0.9)),
     #fff;
@@ -455,9 +455,9 @@ onMounted(() => {
 }
 
 .library-hero h1 {
-  margin: 7px 0 8px;
+  margin: 5px 0 6px;
   color: var(--color-deep-green);
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
   line-height: 1.25;
 }
@@ -467,20 +467,20 @@ onMounted(() => {
   margin: 0;
   color: var(--color-muted);
   font-size: 15px;
-  line-height: 1.75;
+  line-height: 1.62;
 }
 
 .library-hero dl {
   display: grid;
   grid-template-columns: repeat(3, minmax(84px, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin: 0;
 }
 
 .library-hero dl div {
   min-width: 92px;
   border-left: 1px solid rgba(0, 135, 60, 0.16);
-  padding-left: 18px;
+  padding-left: 14px;
 }
 
 .library-hero dt,
@@ -490,13 +490,13 @@ onMounted(() => {
 
 .library-hero dt {
   color: var(--color-deep-green);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1;
 }
 
 .library-hero dd {
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--color-muted);
   font-size: 13px;
 }
@@ -933,7 +933,7 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .library-hero {
-    padding: 22px;
+    padding: 18px;
   }
 
   .library-hero dl {

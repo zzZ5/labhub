@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+from django.utils.text import slugify
 from rest_framework import serializers, viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
@@ -6,21 +9,50 @@ from apps.instruments.models import Instrument, InstrumentCategory
 from apps.instruments.serializers import InstrumentCategorySerializer
 from apps.members.models import Member
 from apps.members.serializers import MemberSerializer
-from apps.news.models import NewsArticle, NewsCategory
-from apps.news.serializers import NewsCategorySerializer
+from apps.news.models import NewsArticle, NewsCategory, NewsImage
+from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer
 from apps.portal.models import ResearchDirection
 from apps.portal.serializers import ResearchDirectionSerializer
-from apps.publications.models import Publication
-from apps.publications.serializers import PublicationSerializer
+from apps.publications.models import Patent, Project, Publication
+from apps.publications.serializers import PatentSerializer, ProjectSerializer, PublicationSerializer
 
 
 class CmsParserMixin:
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
 
+def unique_slug(model, title, current_slug="", prefix="item"):
+    base = slugify(title or "", allow_unicode=False)[:90].strip("-") or f"{prefix}-{uuid4().hex[:8]}"
+    slug = base
+    index = 2
+    queryset = model.objects.all()
+    if current_slug:
+        queryset = queryset.exclude(slug=current_slug)
+    while queryset.filter(slug=slug).exists():
+        suffix = f"-{index}"
+        slug = f"{base[: 120 - len(suffix)]}{suffix}"
+        index += 1
+    return slug
+
+
+class CmsResearchDirectionSerializer(ResearchDirectionSerializer):
+    slug = serializers.SlugField(required=False, allow_blank=True)
+
+    def create(self, validated_data):
+        validated_data["slug"] = unique_slug(ResearchDirection, validated_data.get("title"), prefix="research")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if not instance.slug:
+            validated_data["slug"] = unique_slug(ResearchDirection, validated_data.get("title") or instance.title, instance.slug, prefix="research")
+        else:
+            validated_data.pop("slug", None)
+        return super().update(instance, validated_data)
+
+
 class CmsResearchDirectionViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = ResearchDirection.objects.all()
-    serializer_class = ResearchDirectionSerializer
+    serializer_class = CmsResearchDirectionSerializer
     permission_classes = [CanManagePortalContent]
     lookup_field = "slug"
 
@@ -40,6 +72,9 @@ class CmsNewsCategoryViewSet(CmsParserMixin, viewsets.ModelViewSet):
 
 class CmsNewsArticleSerializer(serializers.ModelSerializer):
     category = NewsCategorySerializer(read_only=True)
+    images = NewsImageSerializer(many=True, read_only=True)
+    slug = serializers.SlugField(required=False, allow_blank=True)
+    content = serializers.CharField(required=False, allow_blank=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=NewsCategory.objects.all(),
         source="category",
@@ -47,6 +82,7 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         allow_null=True,
         write_only=True,
     )
+    word_file = serializers.FileField(required=False)
 
     class Meta:
         model = NewsArticle
@@ -57,8 +93,10 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
             "summary",
             "content",
             "cover_image",
+            "word_file",
             "category",
             "category_id",
+            "images",
             "event_date",
             "location",
             "visibility",
@@ -71,19 +109,62 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
+        validated_data["slug"] = unique_slug(NewsArticle, validated_data.get("title"), prefix="news")
+        self._validate_word_file(validated_data)
+        validated_data.setdefault("content", "")
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop("slug", None)
+        self._validate_word_file(validated_data)
+        return super().update(instance, validated_data)
+
+    def _validate_word_file(self, validated_data):
+        word_file = validated_data.get("word_file")
+        if not word_file:
+            return
+        filename = getattr(word_file, "name", "")
+        if not filename.lower().endswith(".docx"):
+            raise serializers.ValidationError({"word_file": "请上传 .docx 格式的 Word 文档。"})
 
 
 class CmsNewsArticleViewSet(CmsParserMixin, viewsets.ModelViewSet):
-    queryset = NewsArticle.objects.select_related("category", "author").all()
+    queryset = NewsArticle.objects.select_related("category", "author").prefetch_related("images").all()
     serializer_class = CmsNewsArticleSerializer
     permission_classes = [CanManagePortalContent]
     lookup_field = "slug"
 
 
+class CmsNewsImageSerializer(serializers.ModelSerializer):
+    article_id = serializers.PrimaryKeyRelatedField(queryset=NewsArticle.objects.all(), source="article", write_only=True)
+
+    class Meta:
+        model = NewsImage
+        fields = ["id", "article", "article_id", "image", "caption", "sort_order"]
+        read_only_fields = ["id", "article"]
+
+
+class CmsNewsImageViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = NewsImage.objects.select_related("article").all()
+    serializer_class = CmsNewsImageSerializer
+    permission_classes = [CanManagePortalContent]
+
+
 class CmsPublicationViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
+    permission_classes = [CanManagePortalContent]
+
+
+class CmsProjectViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = [CanManagePortalContent]
+
+
+class CmsPatentViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = Patent.objects.all()
+    serializer_class = PatentSerializer
     permission_classes = [CanManagePortalContent]
 
 

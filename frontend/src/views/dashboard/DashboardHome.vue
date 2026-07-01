@@ -2,7 +2,7 @@
   <InternalLayout title="内部工作台">
     <section class="dashboard-hero">
       <div>
-        <span>中农雨磷 Research Workspace</span>
+        <span>中农雨磷内部平台</span>
         <h1>科研管理概览</h1>
         <p>集中查看课题组资料、仪器设备状态、学生信息与近期归档材料。</p>
       </div>
@@ -178,10 +178,10 @@ function degreeText(degree: string) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 26px;
+  margin-bottom: 10px;
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-lg);
-  padding: 30px 32px;
+  padding: 22px 26px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 56%, rgba(234, 245, 238, 0.86)),
     #fff;
@@ -195,9 +195,9 @@ function degreeText(degree: string) {
 }
 
 .dashboard-hero h1 {
-  margin: 6px 0 8px;
+  margin: 5px 0 6px;
   color: var(--color-deep-green);
-  font-size: clamp(27px, 3vw, 34px);
+  font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
   line-height: 1.2;
 }
@@ -205,6 +205,8 @@ function degreeText(degree: string) {
 .dashboard-hero p {
   margin: 0;
   color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .outline-action {
@@ -215,13 +217,22 @@ function degreeText(degree: string) {
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.summary-card,
 .panel {
   padding: 22px;
+}
+
+.summary-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
 .summary-card:hover,
@@ -230,22 +241,34 @@ function degreeText(degree: string) {
 }
 
 .summary-card span {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-muted);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-card strong {
-  display: block;
-  margin: 9px 0;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
   color: var(--color-deep-green);
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 650;
   line-height: 1;
 }
 
 .summary-card p {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .panel-grid {
@@ -402,10 +425,15 @@ function degreeText(degree: string) {
 }
 
 @media (max-width: 980px) {
-  .dashboard-grid,
   .panel-grid,
   .download-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 }
 
@@ -413,7 +441,7 @@ function degreeText(degree: string) {
   .dashboard-hero {
     display: grid;
     align-items: start;
-    padding: 22px;
+    padding: 18px;
   }
 
   .dashboard-grid,
