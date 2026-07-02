@@ -88,6 +88,7 @@
               <el-form label-position="top">
                 <el-form-item label="标题"><el-input v-model="researchForm.title" /></el-form-item>
                 <el-form-item label="摘要"><el-input v-model="researchForm.summary" type="textarea" :rows="3" /></el-form-item>
+                <el-form-item label="关键词"><el-input v-model="researchForm.keywords" placeholder="多个关键词用逗号、顿号或空格分隔" /></el-form-item>
                 <el-form-item label="详细内容"><el-input v-model="researchForm.content" type="textarea" :rows="5" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, researchForm, 'cover_image')" />
@@ -510,7 +511,7 @@ const editingPatentPdf = ref('')
 const editingAwardImage = ref('')
 const editingAwardAttachment = ref('')
 
-const researchForm = reactive<CmsForm>({ title: '', summary: '', content: '', cover_image: undefined, sort_order: 0 })
+const researchForm = reactive<CmsForm>({ title: '', summary: '', keywords: '', content: '', cover_image: undefined, sort_order: 0 })
 const siteForm = reactive<CmsForm>({
   site_name: '中农雨磷',
   site_subtitle: '中国农业大学资源与环境学院',
@@ -607,7 +608,7 @@ const awardForm = reactive<CmsForm>({
 })
 
 const researchRows = computed<Row<ResearchDirection>[]>(() =>
-  researchItems.value.map((item) => ({ key: item.slug, title: item.title, meta: item.slug, source: item })),
+  researchItems.value.map((item) => ({ key: item.slug, title: item.title, meta: item.keywords || item.summary || item.slug, source: item })),
 )
 const memberRows = computed<Row<Member>[]>(() =>
   memberItems.value.map((item) => ({
@@ -723,7 +724,7 @@ function setFile(event: Event, form: CmsForm, field: FileField) {
 function resetResearch() {
   editingResearchSlug.value = ''
   editingResearchCover.value = ''
-  Object.assign(researchForm, { title: '', summary: '', content: '', cover_image: undefined, sort_order: 0 })
+  Object.assign(researchForm, { title: '', summary: '', keywords: '', content: '', cover_image: undefined, sort_order: 0 })
 }
 
 function editResearch(item: ResearchDirection) {
@@ -732,6 +733,7 @@ function editResearch(item: ResearchDirection) {
   Object.assign(researchForm, {
     title: item.title,
     summary: item.summary,
+    keywords: item.keywords || '',
     content: item.content || '',
     cover_image: undefined,
     sort_order: item.sort_order || 0,

@@ -4,7 +4,7 @@
       <div class="container">
         <p class="section-kicker">研究方向</p>
         <h1>研究方向</h1>
-        <p>围绕农业废弃物资源化、生态环境过程调控、微生物生态机制和智能堆肥技术，形成从基础机制到工程应用的研究链条。</p>
+        <p>{{ pageDescription }}</p>
       </div>
     </section>
     <section class="page-section">
@@ -37,11 +37,23 @@ const displayDirections = computed(() =>
   directions.value.map((item, index) => ({
     index: `0${index + 1}`,
     title: item.title,
-    summary: item.summary,
+    summary: item.summary || '研究方向简介待补充。',
     to: `/research/${item.slug}`,
-    tags: ['农业生态', '资源循环', '环境过程'],
+    tags: splitKeywords(item.keywords),
   })),
 )
+
+const pageDescription = computed(() => {
+  const firstSummary = directions.value.find((item) => item.summary)?.summary
+  return firstSummary || '研究方向内容可在内部平台“门户内容”中维护，保存后会同步展示到公开网站。'
+})
+
+function splitKeywords(value?: string) {
+  return (value || '')
+    .split(/[，,、\s/]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
 
 onMounted(async () => {
   try {

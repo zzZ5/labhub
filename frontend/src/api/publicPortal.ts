@@ -5,6 +5,7 @@ export interface ResearchDirection {
   title: string
   slug: string
   summary: string
+  keywords?: string
   content?: string
   cover_image?: string
   sort_order?: number

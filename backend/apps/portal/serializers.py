@@ -12,7 +12,7 @@ class SiteSettingSerializer(serializers.ModelSerializer):
 class ResearchDirectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResearchDirection
-        fields = ["id", "title", "slug", "summary", "content", "cover_image", "sort_order", "updated_at"]
+        fields = ["id", "title", "slug", "summary", "keywords", "content", "cover_image", "sort_order", "updated_at"]
 
 
 class HomeBannerSerializer(serializers.ModelSerializer):

@@ -28,6 +28,7 @@ class ResearchDirection(models.Model):
     title = models.CharField("标题", max_length=160)
     slug = models.SlugField("URL 标识", max_length=180, unique=True)
     summary = models.TextField("摘要", blank=True)
+    keywords = models.CharField("关键词", max_length=240, blank=True)
     content = models.TextField("内容", blank=True)
     cover_image = models.ImageField("封面图", upload_to="portal/research/", blank=True)
     sort_order = models.PositiveIntegerField("排序", default=0)

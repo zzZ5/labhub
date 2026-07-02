@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 760" role="img" aria-label="China Agricultural University ecological research banner">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbfaf5"/>
+      <stop offset="0.42" stop-color="#f8f7f2"/>
+      <stop offset="0.72" stop-color="#eef6ef"/>
+      <stop offset="1" stop-color="#f3eadb"/>
+    </linearGradient>
+    <linearGradient id="morning" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fbfaf5" stop-opacity="0"/>
+      <stop offset="0.48" stop-color="#fbfaf5" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#f4c778" stop-opacity=".5"/>
+    </linearGradient>
+    <linearGradient id="fieldA" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#dfe9cd"/>
+      <stop offset="0.45" stop-color="#b9d5a3"/>
+      <stop offset="1" stop-color="#d8bd7d"/>
+    </linearGradient>
+    <linearGradient id="fieldB" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f2efe2"/>
+      <stop offset="0.5" stop-color="#d6e5c8"/>
+      <stop offset="1" stop-color="#c8a76b"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00873c"/>
+      <stop offset="1" stop-color="#1f3d2b"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff4c4" stop-opacity=".95"/>
+      <stop offset=".45" stop-color="#f2c36f" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#f2c36f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#1f3d2b" flood-opacity=".1"/>
+    </filter>
+  </defs>
+
+  <rect width="1800" height="760" fill="url(#base)"/>
+  <rect width="1800" height="760" fill="url(#morning)"/>
+
+  <circle cx="1462" cy="162" r="154" fill="url(#sun)" filter="url(#blur)"/>
+  <circle cx="1462" cy="162" r="36" fill="#f5c66f" opacity=".5"/>
+
+  <g opacity=".34" stroke="#1f3d2b" stroke-width="1.2" fill="none">
+    <path d="M1040 166 C1118 118 1186 134 1238 92 S1374 58 1442 88"/>
+    <path d="M1120 222 C1188 176 1272 194 1326 144 S1452 104 1534 128"/>
+  </g>
+
+  <path d="M0 430 C210 382 378 420 574 374 C836 312 1038 330 1236 286 C1448 238 1608 242 1800 198 L1800 760 L0 760 Z" fill="#fbfaf5" opacity=".88"/>
+  <path d="M0 488 C240 414 432 462 650 410 C884 354 1072 374 1274 324 C1468 276 1628 286 1800 244 L1800 760 L0 760 Z" fill="url(#fieldA)" opacity=".82"/>
+  <path d="M0 570 C238 516 428 548 666 498 C948 438 1152 486 1370 430 C1534 388 1668 390 1800 354 L1800 760 L0 760 Z" fill="url(#fieldB)" opacity=".88"/>
+  <path d="M0 642 C272 590 536 614 792 564 C1052 512 1258 562 1484 504 C1608 472 1706 470 1800 450 L1800 760 L0 760 Z" fill="#fbfaf5" opacity=".8"/>
+
+  <g opacity=".32" fill="none">
+    <path d="M760 760 C860 660 924 566 968 446" stroke="#00873c" stroke-width="3"/>
+    <path d="M880 760 C998 648 1080 548 1154 414" stroke="#00873c" stroke-width="3"/>
+    <path d="M1004 760 C1146 642 1256 534 1372 402" stroke="#1f3d2b" stroke-width="2.6"/>
+    <path d="M1134 760 C1294 638 1404 548 1566 430" stroke="#a6784e" stroke-width="2.4"/>
+    <path d="M1268 760 C1414 664 1546 592 1800 530" stroke="#a6784e" stroke-width="2.2"/>
+  </g>
+
+  <g transform="translate(1182 310)" filter="url(#softShadow)" opacity=".7">
+    <path d="M116 220 C124 134 184 72 278 24 C278 124 218 190 116 220 Z" fill="url(#leaf)"/>
+    <path d="M100 226 C82 144 24 88 -72 48 C-58 146 2 206 100 226 Z" fill="#00873c" opacity=".86"/>
+    <path d="M106 270 C104 188 112 112 136 58" stroke="#1f3d2b" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <path d="M136 58 C152 104 176 138 218 164" stroke="#f8f7f2" stroke-width="5" stroke-linecap="round" fill="none" opacity=".78"/>
+    <path d="M100 224 C58 172 20 136 -36 102" stroke="#f8f7f2" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7"/>
+  </g>
+
+  <g opacity=".2" fill="none" stroke="#4e6e7e" stroke-width="2">
+    <path d="M1196 220 L1272 172 L1354 196 L1434 138 L1520 162"/>
+    <circle cx="1196" cy="220" r="7" fill="#4e6e7e"/>
+    <circle cx="1272" cy="172" r="7" fill="#4e6e7e"/>
+    <circle cx="1354" cy="196" r="7" fill="#4e6e7e"/>
+    <circle cx="1434" cy="138" r="7" fill="#4e6e7e"/>
+    <circle cx="1520" cy="162" r="7" fill="#4e6e7e"/>
+  </g>
+
+  <g opacity=".1" stroke="#00873c" stroke-width="1" fill="none">
+    <path d="M1010 88 H1600"/>
+    <path d="M970 124 H1670"/>
+    <path d="M1088 260 H1730"/>
+  </g>
+</svg>

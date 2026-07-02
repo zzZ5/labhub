@@ -34,19 +34,18 @@
 
     <section class="page-section research-section">
       <div class="container">
-        <SectionHeader kicker="研究方向" title="从过程机制到资源化应用" description="围绕农业有机废弃物转化，连接微生物机制、堆肥腐殖化、养分循环、产品开发和田间生态评价。" />
-        <div class="research-flow" aria-label="研究链条">
-          <span>农业有机废弃物</span>
-          <span>微生物过程</span>
-          <span>养分循环</span>
-          <span>高值产品</span>
-          <span>田间生态评价</span>
+        <SectionHeader kicker="研究方向" :title="researchSectionTitle" :description="researchSectionDescription" />
+        <div v-if="researchFlowItems.length" class="research-flow" aria-label="研究关键词">
+          <span v-for="item in researchFlowItems" :key="item">{{ item }}</span>
         </div>
         <div v-if="displayResearchDirections.length" class="research-grid">
           <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="item.to">
             <component :is="item.icon" />
             <h3>{{ item.title }}</h3>
             <p>{{ item.description }}</p>
+            <div v-if="item.tags.length" class="research-tags">
+              <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+            </div>
           </RouterLink>
         </div>
         <RouterLink v-if="displayResearchDirections.length" class="section-link" to="/research">查看全部研究方向</RouterLink>
@@ -188,12 +187,19 @@ const introDescription = computed(() => siteSetting.value.footer_text || '中农
 const contactTitle = computed(() => contactInfo.value.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入')
 const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
 const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
+const researchSectionTitle = computed(() => (apiResearchDirections.value.length ? '研究方向' : '研究方向待维护'))
+const researchSectionDescription = computed(() => {
+  const summaries = apiResearchDirections.value
+    .map((item) => item.summary)
+    .filter(Boolean)
+  return summaries[0] || '研究方向内容可在内部平台“门户内容”中维护，首页会实时同步公开展示。'
+})
 const heroBackgroundStyle = computed(() => {
   const layers = [
     'linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%)',
     'linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08))',
   ]
-  if (siteSetting.value.hero_image) layers.push(`url("${siteSetting.value.hero_image}")`)
+  layers.push(`url("${siteSetting.value.hero_image || '/default-hero.svg'}")`)
   return {
     backgroundImage: layers.join(', '),
   }
@@ -213,8 +219,21 @@ const displayResearchDirections = computed(() => {
     description: item.summary || '研究方向简介待补充。',
     to: `/research/${item.slug}`,
     icon: icons[index % icons.length],
+    tags: splitKeywords(item.keywords).slice(0, 4),
   }))
 })
+
+const researchFlowItems = computed(() => {
+  const keywords = apiResearchDirections.value.flatMap((item) => splitKeywords(item.keywords))
+  return Array.from(new Set(keywords)).slice(0, 6)
+})
+
+function splitKeywords(value?: string) {
+  return (value || '')
+    .split(/[，,、\s/]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
 
 const displayStats = computed(() => {
   if (!apiStats.value) {
@@ -682,6 +701,23 @@ onMounted(async () => {
   margin: 0;
   color: var(--color-muted);
   line-height: 1.7;
+}
+
+.research-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.research-tags span {
+  border: 1px solid rgba(0, 135, 60, 0.14);
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: var(--color-eco-green);
+  color: var(--color-deep-green);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .paper-compact {
