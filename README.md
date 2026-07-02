@@ -77,6 +77,7 @@ docker compose up -d --no-build
 ## Notes
 
 - Public media is served by Nginx from `/media/`.
+- Production Nginx exposes host port `8088` by default. Change `NGINX_HTTP_PORT` in `.env` if needed.
 - Sensitive internal files must be stored under `protected_media` and downloaded through authenticated Django APIs in later phases.
 - Do not commit `.env`.
 - HTTPS certificates can be mounted under `deploy/ssl/`; see `deploy/ssl/README.md`.

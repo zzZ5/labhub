@@ -44,6 +44,7 @@ POSTGRES_PASSWORD=换成强密码
 ADMIN_EMAIL=baoju_liu@foxmail.com
 ADMIN_PASSWORD=换成强密码
 SITE_DOMAIN=服务器IP或你的域名
+NGINX_HTTP_PORT=8088
 ```
 
 如果暂时只用 HTTP/IP 访问，保持：
@@ -68,8 +69,14 @@ bash deploy/scripts/init.sh
 访问：
 
 ```text
-http://服务器IP/
-http://服务器IP/admin/
+http://服务器IP:8088/
+http://服务器IP:8088/admin/
+```
+
+如果使用 cpolar，转发目标填写：
+
+```text
+http://127.0.0.1:8088
 ```
 
 ## 5. 以后更新
