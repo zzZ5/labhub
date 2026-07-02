@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.students.preview import refresh_file_preview_pdf
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentTag, DocumentVersion
-from .services import can_download_document, can_view_document
+from .services import can_delete_document, can_download_document, can_edit_document, can_view_document
 
 
 class DocumentCategorySerializer(serializers.ModelSerializer):
@@ -44,6 +44,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     can_view = serializers.SerializerMethodField()
     can_preview = serializers.SerializerMethodField()
     can_download = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -65,6 +67,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             "can_view",
             "can_preview",
             "can_download",
+            "can_edit",
+            "can_delete",
         ]
 
     def get_can_view(self, obj):
@@ -77,6 +81,14 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def get_can_preview(self, obj):
         return bool(obj.current_file and self.get_can_view(obj))
+
+    def get_can_edit(self, obj):
+        request = self.context.get("request")
+        return can_edit_document(getattr(request, "user", None), obj)
+
+    def get_can_delete(self, obj):
+        request = self.context.get("request")
+        return can_delete_document(getattr(request, "user", None), obj)
 
 
 class DocumentWriteSerializer(serializers.ModelSerializer):

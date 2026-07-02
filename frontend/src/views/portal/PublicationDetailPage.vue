@@ -1,11 +1,11 @@
 <template>
   <PortalLayout>
-    <section class="publication-head">
+    <section class="detail-head">
       <div class="container">
         <RouterLink class="back-link" to="/publications">返回科研成果</RouterLink>
         <p class="section-kicker">论文详情</p>
         <h1>{{ paper?.title || '论文详情' }}</h1>
-        <div class="paper-tags">
+        <div class="tags">
           <span>{{ paper?.year || '年份待补充' }}</span>
           <span v-if="paper?.journal">{{ paper.journal }}</span>
           <span v-if="paper?.doi">DOI: {{ paper.doi }}</span>
@@ -14,11 +14,11 @@
     </section>
 
     <section class="page-section">
-      <div class="container publication-layout">
-        <main class="card paper-card">
+      <div class="container detail-layout">
+        <main class="card detail-card">
           <section>
             <h2>作者</h2>
-            <p class="authors">{{ paper?.authors || '作者信息待补充' }}</p>
+            <p class="muted">{{ paper?.authors || '作者信息待补充' }}</p>
           </section>
           <section>
             <h2>摘要</h2>
@@ -37,7 +37,7 @@
               <dt>期刊</dt>
               <dd>{{ paper?.journal || '待补充' }}</dd>
             </div>
-            <div v-if="paper?.volume || paper?.issue || paper?.pages">
+            <div v-if="volumeIssuePages">
               <dt>卷期页</dt>
               <dd>{{ volumeIssuePages }}</dd>
             </div>
@@ -52,6 +52,7 @@
           </dl>
           <a v-if="paper?.doi" class="outline-link" :href="doiUrl" target="_blank" rel="noreferrer">打开 DOI</a>
           <a v-if="paper?.pdf_file" class="primary-link" :href="paper.pdf_file" target="_blank" rel="noreferrer">查看 PDF</a>
+          <a v-if="paper?.pdf_file" class="outline-link" :href="paper.pdf_file" download>下载 PDF</a>
         </aside>
       </div>
     </section>
@@ -68,45 +69,6 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 const route = useRoute()
 const paper = ref<Publication | null>(null)
 
-const fallbackPapers: Record<string, Publication> = {
-  '0': {
-    id: 0,
-    year: 2026,
-    title: 'Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting',
-    authors: 'Su Chang; Yi Zheng; Baoju Liu; Wenjie Chen; Yuquan Wei; Long D. Nghiem; Mohan Bai; Guochun Ding; Huike Ye; Yan Xu; Ji Li',
-    journal: 'Environmental Research',
-    doi: '',
-    abstract: 'AMiner 候选记录。后续可在后台补充完整摘要、DOI 和 PDF 附件。',
-    pdf_file: '',
-    visibility: 'public',
-    is_representative: false,
-  },
-  '1': {
-    id: 1,
-    year: 2026,
-    title: 'Effect of Different Organic-to-inorganic Phosphorus Ratios on Organic Phosphorus Mineralization and Microbial Functions During Composting',
-    authors: 'Zhen Wu; Yuquan Wei; Tong Guo; Long D. Nghiem; Zimin Wei; Yue Zhao',
-    journal: 'Journal of Environmental Chemical Engineering',
-    doi: '',
-    abstract: 'AMiner 候选记录。后续可在后台补充完整摘要、DOI 和 PDF 附件。',
-    pdf_file: '',
-    visibility: 'public',
-    is_representative: false,
-  },
-  '2': {
-    id: 2,
-    year: 2026,
-    title: 'A Compost-Derived Functional Microbial Consortium Fortifies Humification During Bio-Organic Fertilizer Production',
-    authors: 'Yang Yang; Yuxin Sun; Jiaqi Liu; Xueqing Jia; Tao Wang; Qing Chen; Yanming Li; Yuyun Wang; Zhi Xu; Yuquan Wei; Ruixue Chang',
-    journal: 'Journal of Environmental Chemical Engineering',
-    doi: '',
-    abstract: 'AMiner 候选记录。后续可在后台补充完整摘要、DOI 和 PDF 附件。',
-    pdf_file: '',
-    visibility: 'public',
-    is_representative: false,
-  },
-}
-
 const doiUrl = computed(() => {
   if (!paper.value?.doi) return ''
   return paper.value.doi.startsWith('http') ? paper.value.doi : `https://doi.org/${paper.value.doi}`
@@ -118,48 +80,41 @@ const volumeIssuePages = computed(() => {
 })
 
 onMounted(async () => {
-  const id = String(route.params.id || '')
-  try {
-    paper.value = await fetchPublication(id)
-  } catch {
-    paper.value = fallbackPapers[id] || null
-  }
+  paper.value = await fetchPublication(String(route.params.id || ''))
 })
 </script>
 
 <style scoped>
-.publication-head {
-  border-bottom: 4px solid var(--color-cau-green);
-  padding: 46px 0 38px;
-  background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.98) 58%, rgba(248, 247, 242, 0.96)),
-    var(--color-white);
+.detail-head {
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  padding: 34px 0 30px;
+  background: linear-gradient(90deg, rgba(234, 245, 238, 0.9), rgba(255, 255, 255, 0.98) 58%, rgba(248, 247, 242, 0.92));
 }
 
 .back-link {
   display: inline-flex;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   color: var(--color-cau-green);
   font-weight: 700;
 }
 
-.publication-head h1 {
-  max-width: 980px;
+.detail-head h1 {
+  max-width: 1000px;
   margin: 0;
   color: var(--color-deep-green);
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: clamp(28px, 3.6vw, 44px);
   font-weight: 650;
-  line-height: 1.24;
+  line-height: 1.25;
 }
 
-.paper-tags {
+.tags {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
-.paper-tags span {
+.tags span {
   border-radius: 999px;
   padding: 6px 11px;
   background: var(--color-eco-green);
@@ -172,38 +127,38 @@ onMounted(async () => {
   background: var(--color-rice);
 }
 
-.publication-layout {
+.detail-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 24px;
 }
 
-.paper-card,
+.detail-card,
 .side-card {
   border-color: rgba(31, 61, 43, 0.1);
   box-shadow: none;
 }
 
-.paper-card {
+.detail-card {
   display: grid;
   gap: 26px;
   padding: 30px 34px;
 }
 
-.paper-card h2 {
+.detail-card h2 {
   margin: 0 0 12px;
   color: var(--color-deep-green);
-  font-size: 22px;
+  font-size: 21px;
 }
 
-.paper-card p {
+.detail-card p {
   margin: 0;
   color: var(--color-text);
   font-size: 16px;
   line-height: 1.85;
 }
 
-.paper-card .authors {
+.detail-card .muted {
   color: var(--color-muted);
 }
 
@@ -255,14 +210,8 @@ onMounted(async () => {
 }
 
 @media (max-width: 900px) {
-  .publication-layout {
+  .detail-layout {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .paper-card {
-    padding: 24px 22px;
   }
 }
 </style>

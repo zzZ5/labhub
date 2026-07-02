@@ -1,11 +1,11 @@
-<template>
+﻿<template>
   <InternalLayout title="成员管理">
     <section class="member-page">
       <header class="surface-heading member-heading">
         <div>
           <span>账号、学校身份与系统权限</span>
           <h1>成员账号管理</h1>
-          <p>账号状态决定能否进入内部平台；学校身份表示他在课题组/学校中的身份；系统权限只表示他在平台里能管理哪些功能。</p>
+          <p>学校身份用于人员分类；系统权限用于控制后台管理能力。学生账号可在这里一键生成学生档案，一个账号只会绑定一个档案。</p>
         </div>
         <div class="heading-actions">
           <el-button plain @click="openCreateDrawer">新建账号</el-button>
@@ -13,31 +13,13 @@
         </div>
       </header>
 
-      <el-alert
-        v-if="errorMessage"
-        class="permission-alert"
-        type="warning"
-        :closable="false"
-        :title="errorMessage"
-      />
+      <el-alert v-if="errorMessage" class="permission-alert" type="warning" :closable="false" :title="errorMessage" />
 
       <section class="stat-grid">
-        <article class="card stat-card">
-          <span>全部账号</span>
-          <strong>{{ users.length }}</strong>
-        </article>
-        <article class="card stat-card">
-          <span>已审核</span>
-          <strong>{{ approvedCount }}</strong>
-        </article>
-        <article class="card stat-card">
-          <span>待审核</span>
-          <strong>{{ pendingUsers.length }}</strong>
-        </article>
-        <article class="card stat-card">
-          <span>学生待建档</span>
-          <strong>{{ studentMissingArchiveCount }}</strong>
-        </article>
+        <article class="card stat-card"><span>全部账号</span><strong>{{ users.length }}</strong></article>
+        <article class="card stat-card"><span>已审核</span><strong>{{ approvedCount }}</strong></article>
+        <article class="card stat-card"><span>待审核</span><strong>{{ pendingUsers.length }}</strong></article>
+        <article class="card stat-card"><span>学生待建档</span><strong>{{ studentMissingArchiveCount }}</strong></article>
       </section>
 
       <section class="member-grid">
@@ -45,16 +27,13 @@
           <div class="panel-heading">
             <div>
               <h2>待审核账号</h2>
-              <p>选择学校身份后通过审核。系统管理权限可在下方单独添加。</p>
+              <p>选择学校身份后通过审核；系统管理权限可在账号编辑中单独维护。</p>
             </div>
             <span>{{ pendingUsers.length }} 个</span>
           </div>
           <div v-if="pendingUsers.length" class="review-list">
             <div v-for="user in pendingUsers" :key="user.id" class="review-card">
-              <div>
-                <strong>{{ displayUser(user) }}</strong>
-                <span>{{ user.email || user.username }}</span>
-              </div>
+              <div><strong>{{ displayUser(user) }}</strong><span>{{ user.email || user.username }}</span></div>
               <el-select v-model="schoolIdentityForms[user.id]" placeholder="学校身份">
                 <el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
@@ -83,65 +62,27 @@
         <div class="panel-heading account-toolbar">
           <div>
             <h2>全部成员</h2>
-            <p>学校身份负责人员分类；系统权限负责后台管理能力。学生档案绑定在“学生档案”页面完成。</p>
+            <p>本科生、硕士生、博士生账号可一键生成学生档案；已有档案的账号不会重复创建。</p>
           </div>
           <div class="filters">
             <el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" />
-            <el-select v-model="statusFilter" placeholder="状态">
-              <el-option label="全部状态" value="all" />
-              <el-option label="已审核" value="approved" />
-              <el-option label="待审核" value="pending" />
-            </el-select>
-            <el-select v-model="schoolFilter" placeholder="学校身份">
-              <el-option label="全部身份" value="all" />
-              <el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-            <el-select v-model="permissionFilter" placeholder="系统权限">
-              <el-option label="全部权限" value="all" />
-              <el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" />
-            </el-select>
+            <el-select v-model="statusFilter" placeholder="状态"><el-option label="全部状态" value="all" /><el-option label="已审核" value="approved" /><el-option label="待审核" value="pending" /></el-select>
+            <el-select v-model="schoolFilter" placeholder="学校身份"><el-option label="全部身份" value="all" /><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
+            <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
           </div>
         </div>
 
         <div class="account-list">
           <article v-for="user in filteredUsers" :key="user.id" class="account-row-card">
-            <div class="member-cell">
-              <strong>{{ displayUser(user) }}</strong>
-              <small>{{ user.email || user.username }}</small>
-            </div>
+            <div class="member-cell"><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
             <div class="compact-tags">
-              <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">
-                {{ user.profile?.is_approved ? '已审核' : '待审核' }}
-              </span>
-              <span :class="['status-tag', user.is_active ? 'normal' : 'rejected']">
-                {{ user.is_active ? '可登录' : '已停用' }}
-              </span>
+              <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">{{ user.profile?.is_approved ? '已审核' : '待审核' }}</span>
+              <span :class="['status-tag', user.is_active ? 'normal' : 'rejected']">{{ user.is_active ? '可登录' : '已停用' }}</span>
               <span class="status-tag archived">{{ roleLabel(schoolIdentity(user)) }}</span>
             </div>
-            <div class="permission-chips compact-permissions">
-              <span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span>
-              <span v-if="!systemRoles(user).length" class="status-tag archived">普通权限</span>
-            </div>
-            <div class="student-link-cell">
-              <RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">
-                {{ studentByUserId[user.id].name }}
-              </RouterLink>
-              <RouterLink v-else-if="isStudentRole(user)" to="/students" class="status-tag pending">待建档</RouterLink>
-              <span v-else class="status-tag archived">非学生</span>
-            </div>
-            <div class="account-actions">
-              <el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button>
-              <el-button size="small" plain @click="openPasswordDialog(user)">重置密码</el-button>
-              <el-button
-                v-if="user.id !== session.user?.id && !user.is_superuser"
-                size="small"
-                plain
-                type="danger"
-                @click="confirmDeleteAccount(user)"
-              >
-                删除
-              </el-button>
-            </div>
+            <div class="permission-chips compact-permissions"><span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span><span v-if="!systemRoles(user).length" class="status-tag archived">普通权限</span></div>
+            <div class="student-link-cell"><RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
+            <div class="account-actions"><el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button><el-button size="small" plain @click="openPasswordDialog(user)">重置密码</el-button><el-button v-if="user.id !== session.user?.id && !user.is_superuser" size="small" plain type="danger" @click="confirmDeleteAccount(user)">删除</el-button></div>
           </article>
         </div>
         <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
@@ -149,79 +90,26 @@
 
       <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
         <el-form label-position="top" class="create-form">
-          <el-form-item label="姓名">
-            <el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" />
-          </el-form-item>
-          <el-form-item label="邮箱">
-            <el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" />
-          </el-form-item>
-          <el-form-item label="账号名">
-            <el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" />
-          </el-form-item>
-          <el-form-item v-if="!editingUserId" label="初始密码">
-            <el-input v-model="accountForm.password" type="password" autocomplete="new-password" show-password />
-          </el-form-item>
-          <el-form-item label="学校身份">
-            <el-select v-model="accountForm.role_type">
-              <el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="系统权限">
-            <el-checkbox-group v-model="accountForm.system_roles">
-              <el-checkbox v-for="role in systemPermissionOptions" :key="role.value" :label="role.value">
-                {{ role.label }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-          <el-form-item label="账号状态">
-            <el-switch
-              v-model="accountForm.is_approved"
-              active-text="已审核"
-              inactive-text="待审核"
-            />
-          </el-form-item>
-          <el-form-item v-if="editingUserId" label="登录状态">
-            <el-switch
-              v-model="accountForm.is_active"
-              active-text="启用"
-              inactive-text="停用"
-            />
-          </el-form-item>
+          <el-form-item label="姓名"><el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" /></el-form-item>
+          <el-form-item label="邮箱"><el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" /></el-form-item>
+          <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
+          <el-form-item v-if="!editingUserId" label="初始密码"><el-input v-model="accountForm.password" type="password" autocomplete="new-password" show-password /></el-form-item>
+          <el-form-item label="学校身份"><el-select v-model="accountForm.role_type"><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
+          <el-form-item label="系统权限"><el-checkbox-group v-model="accountForm.system_roles"><el-checkbox v-for="role in systemPermissionOptions" :key="role.value" :label="role.value">{{ role.label }}</el-checkbox></el-checkbox-group></el-form-item>
+          <el-form-item label="账号状态"><el-switch v-model="accountForm.is_approved" active-text="已审核" inactive-text="待审核" /></el-form-item>
+          <el-form-item v-if="editingUserId" label="登录状态"><el-switch v-model="accountForm.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
         </el-form>
-        <template #footer>
-          <div class="drawer-footer">
-            <el-button @click="accountDrawerVisible = false">取消</el-button>
-            <el-button type="primary" :loading="accountSaving" @click="submitAccountForm">
-              {{ editingUserId ? '保存账号' : '创建账号' }}
-            </el-button>
-          </div>
-        </template>
+        <template #footer><div class="drawer-footer"><el-button @click="accountDrawerVisible = false">取消</el-button><el-button type="primary" :loading="accountSaving" @click="submitAccountForm">{{ editingUserId ? '保存账号' : '创建账号' }}</el-button></div></template>
       </el-drawer>
 
       <el-dialog v-model="passwordVisible" title="重置密码" width="420px">
-        <el-alert
-          class="password-alert"
-          type="warning"
-          :closable="false"
-          title="保存后旧密码立即失效，请通过线下方式把新密码告知成员。"
-        />
-        <el-form label-position="top">
-          <el-form-item label="成员">
-            <el-input :model-value="passwordTargetName" disabled />
-          </el-form-item>
-          <el-form-item label="新密码">
-            <el-input v-model="passwordForm.password" type="password" autocomplete="new-password" show-password />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <el-button @click="passwordVisible = false">取消</el-button>
-          <el-button type="primary" :loading="passwordSaving" @click="submitPasswordReset">保存新密码</el-button>
-        </template>
+        <el-alert class="password-alert" type="warning" :closable="false" title="保存后旧密码立即失效，请通过线下方式把新密码告知成员。" />
+        <el-form label-position="top"><el-form-item label="成员"><el-input :model-value="passwordTargetName" disabled /></el-form-item><el-form-item label="新密码"><el-input v-model="passwordForm.password" type="password" autocomplete="new-password" show-password /></el-form-item></el-form>
+        <template #footer><el-button @click="passwordVisible = false">取消</el-button><el-button type="primary" :loading="passwordSaving" @click="submitPasswordReset">保存新密码</el-button></template>
       </el-dialog>
     </section>
   </InternalLayout>
 </template>
-
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -240,7 +128,7 @@ import {
   type Role,
   updateUser,
 } from '../../api/accounts'
-import { fetchStudentProfiles, type StudentProfile } from '../../api/students'
+import { createStudentProfile, fetchStudentProfiles, type StudentProfile } from '../../api/students'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
@@ -281,10 +169,12 @@ const passwordForm = reactive({
 
 const schoolIdentityOptions = [
   { value: 'member', label: '课题组成员' },
+  { value: 'undergraduate', label: '本科生' },
   { value: 'master', label: '硕士生' },
   { value: 'phd', label: '博士生' },
   { value: 'postdoc', label: '博士后' },
   { value: 'pi', label: '硕博导师' },
+  { value: 'other', label: '其他' },
 ]
 
 const systemPermissionOptions = [
@@ -352,10 +242,12 @@ function roleLabel(code: string) {
 function roleDescription(code: string) {
   const descriptions: Record<string, string> = {
     member: '普通内部成员，可访问基础内部资料。',
+    undergraduate: '本科生身份，可维护本人学生档案和归档资料。',
     master: '硕士生身份，可维护本人学生档案和归档资料。',
     phd: '博士生身份，可维护本人学生档案和归档资料。',
     postdoc: '博士后身份，可访问成员内部资料和科研管理信息。',
     pi: '硕博导师，可查看和管理学生档案。',
+    other: '其他学校身份，用于人员分类。',
     editor: '维护门户内容、新闻、成员展示和科研成果。',
     document_manager: '上传、维护和归档内部资料。',
     instrument_manager: '维护仪器平台的设备信息、图片和使用说明。',
@@ -380,7 +272,12 @@ function systemRoles(user: CurrentUser) {
 }
 
 function isStudentRole(user: CurrentUser) {
-  return ['master', 'phd'].includes(schoolIdentity(user))
+  return ['undergraduate', 'master', 'phd'].includes(schoolIdentity(user))
+}
+
+function studentDegreeType(user: CurrentUser) {
+  const identity = schoolIdentity(user)
+  return ['undergraduate', 'master', 'phd'].includes(identity) ? identity : 'master'
 }
 
 function assignableRoles(user: CurrentUser) {
@@ -508,6 +405,35 @@ async function submitPasswordReset() {
     ElMessage.error(String(firstError || data.detail || '密码重置失败。'))
   } finally {
     passwordSaving.value = false
+  }
+}
+
+async function handleCreateStudentArchive(user: CurrentUser) {
+  if (studentByUserId.value[user.id]) {
+    ElMessage.info('该账号已经有学生档案。')
+    return
+  }
+  if (!isStudentRole(user)) {
+    ElMessage.warning('只有本科生、硕士生或博士生账号可以生成学生档案。')
+    return
+  }
+  savingId.value = user.id
+  try {
+    const profile = await createStudentProfile({
+      user: user.id,
+      name: displayUser(user),
+      degree_type: studentDegreeType(user),
+      grade: '',
+      visibility: 'supervisor',
+    })
+    ElMessage.success(`已生成“${profile.name}”的学生档案。`)
+    await reload()
+  } catch (error: any) {
+    const data = error?.response?.data || {}
+    const firstError = Object.values(data).flat?.()[0]
+    ElMessage.error(String(firstError || data.detail || '学生档案生成失败，请确认账号身份或是否已建档。'))
+  } finally {
+    savingId.value = null
   }
 }
 
@@ -895,6 +821,26 @@ onMounted(reload)
   font-weight: 700;
 }
 
+.archive-create-button {
+  border: 1px solid rgba(0, 135, 60, 0.22);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #fff;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.archive-create-button:hover:not(:disabled) {
+  background: var(--color-eco-green);
+}
+
+.archive-create-button:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
 .empty-note {
   padding: 14px 0 2px;
 }
@@ -958,3 +904,8 @@ onMounted(reload)
   }
 }
 </style>
+
+
+
+
+

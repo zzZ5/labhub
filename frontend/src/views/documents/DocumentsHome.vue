@@ -88,6 +88,7 @@
             </div>
             <div class="reader-actions">
               <el-button plain @click="closePreview">返回列表</el-button>
+              <el-button v-if="previewDocument.can_delete" plain type="danger" @click="handleDelete(previewDocument)">删除</el-button>
               <el-button v-if="previewDocument.can_download" type="primary" @click="handleDownload(previewDocument)">下载</el-button>
             </div>
           </header>
@@ -137,9 +138,12 @@
             </dl>
             <footer>
               <span class="preview-hint">{{ doc.can_preview ? '点击卡片查看' : '暂无可预览文件' }}</span>
-              <el-button type="primary" :disabled="!doc.can_download" @click.stop="handleDownload(doc)">
-                {{ doc.can_download ? '下载' : '不可下载' }}
-              </el-button>
+              <div class="document-actions">
+                <el-button v-if="doc.can_delete" plain type="danger" @click.stop="handleDelete(doc)">删除</el-button>
+                <el-button type="primary" :disabled="!doc.can_download" @click.stop="handleDownload(doc)">
+                  {{ doc.can_download ? '下载' : '不可下载' }}
+                </el-button>
+              </div>
             </footer>
           </article>
         </div>
@@ -187,13 +191,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
 
 import EmptyState from '../../components/EmptyState.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import {
   createDocument,
+  deleteDocument,
   downloadDocument,
   fetchDocumentCategories,
   fetchDocuments,
@@ -222,10 +227,16 @@ const uploadForm = reactive({
 })
 
 const fallbackCategories = [
-  { id: 1, name: '实验 SOP', slug: 'sop', parent: null, description: '', sort_order: 1, visibility: 'members' },
-  { id: 2, name: '数据分析教程', slug: 'analysis', parent: null, description: '', sort_order: 2, visibility: 'members' },
-  { id: 3, name: '绘图模板', slug: 'plot-template', parent: null, description: '', sort_order: 3, visibility: 'members' },
-  { id: 4, name: '仪器说明书', slug: 'instrument-manual', parent: null, description: '', sort_order: 4, visibility: 'members' },
+  { id: 1, name: '组内制度与通知', slug: 'lab-policy', parent: null, description: '实验室制度、值日安排、通知公告与常用流程。', sort_order: 1, visibility: 'members' },
+  { id: 2, name: '实验室安全', slug: 'lab-safety', parent: null, description: '安全培训、危险源提示、废弃物处置与应急流程。', sort_order: 2, visibility: 'members' },
+  { id: 3, name: '实验方法与 SOP', slug: 'sop', parent: null, description: '仪器操作、样品前处理、实验步骤与质量控制。', sort_order: 3, visibility: 'members' },
+  { id: 4, name: '仪器设备资料', slug: 'instrument-docs', parent: null, description: '仪器说明书、维护记录、操作说明和配套软件。', sort_order: 4, visibility: 'members' },
+  { id: 5, name: '数据与代码规范', slug: 'data-code', parent: null, description: '数据模板、统计分析、绘图规范与代码归档要求。', sort_order: 5, visibility: 'members' },
+  { id: 6, name: '项目与经费材料', slug: 'project-admin', parent: null, description: '项目申报、过程管理、结题材料和经费相关模板。', sort_order: 6, visibility: 'members' },
+  { id: 7, name: '论文写作与投稿', slug: 'paper-writing', parent: null, description: '论文模板、投稿说明、图表规范与回复审稿材料。', sort_order: 7, visibility: 'members' },
+  { id: 8, name: '组会与学术交流', slug: 'seminars', parent: null, description: '组会汇报、文献分享、会议报告和讲座资料。', sort_order: 8, visibility: 'members' },
+  { id: 9, name: '学生资料模板', slug: 'student-templates', parent: null, description: '开题、中期、答辩、毕业归档等学生常用模板。', sort_order: 9, visibility: 'members' },
+  { id: 10, name: '行政表格与模板', slug: 'admin-forms', parent: null, description: '学院、学校和课题组常用行政表格。', sort_order: 10, visibility: 'members' },
 ]
 
 const fallbackDocuments: LabDocument[] = [
@@ -245,6 +256,8 @@ const fallbackDocuments: LabDocument[] = [
     can_view: true,
     can_preview: false,
     can_download: false,
+    can_edit: false,
+    can_delete: false,
   },
 ]
 
@@ -331,6 +344,28 @@ async function handleDownload(doc: LabDocument) {
     if (status === 401) ElMessage.error('请先登录后再下载内部资料。')
     else if (status === 403) ElMessage.error('你没有该资料的下载权限。')
     else ElMessage.error('下载失败，请稍后重试。')
+  }
+}
+
+async function handleDelete(doc: LabDocument) {
+  if (!doc.can_delete || doc.id === 0) {
+    ElMessage.warning('只能删除自己上传的资料，或由管理员处理。')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(`确定删除“${doc.title}”吗？删除后该资料及其文件版本将不可恢复。`, '删除内部资料', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+    await deleteDocument(doc)
+    ElMessage.success('资料已删除。')
+    if (previewDocument.value?.id === doc.id) previewDocument.value = null
+    await loadDocuments()
+  } catch (error: any) {
+    if (error === 'cancel' || error === 'close') return
+    const detail = error?.response?.data?.detail
+    ElMessage.error(detail || '删除失败，请确认是否为本人上传的资料。')
   }
 }
 
@@ -774,6 +809,13 @@ onMounted(() => {
 .preview-hint {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .reader-heading {

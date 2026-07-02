@@ -25,6 +25,21 @@ export async function ensureCsrfToken() {
   await csrfReady
 }
 
+function normalizeMediaUrl(value: string) {
+  return value.replace(/https?:\/\/(?:backend|localhost|127\.0\.0\.1|0\.0\.0\.0):8000(\/media\/[^\s"'<>)]*)/gi, '$1')
+}
+
+function normalizeResponseMediaUrls<T>(data: T): T {
+  if (typeof data === 'string') return normalizeMediaUrl(data) as T
+  if (Array.isArray(data)) return data.map((item) => normalizeResponseMediaUrls(item)) as T
+  if (data && typeof data === 'object') {
+    Object.entries(data).forEach(([key, value]) => {
+      ;(data as Record<string, unknown>)[key] = normalizeResponseMediaUrls(value)
+    })
+  }
+  return data
+}
+
 http.interceptors.request.use(async (config) => {
   const method = config.method?.toUpperCase() || 'GET'
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
@@ -34,7 +49,10 @@ http.interceptors.request.use(async (config) => {
 })
 
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = normalizeResponseMediaUrls(response.data)
+    return response
+  },
   (error) => {
     const status = error?.response?.status
     const detail = String(error?.response?.data?.detail || '')

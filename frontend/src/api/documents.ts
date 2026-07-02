@@ -39,6 +39,8 @@ export interface LabDocument {
   can_view: boolean
   can_preview: boolean
   can_download: boolean
+  can_edit: boolean
+  can_delete: boolean
 }
 
 export async function fetchDocumentCategories() {
@@ -92,6 +94,10 @@ export async function downloadDocument(document: LabDocument) {
   link.download = filename
   link.click()
   window.URL.revokeObjectURL(url)
+}
+
+export async function deleteDocument(document: LabDocument) {
+  await http.delete(`/documents/documents/${document.id}/`)
 }
 
 export function previewDocumentUrl(document: LabDocument) {

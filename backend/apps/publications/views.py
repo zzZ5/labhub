@@ -1,4 +1,6 @@
+from rest_framework import filters
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -24,20 +26,41 @@ class PublicVisibilityMixin:
         return self.queryset.filter(visibility=Visibility.PUBLIC)
 
 
+class PublicResultsPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class PublicationViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
+    pagination_class = PublicResultsPagination
     filterset_fields = ["year", "is_representative"]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "authors", "journal", "doi", "abstract"]
+    ordering_fields = ["year", "sort_order", "created_at"]
+    ordering = ["-year", "sort_order", "-created_at"]
 
 
 class ProjectViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    pagination_class = PublicResultsPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "project_number", "funding_source", "principal_investigator", "status", "description"]
+    ordering_fields = ["sort_order", "start_date", "end_date", "title"]
+    ordering = ["sort_order", "-start_date", "title"]
 
 
 class PatentViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Patent.objects.all()
     serializer_class = PatentSerializer
+    pagination_class = PublicResultsPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "patent_number", "inventors", "status"]
+    ordering_fields = ["sort_order", "application_date", "authorization_date", "title"]
+    ordering = ["sort_order", "-application_date", "-authorization_date", "title"]
 
 
 class SoftwareCopyrightViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
@@ -48,6 +71,11 @@ class SoftwareCopyrightViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
 class AwardViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Award.objects.all()
     serializer_class = AwardSerializer
+    pagination_class = PublicResultsPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "award_level", "participants", "description"]
+    ordering_fields = ["sort_order", "award_date", "title"]
+    ordering = ["sort_order", "-award_date", "title"]
 
 
 class StandardViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):

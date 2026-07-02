@@ -1,13 +1,13 @@
 ﻿<template>
   <PortalLayout>
-    <section class="hero">
+    <section class="hero" :style="heroBackgroundStyle">
       <div class="container hero-inner">
         <div class="hero-copy">
-          <p class="section-kicker">中国农业大学资源与环境学院</p>
-          <h1>中农雨磷</h1>
-          <p class="hero-lead">聚焦微生物生态、有机废弃物资源转化与高值产品开发</p>
+          <p class="section-kicker">{{ siteSubtitle }}</p>
+          <h1>{{ siteName }}</h1>
+          <p class="hero-lead">{{ heroLead }}</p>
           <p class="hero-text">
-            课题组面向农业绿色发展与资源环境治理需求，围绕有机废弃物资源化、养分循环和土壤生态过程开展基础研究、技术研发与应用评价。
+            {{ siteDescription }}
           </p>
           <div class="hero-actions">
             <RouterLink class="primary-action" to="/research">研究方向</RouterLink>
@@ -16,21 +16,12 @@
         </div>
       </div>
     </section>
-    <section class="hero-strip" aria-label="研究链条">
-      <div class="container hero-strip-grid">
-        <span v-for="item in heroScenes" :key="item.title">
-          <strong>{{ item.title }}</strong>
-          {{ item.value }}
-        </span>
-      </div>
-    </section>
-
     <section class="page-section intro-section">
       <div class="container intro-grid">
         <SectionHeader
           kicker="课题组简介"
-          title="把农业废弃物转化为可持续生态资源"
-          description="中农雨磷以团队协作为基础，连接微生物生态机制、有机废弃物转化、产品开发和田间应用评价，推动农业废弃物从环境负担转化为生态资源。"
+          :title="introTitle"
+          :description="introDescription"
         />
         <div class="intro-facts">
           <div v-for="item in facts" :key="item.label">
@@ -51,21 +42,21 @@
           <span>高值产品</span>
           <span>田间生态评价</span>
         </div>
-        <div class="research-grid">
-          <article v-for="item in displayResearchDirections" :key="item.title" class="card research-card">
+        <div v-if="displayResearchDirections.length" class="research-grid">
+          <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="item.to">
             <component :is="item.icon" />
             <h3>{{ item.title }}</h3>
             <p>{{ item.description }}</p>
-          </article>
+          </RouterLink>
         </div>
-        <RouterLink class="section-link" to="/research">查看全部研究方向</RouterLink>
+        <RouterLink v-if="displayResearchDirections.length" class="section-link" to="/research">查看全部研究方向</RouterLink>
       </div>
     </section>
 
     <section class="page-section publication-section">
       <div class="container publication-grid">
         <div>
-          <SectionHeader kicker="科研成果" title="近期发表" description="组内论文统一纳入成果统计，首页展示近期发表的研究进展。" />
+          <SectionHeader kicker="科研成果" title="近期进展" description="论文、项目、专利和获奖成果统一纳入门户展示，首页按门户内容排序展示近期代表进展。" />
           <div class="stats-row">
             <div v-for="item in displayStats" :key="item.label">
               <strong>{{ item.value }}</strong>
@@ -74,15 +65,15 @@
           </div>
         </div>
         <div class="latest-paper-panel">
-          <RouterLink v-for="paper in displayPapers" :key="paper.title" class="paper-compact" :to="`/publications/${paper.id}`">
-            <time>{{ paper.year }}</time>
+          <RouterLink v-for="item in displayAchievements" :key="`${item.type}-${item.id}`" class="paper-compact" :to="item.to">
+            <time>{{ item.badge }}</time>
             <div>
-              <h3>{{ paper.title }}</h3>
-              <p>{{ paper.source }}</p>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.source }}</p>
               <span>查看详情</span>
             </div>
           </RouterLink>
-          <RouterLink class="section-link compact" to="/publications">查看全部论文</RouterLink>
+          <RouterLink class="section-link compact" to="/publications">查看全部成果</RouterLink>
         </div>
       </div>
     </section>
@@ -91,12 +82,12 @@
       <div class="container">
         <SectionHeader kicker="团队成员" title="团队成员" description="课题组由导师、博士研究生、硕士研究生和毕业学生共同组成，围绕资源环境与生态过程开展协同研究。" />
         <div class="member-grid">
-          <article v-for="member in displayMembers" :key="member.name" class="card member-card">
+          <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
             <img :src="member.avatar" :alt="member.name" />
             <h3>{{ member.name }}</h3>
             <span class="status-tag normal">{{ member.role }}</span>
             <p>{{ member.focus }}</p>
-          </article>
+          </RouterLink>
         </div>
         <RouterLink class="section-link" to="/team">查看团队成员</RouterLink>
       </div>
@@ -123,10 +114,10 @@
       <div class="container join-card">
         <div>
           <p class="section-kicker">加入我们</p>
-          <h2>欢迎对微生物生态与农业资源循环感兴趣的同学加入</h2>
-          <p>长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。</p>
+          <h2>{{ contactTitle }}</h2>
+          <p>{{ contactDescription }}</p>
         </div>
-        <a href="mailto:weiyq2019@cau.edu.cn">联系实验室</a>
+        <a :href="`mailto:${contactEmail}`">联系实验室</a>
       </div>
     </section>
   </PortalLayout>
@@ -140,44 +131,76 @@ import SectionHeader from '../../components/SectionHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import {
   fetchMembers,
+  fetchContactInfo,
   fetchNews,
+  fetchAwards,
+  fetchPatents,
   fetchPublicationStats,
   fetchPublications,
+  fetchProjects,
   fetchResearchDirections,
+  fetchSiteSetting,
+  type Award,
+  type ContactInfo,
   type Member,
   type NewsArticle,
+  type Patent,
   type Publication,
   type PublicationStats,
+  type Project,
   type ResearchDirection,
+  type SiteSetting,
 } from '../../api/publicPortal'
-
-const facts = [
-  { value: '3', label: '核心研究主线' },
-  { value: '6', label: '长期研究方向' },
-  { value: '多类', label: '论文项目与专利成果' },
-]
-
-const heroScenes = [
-  { title: '田间', value: '土壤健康与生态效应' },
-  { title: '过程', value: '堆肥转化与腐殖化调控' },
-  { title: '机制', value: '功能微生物与养分循环' },
-]
 
 const apiResearchDirections = ref<ResearchDirection[]>([])
 const apiMembers = ref<Member[]>([])
 const apiNews = ref<NewsArticle[]>([])
 const apiPapers = ref<Publication[]>([])
+const apiProjects = ref<Project[]>([])
+const apiPatents = ref<Patent[]>([])
+const apiAwards = ref<Award[]>([])
 const apiStats = ref<PublicationStats | null>(null)
-const papersReady = ref(false)
+const siteSetting = ref<Partial<SiteSetting>>({})
+const contactInfo = ref<Partial<ContactInfo>>({})
+const achievementsReady = ref(false)
 
-const fallbackResearchDirections = [
-  { title: '微生物生态', description: '解析有机废弃物转化、土壤生态过程中的关键微生物群落与功能机制。', icon: DataAnalysis },
-  { title: '有机废弃物资源转化', description: '面向农业和食品加工废弃物，研究低碳转化、稳定化和资源化利用路径。', icon: Orange },
-  { title: '高值产品开发', description: '围绕有机肥、水溶肥和生态产品，推进从工艺优化到应用评价的转化研究。', icon: SetUp },
-  { title: '堆肥腐殖化调控', description: '研究堆肥过程中腐殖酸形成、臭气减排和品质提升的过程调控机制。', icon: WindPower },
-  { title: '养分循环与土壤健康', description: '评价有机物料还田、养分循环利用及其对土壤生态功能的影响。', icon: MostlyCloudy },
-  { title: '农业低碳生态转化', description: '服务农业废弃物低碳处理和绿色农业场景，探索可推广的技术模式。', icon: Cpu },
-]
+type HomeAchievement = {
+  id: number
+  type: 'paper' | 'project' | 'patent' | 'award'
+  title: string
+  source: string
+  badge: string
+  to: string
+  sortOrder: number
+  dateRank: number
+}
+
+const siteName = computed(() => siteSetting.value.site_name || '中农雨磷')
+const siteSubtitle = computed(() => siteSetting.value.site_subtitle || '中国农业大学资源与环境学院')
+const heroLead = computed(() => siteSetting.value.keywords || '聚焦微生物生态、有机废弃物资源转化与高值产品开发')
+const siteDescription = computed(() => siteSetting.value.description || '课题组面向农业绿色发展与资源环境治理需求，围绕有机废弃物资源化、养分循环和土壤生态过程开展基础研究、技术研发与应用评价。')
+const introTitle = computed(() => siteSetting.value.footer_text ? '面向农业绿色发展与资源环境治理' : '把农业废弃物转化为可持续生态资源')
+const introDescription = computed(() => siteSetting.value.footer_text || '中农雨磷以团队协作为基础，连接微生物生态机制、有机废弃物转化、产品开发和田间应用评价，推动农业废弃物从环境负担转化为生态资源。')
+const contactTitle = computed(() => contactInfo.value.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入')
+const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
+const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
+const defaultHeroImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1900&q=88'
+const heroBackgroundStyle = computed(() => {
+  const image = siteSetting.value.hero_image || defaultHeroImage
+  return {
+    backgroundImage: [
+      'linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%)',
+      'linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08))',
+      `url("${image}")`,
+    ].join(', '),
+  }
+})
+
+const facts = computed(() => [
+  { value: `${apiResearchDirections.value.length || 6}`, label: '研究方向' },
+  { value: apiStats.value ? `${apiStats.value.publications}` : '论文', label: '论文成果' },
+  { value: apiStats.value ? `${apiStats.value.projects + apiStats.value.patents}` : '项目/专利', label: '项目与专利' },
+])
 
 const fallbackStats = [
   { value: '论文', label: '研究成果持续积累' },
@@ -185,17 +208,17 @@ const fallbackStats = [
   { value: '专利', label: '推动技术转化与应用' },
 ]
 
-const fallbackPapers = [
-  { id: 0, year: '2026', title: 'Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting', source: 'Environmental Research' },
-  { id: 1, year: '2026', title: 'Effect of Different Organic-to-inorganic Phosphorus Ratios on Organic Phosphorus Mineralization and Microbial Functions During Composting', source: 'Journal of Environmental Chemical Engineering' },
-  { id: 2, year: '2026', title: 'A Compost-Derived Functional Microbial Consortium Fortifies Humification During Bio-Organic Fertilizer Production', source: 'Journal of Environmental Chemical Engineering' },
+const fallbackAchievements: HomeAchievement[] = [
+  { id: 0, type: 'paper', badge: '论文', title: 'Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting', source: 'Environmental Research · 2026', to: '/publications', sortOrder: 0, dateRank: 2026 },
+  { id: 1, type: 'project', badge: '项目', title: '农业有机废弃物资源化与生态环境过程调控相关项目', source: '科研项目 · 进行中', to: '/publications?tab=projects', sortOrder: 1, dateRank: 2025 },
+  { id: 2, type: 'patent', badge: '专利', title: '有机废弃物腐殖化调控与资源化利用相关技术成果', source: '专利成果 · 技术转化', to: '/publications?tab=patents', sortOrder: 2, dateRank: 2025 },
 ]
 
 const fallbackMembers = [
-  { name: '团队负责人', role: '硕博导师', focus: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', avatar: '/favicon.svg' },
-  { name: '博士研究生', role: '博士生', focus: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', avatar: '/favicon.svg' },
-  { name: '硕士研究生', role: '硕士生', focus: '参与有机肥产品开发、养分循环与土壤生态评价', avatar: '/favicon.svg' },
-  { name: '毕业学生与合作成员', role: '团队网络', focus: '共同支撑资源利用、生态环境工程和农业应用场景研究', avatar: '/favicon.svg' },
+  { name: '团队负责人', role: '硕博导师', focus: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', avatar: '/favicon.svg', to: '/team' },
+  { name: '博士研究生', role: '博士生', focus: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', avatar: '/favicon.svg', to: '/team' },
+  { name: '硕士研究生', role: '硕士生', focus: '参与有机肥产品开发、养分循环与土壤生态评价', avatar: '/favicon.svg', to: '/team' },
+  { name: '毕业学生与合作成员', role: '团队网络', focus: '共同支撑资源利用、生态环境工程和农业应用场景研究', avatar: '/favicon.svg', to: '/team' },
 ]
 
 const fallbackNews = [
@@ -205,11 +228,12 @@ const fallbackNews = [
 ]
 
 const displayResearchDirections = computed(() => {
-  if (!apiResearchDirections.value.length) return fallbackResearchDirections
+  if (!apiResearchDirections.value.length) return []
   const icons = [Orange, WindPower, MostlyCloudy, DataAnalysis, Cpu, SetUp]
   return apiResearchDirections.value.slice(0, 6).map((item, index) => ({
     title: item.title,
     description: item.summary || '研究方向简介待补充。',
+    to: `/research/${item.slug}`,
     icon: icons[index % icons.length],
   }))
 })
@@ -225,24 +249,90 @@ const displayStats = computed(() => {
   ]
 })
 
-const displayPapers = computed(() => {
-  if (!papersReady.value && !apiPapers.value.length) return []
-  if (!apiPapers.value.length) return fallbackPapers
-  return apiPapers.value.slice(0, 3).map((paper) => ({
-    id: paper.id,
-    year: `${paper.year}`,
-    title: paper.title,
-    source: paper.journal || paper.authors,
-  }))
+function dateRank(value?: string | null, fallback = 0) {
+  if (!value) return fallback
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? fallback : parsed
+}
+
+function yearRank(year?: number | null) {
+  return year ? Date.UTC(year, 0, 1) : 0
+}
+
+const displayAchievements = computed(() => {
+  if (!achievementsReady.value && !apiPapers.value.length) return []
+  const items: HomeAchievement[] = [
+    ...apiPapers.value.map((paper) => ({
+      id: paper.id,
+      type: 'paper' as const,
+      badge: '论文',
+      title: paper.title,
+      source: [paper.journal || paper.authors, paper.year].filter(Boolean).join(' · '),
+      to: `/publications/${paper.id}`,
+      sortOrder: paper.sort_order ?? 0,
+      dateRank: yearRank(paper.year),
+    })),
+    ...apiProjects.value.map((project) => ({
+      id: project.id,
+      type: 'project' as const,
+      badge: '项目',
+      title: project.title,
+      source: [project.funding_source || '科研项目', project.status].filter(Boolean).join(' · '),
+      to: `/publications/projects/${project.id}`,
+      sortOrder: project.sort_order ?? 0,
+      dateRank: dateRank(project.start_date),
+    })),
+    ...apiPatents.value.map((patent) => ({
+      id: patent.id,
+      type: 'patent' as const,
+      badge: '专利',
+      title: patent.title,
+      source: [patent.patent_number || '专利成果', patent.status].filter(Boolean).join(' · '),
+      to: `/publications/patents/${patent.id}`,
+      sortOrder: patent.sort_order ?? 0,
+      dateRank: dateRank(patent.authorization_date || patent.application_date),
+    })),
+    ...apiAwards.value.map((award) => ({
+      id: award.id,
+      type: 'award' as const,
+      badge: '获奖',
+      title: award.title,
+      source: [award.award_level || '获奖成果', award.award_date].filter(Boolean).join(' · '),
+      to: `/publications/awards/${award.id}`,
+      sortOrder: award.sort_order ?? 0,
+      dateRank: dateRank(award.award_date),
+    })),
+  ]
+  if (!items.length) return fallbackAchievements
+  const typeOrder: HomeAchievement['type'][] = ['paper', 'project', 'patent', 'award']
+  const sortOrders = Array.from(new Set(items.map((item) => item.sortOrder))).sort((a, b) => a - b)
+  const ordered: HomeAchievement[] = []
+
+  sortOrders.forEach((sortOrder) => {
+    const buckets = typeOrder.map((type) =>
+      items
+        .filter((item) => item.sortOrder === sortOrder && item.type === type)
+        .sort((a, b) => b.dateRank - a.dateRank),
+    )
+    const maxLength = Math.max(...buckets.map((bucket) => bucket.length))
+    for (let index = 0; index < maxLength; index += 1) {
+      buckets.forEach((bucket) => {
+        if (bucket[index]) ordered.push(bucket[index])
+      })
+    }
+  })
+
+  return ordered.slice(0, 4)
 })
 
 const displayMembers = computed(() => {
-  if (apiMembers.value.length < 2) return fallbackMembers
+  if (!apiMembers.value.length) return fallbackMembers
   return apiMembers.value.slice(0, 4).map((member) => ({
     name: member.name,
     role: member.role_label,
     focus: member.research_direction || '农业生态环境过程',
     avatar: member.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=220&q=80',
+    to: `/team/${member.id}`,
   }))
 })
 
@@ -259,18 +349,28 @@ const displayNews = computed(() => {
 })
 
 onMounted(async () => {
-  const [research, members, news, papers, stats] = await Promise.allSettled([
+  const [setting, contact, research, members, news, papers, projects, patents, awards, stats] = await Promise.allSettled([
+    fetchSiteSetting(),
+    fetchContactInfo(),
     fetchResearchDirections(),
     fetchMembers(),
     fetchNews(),
-    fetchPublications(),
+    fetchPublications({ page_size: 8, ordering: 'sort_order,-year' }),
+    fetchProjects({ page_size: 6, ordering: 'sort_order,-start_date' }),
+    fetchPatents({ page_size: 6, ordering: 'sort_order,-application_date' }),
+    fetchAwards({ page_size: 6, ordering: 'sort_order,-award_date' }),
     fetchPublicationStats(),
   ])
+  if (setting.status === 'fulfilled') siteSetting.value = setting.value
+  if (contact.status === 'fulfilled') contactInfo.value = contact.value
   if (research.status === 'fulfilled') apiResearchDirections.value = research.value
   if (members.status === 'fulfilled') apiMembers.value = members.value
   if (news.status === 'fulfilled') apiNews.value = news.value
   if (papers.status === 'fulfilled') apiPapers.value = papers.value
-  papersReady.value = true
+  if (projects.status === 'fulfilled') apiProjects.value = projects.value
+  if (patents.status === 'fulfilled') apiPatents.value = patents.value
+  if (awards.status === 'fulfilled') apiAwards.value = awards.value
+  achievementsReady.value = true
   if (stats.status === 'fulfilled') apiStats.value = stats.value
 })
 </script>
@@ -281,10 +381,10 @@ onMounted(async () => {
   overflow: hidden;
   border-bottom: 1px solid rgba(31, 61, 43, 0.08);
   color: var(--color-text);
-  background:
-    linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%),
-    linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08)),
-    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1900&q=88") center right / cover no-repeat;
+  background-color: var(--color-rice);
+  background-position: center right;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .hero::before {
@@ -371,46 +471,6 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 28px;
-}
-
-.hero-strip {
-  position: relative;
-  z-index: 2;
-  border-top: 0;
-  border-bottom: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.hero-strip-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin-top: 0;
-  border: 0;
-  padding: 15px 0;
-}
-
-.hero-strip-grid span {
-  display: block;
-  min-height: auto;
-  border-left: 2px solid rgba(0, 135, 60, 0.28);
-  border-right: 0;
-  padding: 2px 0 2px 14px;
-  background: transparent;
-  color: var(--color-muted);
-  box-shadow: none;
-}
-
-.hero-strip-grid strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--color-cau-green);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.hero-strip-grid span {
-  color: var(--color-muted);
 }
 
 .primary-action,
@@ -590,6 +650,8 @@ onMounted(async () => {
   border: 0;
   border-radius: 0;
   padding: 22px;
+  color: inherit;
+  text-decoration: none;
   box-shadow: none;
 }
 
@@ -802,9 +864,7 @@ onMounted(async () => {
 
 @media (max-width: 980px) {
   .hero {
-    background:
-      linear-gradient(180deg, rgba(248, 247, 242, 0.98), rgba(234, 245, 238, 0.88)),
-      url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=86") center / cover no-repeat;
+    background-position: center;
   }
 
   .hero::before {
@@ -822,20 +882,6 @@ onMounted(async () => {
   .hero-inner {
     min-height: auto;
     padding: 58px 0 48px;
-  }
-
-  .hero-strip-grid {
-    margin-top: 0;
-    gap: 10px;
-  }
-
-  .hero-strip-grid span:nth-child(2),
-  .hero-strip-grid span:nth-child(3) {
-    transform: none;
-  }
-
-  .hero-strip-grid {
-    grid-template-columns: 1fr;
   }
 
   .research-grid,
@@ -864,4 +910,5 @@ onMounted(async () => {
   }
 }
 </style>
+
 

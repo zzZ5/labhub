@@ -45,6 +45,17 @@ const news = ref<NewsArticle[]>([])
 const categories = ref<NewsCategory[]>([])
 const activeCategory = ref('')
 const fallbackImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80'
+const fallbackCategories = [
+  { id: 1, name: '组内动态', slug: 'lab-news', description: '', sort_order: 1 },
+  { id: 2, name: '学术交流', slug: 'academic-exchange', description: '', sort_order: 2 },
+  { id: 3, name: '科研进展', slug: 'research-progress', description: '', sort_order: 3 },
+  { id: 4, name: '项目相关', slug: 'projects', description: '', sort_order: 4 },
+  { id: 5, name: '田间试验', slug: 'field-work', description: '', sort_order: 5 },
+  { id: 6, name: '实验培训', slug: 'training', description: '', sort_order: 6 },
+  { id: 7, name: '学生培养', slug: 'student-development', description: '', sort_order: 7 },
+  { id: 8, name: '获奖成果', slug: 'awards', description: '', sort_order: 8 },
+  { id: 9, name: '招生招聘', slug: 'recruitment', description: '', sort_order: 9 },
+]
 
 const fallbackNews = [
   { id: 0, title: '课题组完成夏季堆肥产品田间施用试验采样', slug: 'field-sampling', summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。', cover_image: fallbackImage, event_date: '2026-06-18', category: { name: '田间试验' } },
@@ -68,7 +79,9 @@ onMounted(async () => {
   await Promise.allSettled([
     loadNews(),
     fetchNewsCategories().then((data) => {
-      categories.value = data
+      categories.value = data.length ? data : fallbackCategories
+    }).catch(() => {
+      categories.value = fallbackCategories
     }),
   ])
 })

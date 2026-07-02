@@ -45,11 +45,12 @@ class Project(models.Model):
     status = models.CharField("状态", max_length=80, blank=True)
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
     description = models.TextField("说明", blank=True)
+    sort_order = models.PositiveIntegerField("排序", default=0)
 
     class Meta:
         verbose_name = "项目"
         verbose_name_plural = "项目"
-        ordering = ["-start_date"]
+        ordering = ["sort_order", "-start_date", "title"]
 
     def __str__(self) -> str:
         return self.title
@@ -62,12 +63,14 @@ class Patent(models.Model):
     application_date = models.DateField("申请日期", null=True, blank=True)
     authorization_date = models.DateField("授权日期", null=True, blank=True)
     status = models.CharField("状态", max_length=80, blank=True)
+    pdf_file = models.FileField("PDF 文件", upload_to="publications/patents/", blank=True)
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
+    sort_order = models.PositiveIntegerField("排序", default=0)
 
     class Meta:
         verbose_name = "专利"
         verbose_name_plural = "专利"
-        ordering = ["-application_date"]
+        ordering = ["sort_order", "-application_date", "-authorization_date", "title"]
 
     def __str__(self) -> str:
         return self.title
@@ -94,12 +97,15 @@ class Award(models.Model):
     award_date = models.DateField("获奖日期", null=True, blank=True)
     participants = models.TextField("参与人员", blank=True)
     description = models.TextField("说明", blank=True)
+    image = models.ImageField("获奖图片", upload_to="publications/awards/images/", blank=True)
+    attachment = models.FileField("获奖附件", upload_to="publications/awards/files/", blank=True)
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
+    sort_order = models.PositiveIntegerField("排序", default=0)
 
     class Meta:
         verbose_name = "奖励"
         verbose_name_plural = "奖励"
-        ordering = ["-award_date"]
+        ordering = ["sort_order", "-award_date", "title"]
 
     def __str__(self) -> str:
         return self.title
@@ -136,3 +142,4 @@ class Book(models.Model):
 
     def __str__(self) -> str:
         return self.title
+

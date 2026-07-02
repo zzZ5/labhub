@@ -42,6 +42,17 @@ def other_user(db):
 
 
 @pytest.fixture
+def undergraduate_user(db):
+    user = User.objects.create_user(username="undergraduate", password="pass12345")
+    user.profile.is_approved = True
+    user.profile.role_type = RoleCode.UNDERGRADUATE
+    user.profile.save()
+    role, _ = Role.objects.get_or_create(code=RoleCode.UNDERGRADUATE, defaults={"name": "本科生"})
+    UserRole.objects.get_or_create(user=user, role=role)
+    return user
+
+
+@pytest.fixture
 def student_profile(student_user, pi_user):
     profile = StudentProfile.objects.create(
         user=student_user,
@@ -74,6 +85,44 @@ def test_pi_can_view_supervised_students(client, pi_user, student_profile):
 
     assert response.status_code == 200
     assert response.json()[0]["name"] == "李同学"
+
+
+@pytest.mark.django_db
+def test_pi_account_cannot_be_bound_to_student_profile(client, pi_user):
+    client.login(username="pi", password="pass12345")
+
+    response = client.post(
+        reverse("student-profile-list"),
+        {
+            "user": pi_user.id,
+            "name": "导师账号",
+            "degree_type": StudentProfile.DegreeType.MASTER,
+            "grade": "2026级",
+            "visibility": StudentVisibility.SUPERVISOR,
+        },
+    )
+
+    assert response.status_code == 400
+    assert not StudentProfile.objects.filter(user=pi_user).exists()
+
+
+@pytest.mark.django_db
+def test_undergraduate_account_can_be_bound_to_student_profile(client, pi_user, undergraduate_user):
+    client.login(username="pi", password="pass12345")
+
+    response = client.post(
+        reverse("student-profile-list"),
+        {
+            "user": undergraduate_user.id,
+            "name": "本科同学",
+            "degree_type": StudentProfile.DegreeType.UNDERGRADUATE,
+            "grade": "2026级",
+            "visibility": StudentVisibility.SUPERVISOR,
+        },
+    )
+
+    assert response.status_code == 201
+    assert StudentProfile.objects.filter(user=undergraduate_user, degree_type=StudentProfile.DegreeType.UNDERGRADUATE).exists()
 
 
 @pytest.mark.django_db

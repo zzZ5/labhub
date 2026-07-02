@@ -19,7 +19,14 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus, DocumentTag, DocumentVersion
 from .serializers import DocumentCategorySerializer, DocumentDownloadLogSerializer, DocumentSerializer, DocumentTagSerializer, DocumentWriteSerializer
-from .services import can_download_document, can_manage_documents, can_view_document, visible_documents_for_user
+from .services import (
+    can_delete_document,
+    can_download_document,
+    can_edit_document,
+    can_upload_document,
+    can_view_document,
+    visible_documents_for_user,
+)
 from apps.students.preview import is_office_preview_candidate
 
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -151,22 +158,24 @@ class DocumentViewSet(ModelViewSet):
         return visible_documents_for_user(self.request.user, queryset)
 
     def create(self, request, *args, **kwargs):
-        if not can_manage_documents(request.user):
+        if not can_upload_document(request.user):
             return Response({"detail": "无权维护资料库。"}, status=status.HTTP_403_FORBIDDEN)
         response = super().create(request, *args, **kwargs)
         document = Document.objects.select_related("category").prefetch_related("versions").get(pk=response.data["id"])
         return Response(DocumentSerializer(document, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        if not can_manage_documents(request.user):
-            return Response({"detail": "无权维护资料库。"}, status=status.HTTP_403_FORBIDDEN)
+        document = self.get_object()
+        if not can_edit_document(request.user, document):
+            return Response({"detail": "只能维护自己上传的资料。"}, status=status.HTTP_403_FORBIDDEN)
         response = super().update(request, *args, **kwargs)
         document = Document.objects.select_related("category").prefetch_related("versions").get(pk=response.data["id"])
         return Response(DocumentSerializer(document, context={"request": request}).data)
 
     def destroy(self, request, *args, **kwargs):
-        if not can_manage_documents(request.user):
-            return Response({"detail": "无权维护资料库。"}, status=status.HTTP_403_FORBIDDEN)
+        document = self.get_object()
+        if not can_delete_document(request.user, document):
+            return Response({"detail": "只能删除自己上传的资料。"}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):

@@ -15,6 +15,66 @@
       </div>
 
       <el-tabs v-model="activeTab" class="cms-tabs">
+        <el-tab-pane label="站点首页" name="site">
+          <section class="editor-single">
+            <article class="card form-panel site-form-panel">
+              <div class="form-heading">
+                <div>
+                  <span>首页基础内容</span>
+                  <h2>{{ siteForm.site_name || '站点首页' }}</h2>
+                </div>
+              </div>
+              <el-form label-position="top">
+                <div class="form-two-col">
+                  <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
+                  <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
+                </div>
+                <el-form-item label="首页主标题下方短句"><el-input v-model="siteForm.keywords" /></el-form-item>
+                <el-form-item label="首页简介"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
+                <el-form-item label="课题组简介模块文字"><el-input v-model="siteForm.footer_text" type="textarea" :rows="4" /></el-form-item>
+                <div class="form-two-col">
+                  <el-form-item label="联系邮箱"><el-input v-model="siteForm.contact_email" /></el-form-item>
+                  <el-form-item label="联系电话"><el-input v-model="siteForm.contact_phone" /></el-form-item>
+                </div>
+                <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
+                <el-form-item label="Logo">
+                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
+                  <small v-if="editingSiteLogo">当前 Logo：{{ editingSiteLogo }}</small>
+                </el-form-item>
+                <el-form-item label="网站图标">
+                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
+                  <small v-if="editingSiteFavicon">当前图标：{{ editingSiteFavicon }}</small>
+                </el-form-item>
+                <el-form-item label="首页横幅图">
+                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
+                  <small v-if="editingSiteHeroImage">当前横幅：{{ editingSiteHeroImage }}</small>
+                </el-form-item>
+              </el-form>
+              <FormActions :saving="saving" @save="saveSiteSetting" />
+            </article>
+
+            <article class="card form-panel site-form-panel">
+              <div class="form-heading">
+                <div>
+                  <span>加入我们 / 联系方式</span>
+                  <h2>{{ contactForm.title || '联系我们' }}</h2>
+                </div>
+              </div>
+              <el-form label-position="top">
+                <el-form-item label="标题"><el-input v-model="contactForm.title" /></el-form-item>
+                <el-form-item label="说明"><el-input v-model="contactForm.content" type="textarea" :rows="4" /></el-form-item>
+                <div class="form-two-col">
+                  <el-form-item label="邮箱"><el-input v-model="contactForm.email" /></el-form-item>
+                  <el-form-item label="电话"><el-input v-model="contactForm.phone" /></el-form-item>
+                </div>
+                <el-form-item label="地址"><el-input v-model="contactForm.address" /></el-form-item>
+                <el-form-item label="地图链接"><el-input v-model="contactForm.map_url" /></el-form-item>
+              </el-form>
+              <FormActions :saving="saving" @save="saveContactInfo" />
+            </article>
+          </section>
+        </el-tab-pane>
+
         <el-tab-pane label="研究方向" name="research">
           <section class="editor-grid">
             <ContentList title="研究方向" action-label="新增方向" :items="researchRows" :active-key="editingResearchSlug" @create="resetResearch" @edit="editResearch" />
@@ -141,6 +201,11 @@
 
         <el-tab-pane label="论文成果" name="publications">
           <section class="editor-grid">
+            <div class="import-strip">
+              <span>批量导入：title, authors, journal, year, doi, abstract, visibility, sort_order</span>
+              <a href="/import-templates/publications-template.csv?v=20260702-utf8" download="publications-template.csv">下载模板</a>
+              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'publications')" />
+            </div>
             <ContentList title="论文成果" action-label="新增论文" :items="publicationRows" :active-key="editingPublicationId || ''" @create="resetPublication" @edit="editPublication" />
             <article class="card form-panel">
               <div class="form-heading">
@@ -182,6 +247,11 @@
 
         <el-tab-pane label="科研项目" name="projects">
           <section class="editor-grid">
+            <div class="import-strip">
+              <span>批量导入：title, project_number, funding_source, principal_investigator, status, description, visibility, sort_order</span>
+              <a href="/import-templates/projects-template.csv?v=20260702-utf8" download="projects-template.csv">下载模板</a>
+              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'projects')" />
+            </div>
             <ContentList title="科研项目" action-label="新增项目" :items="projectRows" :active-key="editingProjectId || ''" @create="resetProject" @edit="editProject" />
             <article class="card form-panel">
               <div class="form-heading">
@@ -212,6 +282,7 @@
                   </el-select>
                 </el-form-item>
                 <el-form-item label="说明"><el-input v-model="projectForm.description" type="textarea" :rows="4" /></el-form-item>
+                <el-form-item label="首页排序"><el-input-number v-model="projectForm.sort_order" :min="0" /></el-form-item>
               </el-form>
               <FormActions :saving="saving" :deletable="Boolean(editingProjectId)" @save="saveProject" @delete="deleteProject" />
             </article>
@@ -220,6 +291,11 @@
 
         <el-tab-pane label="专利成果" name="patents">
           <section class="editor-grid">
+            <div class="import-strip">
+              <span>批量导入：title, patent_number, inventors, status, application_date, authorization_date, visibility, sort_order</span>
+              <a href="/import-templates/patents-template.csv?v=20260702-utf8" download="patents-template.csv">下载模板</a>
+              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'patents')" />
+            </div>
             <ContentList title="专利成果" action-label="新增专利" :items="patentRows" :active-key="editingPatentId || ''" @create="resetPatent" @edit="editPatent" />
             <article class="card form-panel">
               <div class="form-heading">
@@ -235,6 +311,10 @@
                   <el-form-item label="状态"><el-input v-model="patentForm.status" /></el-form-item>
                 </div>
                 <el-form-item label="发明人"><el-input v-model="patentForm.inventors" type="textarea" :rows="2" /></el-form-item>
+                <el-form-item label="PDF 附件">
+                  <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, patentForm, 'pdf_file')" />
+                  <small v-if="editingPatentPdf">当前 PDF：{{ editingPatentPdf }}</small>
+                </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="申请日期"><el-date-picker v-model="patentForm.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
                   <el-form-item label="授权日期"><el-date-picker v-model="patentForm.authorization_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
@@ -246,8 +326,56 @@
                     <el-option label="管理员可见" value="admins" />
                   </el-select>
                 </el-form-item>
+                <el-form-item label="首页排序"><el-input-number v-model="patentForm.sort_order" :min="0" /></el-form-item>
               </el-form>
               <FormActions :saving="saving" :deletable="Boolean(editingPatentId)" @save="savePatent" @delete="deletePatent" />
+            </article>
+          </section>
+        </el-tab-pane>
+
+        <el-tab-pane label="获奖成果" name="awards">
+          <section class="editor-grid">
+            <div class="import-strip">
+              <span>批量导入：title, award_level, award_date, participants, description, visibility, sort_order</span>
+              <a href="/import-templates/awards-template.csv?v=20260702-utf8" download="awards-template.csv">下载模板</a>
+              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'awards')" />
+            </div>
+            <ContentList title="获奖成果" action-label="新增获奖" :items="awardRows" :active-key="editingAwardId || ''" @create="resetAward" @edit="editAward" />
+            <article class="card form-panel">
+              <div class="form-heading">
+                <div>
+                  <span>{{ editingAwardId ? '正在编辑' : '新增内容' }}</span>
+                  <h2>{{ awardForm.title || '获奖成果' }}</h2>
+                </div>
+              </div>
+              <el-form label-position="top">
+                <el-form-item label="奖项名称"><el-input v-model="awardForm.title" /></el-form-item>
+                <div class="form-two-col">
+                  <el-form-item label="奖项等级"><el-input v-model="awardForm.award_level" /></el-form-item>
+                  <el-form-item label="获奖日期"><el-date-picker v-model="awardForm.award_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
+                </div>
+                <el-form-item label="参与人员"><el-input v-model="awardForm.participants" type="textarea" :rows="2" /></el-form-item>
+                <div class="form-two-col">
+                  <el-form-item label="获奖图片">
+                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, awardForm, 'image')" />
+                    <small v-if="editingAwardImage">当前图片：{{ editingAwardImage }}</small>
+                  </el-form-item>
+                  <el-form-item label="附件 PDF">
+                    <input class="file-input" type="file" accept="application/pdf,image/*" @change="setFile($event, awardForm, 'attachment')" />
+                    <small v-if="editingAwardAttachment">当前附件：{{ editingAwardAttachment }}</small>
+                  </el-form-item>
+                </div>
+                <el-form-item label="可见范围">
+                  <el-select v-model="awardForm.visibility">
+                    <el-option label="公开" value="public" />
+                    <el-option label="成员可见" value="members" />
+                    <el-option label="管理员可见" value="admins" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="说明"><el-input v-model="awardForm.description" type="textarea" :rows="4" /></el-form-item>
+                <el-form-item label="首页排序"><el-input-number v-model="awardForm.sort_order" :min="0" /></el-form-item>
+              </el-form>
+              <FormActions :saving="saving" :deletable="Boolean(editingAwardId)" @save="saveAward" @delete="deleteAward" />
             </article>
           </section>
         </el-tab-pane>
@@ -262,10 +390,10 @@ import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
-import type { Member, NewsCategory, Patent, Project, Publication, ResearchDirection } from '../../api/publicPortal'
+import type { Award, ContactInfo, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 
-type FileField = 'cover_image' | 'avatar' | 'pdf_file' | 'image' | 'word_file'
+type FileField = 'cover_image' | 'avatar' | 'pdf_file' | 'image' | 'attachment' | 'word_file' | 'logo' | 'favicon' | 'hero_image'
 type CmsForm = Record<string, unknown>
 type Row<T> = {
   key: string | number
@@ -345,19 +473,27 @@ const FormActions = defineComponent({
   },
 })
 
-const activeTab = ref('research')
+const activeTab = ref('site')
 const saving = ref(false)
 const uploadingNewsImage = ref(false)
 
 const researchItems = ref<ResearchDirection[]>([])
+const siteSettings = ref<SiteSetting[]>([])
+const contactInfoItems = ref<ContactInfo[]>([])
 const memberItems = ref<Member[]>([])
 const newsItems = ref<CmsNewsArticle[]>([])
 const newsCategories = ref<NewsCategory[]>([])
 const publicationItems = ref<Publication[]>([])
 const projectItems = ref<Project[]>([])
 const patentItems = ref<Patent[]>([])
+const awardItems = ref<Award[]>([])
 
 const editingResearchSlug = ref('')
+const editingSiteId = ref<number | null>(null)
+const editingContactId = ref<number | null>(null)
+const editingSiteLogo = ref('')
+const editingSiteFavicon = ref('')
+const editingSiteHeroImage = ref('')
 const editingResearchCover = ref('')
 const editingMemberId = ref<number | null>(null)
 const editingMemberAvatar = ref('')
@@ -369,8 +505,33 @@ const editingPublicationId = ref<number | null>(null)
 const editingPublicationPdf = ref('')
 const editingProjectId = ref<number | null>(null)
 const editingPatentId = ref<number | null>(null)
+const editingAwardId = ref<number | null>(null)
+const editingPatentPdf = ref('')
+const editingAwardImage = ref('')
+const editingAwardAttachment = ref('')
 
 const researchForm = reactive<CmsForm>({ title: '', summary: '', content: '', cover_image: undefined, sort_order: 0 })
+const siteForm = reactive<CmsForm>({
+  site_name: '中农雨磷',
+  site_subtitle: '中国农业大学资源与环境学院',
+  keywords: '聚焦微生物生态、有机废弃物资源转化与高值产品开发',
+  description: '',
+  footer_text: '',
+  contact_email: '',
+  contact_phone: '',
+  address: '',
+  logo: undefined,
+  favicon: undefined,
+  hero_image: undefined,
+})
+const contactForm = reactive<CmsForm>({
+  title: '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
+  content: '',
+  email: '',
+  phone: '',
+  address: '',
+  map_url: '',
+})
 const memberForm = reactive<CmsForm>({
   name: '',
   role_type: 'master',
@@ -420,6 +581,7 @@ const projectForm = reactive<CmsForm>({
   status: '',
   visibility: 'public',
   description: '',
+  sort_order: 0,
 })
 const patentForm = reactive<CmsForm>({
   title: '',
@@ -428,7 +590,20 @@ const patentForm = reactive<CmsForm>({
   application_date: '',
   authorization_date: '',
   status: '',
+  pdf_file: undefined,
   visibility: 'public',
+  sort_order: 0,
+})
+const awardForm = reactive<CmsForm>({
+  title: '',
+  award_level: '',
+  award_date: '',
+  participants: '',
+  description: '',
+  image: undefined,
+  attachment: undefined,
+  visibility: 'public',
+  sort_order: 0,
 })
 
 const researchRows = computed<Row<ResearchDirection>[]>(() =>
@@ -451,25 +626,32 @@ const newsRows = computed<Row<CmsNewsArticle>[]>(() =>
   })),
 )
 const publicationRows = computed<Row<Publication>[]>(() =>
-  publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
+  publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
 )
 const projectRows = computed<Row<Project>[]>(() =>
-  projectItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${item.funding_source || '资助来源待补充'} · ${item.status || '状态待补充'}`, source: item })),
+  projectItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.funding_source || '资助来源待补充'} · ${item.status || '状态待补充'}`, source: item })),
 )
 const patentRows = computed<Row<Patent>[]>(() =>
-  patentItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${item.patent_number || '专利号待补充'} · ${item.status || '状态待补充'}`, source: item })),
+  patentItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.patent_number || '专利号待补充'} · ${item.status || '状态待补充'}`, source: item })),
+)
+const awardRows = computed<Row<Award>[]>(() =>
+  awardItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.award_level || '等级待补充'} · ${item.award_date || '日期待补充'}`, source: item })),
 )
 const cmsOverview = computed(() => [
+  { label: '首页设置', value: siteSettings.value.length ? 1 : 0, note: '基础文案与联系信息' },
   { label: '研究方向', value: researchItems.value.length, note: '公开门户展示' },
   { label: '团队成员', value: memberItems.value.length, note: '师生与校友信息' },
   { label: '新闻活动', value: newsItems.value.length, note: '组内动态与活动' },
   { label: '论文成果', value: publicationItems.value.length, note: '科研成果维护' },
   { label: '科研项目', value: projectItems.value.length, note: '项目维护' },
   { label: '专利成果', value: patentItems.value.length, note: '专利维护' },
+  { label: '获奖成果', value: awardItems.value.length, note: '获奖维护' },
 ])
 
 async function loadAll() {
-  const [research, members, categories, news, publications, projects, patents] = await Promise.all([
+  const [settings, contacts, research, members, categories, news, publications, projects, patents, awards] = await Promise.all([
+    cmsApi.listSiteSettings(),
+    cmsApi.listContactInfo(),
     cmsApi.listResearch(),
     cmsApi.listMembers(),
     cmsApi.listNewsCategories(),
@@ -477,7 +659,11 @@ async function loadAll() {
     cmsApi.listPublications(),
     cmsApi.listProjects(),
     cmsApi.listPatents(),
+    cmsApi.listAwards(),
   ])
+  siteSettings.value = settings
+  contactInfoItems.value = contacts
+  fillSiteForms(settings[0], contacts[0])
   researchItems.value = research
   memberItems.value = members
   newsCategories.value = categories
@@ -485,6 +671,48 @@ async function loadAll() {
   publicationItems.value = publications
   projectItems.value = projects
   patentItems.value = patents
+  awardItems.value = awards
+}
+
+function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
+  editingSiteId.value = setting?.id || null
+  editingContactId.value = contact?.id || null
+  editingSiteLogo.value = setting?.logo || ''
+  editingSiteFavicon.value = setting?.favicon || ''
+  editingSiteHeroImage.value = setting?.hero_image || ''
+  Object.assign(siteForm, {
+    site_name: setting?.site_name || '中农雨磷',
+    site_subtitle: setting?.site_subtitle || '中国农业大学资源与环境学院',
+    keywords: setting?.keywords || '聚焦微生物生态、有机废弃物资源转化与高值产品开发',
+    description: setting?.description || '',
+    footer_text: setting?.footer_text || '',
+    contact_email: setting?.contact_email || '',
+    contact_phone: setting?.contact_phone || '',
+    address: setting?.address || '',
+    logo: undefined,
+    favicon: undefined,
+    hero_image: undefined,
+  })
+  Object.assign(contactForm, {
+    title: contact?.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
+    content: contact?.content || '',
+    email: contact?.email || setting?.contact_email || '',
+    phone: contact?.phone || setting?.contact_phone || '',
+    address: contact?.address || setting?.address || '',
+    map_url: contact?.map_url || '',
+  })
+}
+
+async function saveSiteSetting() {
+  await save(() =>
+    editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm) : cmsApi.createSiteSetting(siteForm),
+  )
+}
+
+async function saveContactInfo() {
+  await save(() =>
+    editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm) : cmsApi.createContactInfo(contactForm),
+  )
 }
 
 function setFile(event: Event, form: CmsForm, field: FileField) {
@@ -726,6 +954,7 @@ function resetProject() {
     status: '',
     visibility: 'public',
     description: '',
+    sort_order: 0,
   })
 }
 
@@ -741,6 +970,7 @@ function editProject(item: Project) {
     status: item.status || '',
     visibility: (item as Project & { visibility?: string }).visibility || 'public',
     description: item.description || '',
+    sort_order: item.sort_order || 0,
   })
 }
 
@@ -756,6 +986,7 @@ async function deleteProject() {
 
 function resetPatent() {
   editingPatentId.value = null
+  editingPatentPdf.value = ''
   Object.assign(patentForm, {
     title: '',
     patent_number: '',
@@ -763,12 +994,15 @@ function resetPatent() {
     application_date: '',
     authorization_date: '',
     status: '',
+    pdf_file: undefined,
     visibility: 'public',
+    sort_order: 0,
   })
 }
 
 function editPatent(item: Patent) {
   editingPatentId.value = item.id
+  editingPatentPdf.value = item.pdf_file || ''
   Object.assign(patentForm, {
     title: item.title,
     patent_number: item.patent_number || '',
@@ -776,7 +1010,9 @@ function editPatent(item: Patent) {
     application_date: item.application_date || '',
     authorization_date: item.authorization_date || '',
     status: item.status || '',
+    pdf_file: undefined,
     visibility: (item as Patent & { visibility?: string }).visibility || 'public',
+    sort_order: item.sort_order || 0,
   })
 }
 
@@ -788,6 +1024,170 @@ async function savePatent() {
 async function deletePatent() {
   if (!editingPatentId.value) return
   await removeAfterConfirm('确定删除这个专利成果吗？', () => cmsApi.deletePatent(editingPatentId.value as number), resetPatent)
+}
+
+function resetAward() {
+  editingAwardId.value = null
+  editingAwardImage.value = ''
+  editingAwardAttachment.value = ''
+  Object.assign(awardForm, {
+    title: '',
+    award_level: '',
+    award_date: '',
+    participants: '',
+    description: '',
+    image: undefined,
+    attachment: undefined,
+    visibility: 'public',
+    sort_order: 0,
+  })
+}
+
+function editAward(item: Award) {
+  editingAwardId.value = item.id
+  editingAwardImage.value = item.image || ''
+  editingAwardAttachment.value = item.attachment || ''
+  Object.assign(awardForm, {
+    title: item.title,
+    award_level: item.award_level || '',
+    award_date: item.award_date || '',
+    participants: item.participants || '',
+    description: item.description || '',
+    image: undefined,
+    attachment: undefined,
+    visibility: item.visibility || 'public',
+    sort_order: item.sort_order || 0,
+  })
+}
+
+async function saveAward() {
+  await save(() => (editingAwardId.value ? cmsApi.updateAward(editingAwardId.value, awardForm) : cmsApi.createAward(awardForm)))
+  resetAward()
+}
+
+async function deleteAward() {
+  if (!editingAwardId.value) return
+  await removeAfterConfirm('确定删除这个获奖成果吗？', () => cmsApi.deleteAward(editingAwardId.value as number), resetAward)
+}
+
+type ResultImportKind = 'publications' | 'projects' | 'patents' | 'awards'
+
+async function importResults(event: Event, kind: ResultImportKind) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+    ElMessage.warning('请先在 Excel 中另存为 CSV，再导入。')
+    return
+  }
+  try {
+    const rows = parseDelimited(await file.text())
+    if (!rows.length) {
+      ElMessage.warning('没有读取到可导入的数据。')
+      return
+    }
+    saving.value = true
+    for (const row of rows) {
+      const payload = normalizeImportRow(row, kind)
+      if (!payload.title) continue
+      if (kind === 'publications') await cmsApi.createPublication(payload)
+      if (kind === 'projects') await cmsApi.createProject(payload)
+      if (kind === 'patents') await cmsApi.createPatent(payload)
+      if (kind === 'awards') await cmsApi.createAward(payload)
+    }
+    await loadAll()
+    ElMessage.success(`已导入 ${rows.length} 条记录`)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '导入失败，请检查表头和日期格式。')
+  } finally {
+    saving.value = false
+  }
+}
+
+function parseDelimited(text: string) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
+  if (lines.length < 2) return []
+  const delimiter = lines[0].includes('\t') ? '\t' : ','
+  const headers = splitDelimitedLine(lines[0], delimiter).map((item) => item.trim())
+  return lines.slice(1).map((line) => {
+    const values = splitDelimitedLine(line, delimiter)
+    return headers.reduce<Record<string, string>>((row, header, index) => {
+      row[header] = values[index]?.trim() || ''
+      return row
+    }, {})
+  })
+}
+
+function splitDelimitedLine(line: string, delimiter: string) {
+  const result: string[] = []
+  let value = ''
+  let quoted = false
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index]
+    if (char === '"' && line[index + 1] === '"') {
+      value += '"'
+      index += 1
+    } else if (char === '"') {
+      quoted = !quoted
+    } else if (char === delimiter && !quoted) {
+      result.push(value)
+      value = ''
+    } else {
+      value += char
+    }
+  }
+  result.push(value)
+  return result
+}
+
+function normalizeImportRow(row: Record<string, string>, kind: ResultImportKind) {
+  const visibility = row.visibility || 'public'
+  if (kind === 'publications') {
+    return {
+      title: row.title || row.论文题目 || '',
+      authors: row.authors || row.作者 || '',
+      journal: row.journal || row.期刊 || '',
+      year: Number(row.year || row.年份 || new Date().getFullYear()),
+      doi: row.doi || row.DOI || '',
+      abstract: row.abstract || row.摘要 || '',
+      visibility,
+      sort_order: Number(row.sort_order || 0),
+    }
+  }
+  if (kind === 'projects') {
+    return {
+      title: row.title || row.项目名称 || '',
+      project_number: row.project_number || row.项目编号 || '',
+      funding_source: row.funding_source || row.资助来源 || row.来源 || '',
+      principal_investigator: row.principal_investigator || row.负责人 || '',
+      status: row.status || row.状态 || '',
+      description: row.description || row.说明 || '',
+      visibility,
+      sort_order: Number(row.sort_order || 0),
+    }
+  }
+  if (kind === 'patents') {
+    return {
+      title: row.title || row.专利名称 || '',
+      patent_number: row.patent_number || row.专利号 || '',
+      inventors: row.inventors || row.发明人 || '',
+      status: row.status || row.状态 || '',
+      application_date: row.application_date || row.申请日期 || '',
+      authorization_date: row.authorization_date || row.授权日期 || '',
+      visibility,
+      sort_order: Number(row.sort_order || 0),
+    }
+  }
+  return {
+    title: row.title || row.奖项名称 || '',
+    award_level: row.award_level || row.奖项等级 || '',
+    award_date: row.award_date || row.获奖日期 || '',
+    participants: row.participants || row.参与人员 || '',
+    description: row.description || row.说明 || '',
+    visibility,
+    sort_order: Number(row.sort_order || 0),
+  }
 }
 
 async function save(action: () => Promise<unknown>) {
@@ -830,6 +1230,10 @@ function roleText(role: string) {
 
 function statusText(status: string) {
   return ({ draft: '草稿', published: '已发布', archived: '已归档' }[status] || status)
+}
+
+function visibilityText(visibility?: string) {
+  return ({ public: '公开', members: '成员可见', admins: '管理员可见' }[visibility || ''] || '未设置')
 }
 
 onMounted(loadAll)
@@ -930,6 +1334,13 @@ onMounted(loadAll)
   align-items: stretch;
 }
 
+.editor-single {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
 .list-panel,
 .form-panel {
   border-radius: var(--radius-md);
@@ -948,6 +1359,10 @@ onMounted(loadAll)
 .form-panel {
   padding: 18px 20px;
   box-shadow: none;
+}
+
+.site-form-panel {
+  min-height: 100%;
 }
 
 .list-panel:hover,
@@ -1154,6 +1569,50 @@ onMounted(loadAll)
   line-height: 1.65;
 }
 
+.import-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(0, 135, 60, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--color-panel);
+}
+
+.import-strip span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-strip input {
+  flex: 0 0 210px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.import-strip a {
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 135, 60, 0.22);
+  border-radius: 999px;
+  padding: 5px 12px;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.import-strip a:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 135, 60, 0.06);
+}
+
 .news-gallery-manager {
   display: grid;
   gap: 12px;
@@ -1301,6 +1760,7 @@ onMounted(loadAll)
 
 @media (max-width: 980px) {
   .editor-grid,
+  .editor-single,
   .form-two-col,
   .gallery-upload {
     grid-template-columns: 1fr;

@@ -1,5 +1,8 @@
 ﻿from rest_framework import serializers
 
+from apps.accounts.models import RoleCode
+from apps.accounts.services import user_has_role
+
 from .models import StudentArchiveFile, StudentProfile
 from .services import can_delete_archive_file, can_delete_student_profile, can_edit_student_profile, can_view_archive_file
 
@@ -101,6 +104,14 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     def get_user_display_name(self, obj):
         profile = getattr(obj.user, "profile", None)
         return getattr(profile, "real_name", "") or obj.user.get_full_name() or obj.user.get_username()
+
+    def validate_user(self, user):
+        profile = getattr(user, "profile", None)
+        identity = getattr(profile, "role_type", "")
+        student_roles = {RoleCode.UNDERGRADUATE, RoleCode.MASTER, RoleCode.PHD}
+        if identity in student_roles or user_has_role(user, *student_roles):
+            return user
+        raise serializers.ValidationError("学生档案只能关联本科生、硕士或博士账号。")
 
     def create(self, validated_data):
         advisors = validated_data.pop("advisors", [])

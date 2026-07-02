@@ -185,7 +185,7 @@ def test_custom_permission_allows_assigned_user(client, approved_user):
 
 
 @pytest.mark.django_db
-def test_document_upload_requires_document_manager(client, approved_user):
+def test_approved_member_can_upload_and_manage_own_document(client, approved_user):
     category = DocumentCategory.objects.create(name="实验 SOP", slug="upload-sop")
     client.login(username="member", password="pass12345")
 
@@ -201,7 +201,32 @@ def test_document_upload_requires_document_manager(client, approved_user):
         },
     )
 
+    assert response.status_code == 201
+    data = response.json()
+    document = Document.objects.get(pk=data["id"])
+    assert document.owner == approved_user
+    assert document.maintainer == approved_user
+    assert data["can_delete"] is True
+
+
+@pytest.mark.django_db
+def test_approved_member_cannot_delete_other_members_document(client, approved_user):
+    owner = User.objects.create_user(username="other-member", password="pass12345")
+    owner.profile.is_approved = True
+    owner.profile.save()
+    document = Document.objects.create(
+        title="别人上传的资料",
+        visibility=DocumentVisibility.MEMBERS,
+        status=DocumentStatus.ACTIVE,
+        owner=owner,
+        maintainer=owner,
+    )
+    client.login(username="member", password="pass12345")
+
+    response = client.delete(reverse("document-detail", args=[document.id]))
+
     assert response.status_code == 403
+    assert Document.objects.filter(pk=document.pk).exists()
 
 
 @pytest.mark.django_db

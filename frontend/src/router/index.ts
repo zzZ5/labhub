@@ -11,9 +11,14 @@ import PendingApproval from '../views/auth/PendingApproval.vue'
 import MembersAdmin from '../views/members/MembersAdmin.vue'
 import PortalHome from '../views/portal/PortalHome.vue'
 import ResearchPage from '../views/portal/ResearchPage.vue'
+import ResearchDetailPage from '../views/portal/ResearchDetailPage.vue'
 import TeamPage from '../views/portal/TeamPage.vue'
+import MemberDetailPage from '../views/portal/MemberDetailPage.vue'
 import PublicationsPage from '../views/portal/PublicationsPage.vue'
 import PublicationDetailPage from '../views/portal/PublicationDetailPage.vue'
+import ProjectDetailPage from '../views/portal/ProjectDetailPage.vue'
+import PatentDetailPage from '../views/portal/PatentDetailPage.vue'
+import AwardDetailPage from '../views/portal/AwardDetailPage.vue'
 import NewsPage from '../views/portal/NewsPage.vue'
 import NewsDetailPage from '../views/portal/NewsDetailPage.vue'
 import StudentsHome from '../views/students/StudentsHome.vue'
@@ -59,14 +64,39 @@ const router = createRouter({
       component: ResearchPage,
     },
     {
+      path: '/research/:slug',
+      name: 'research-detail',
+      component: ResearchDetailPage,
+    },
+    {
       path: '/team',
       name: 'team',
       component: TeamPage,
     },
     {
+      path: '/team/:id',
+      name: 'member-detail',
+      component: MemberDetailPage,
+    },
+    {
       path: '/publications',
       name: 'publications',
       component: PublicationsPage,
+    },
+    {
+      path: '/publications/projects/:id',
+      name: 'project-detail',
+      component: ProjectDetailPage,
+    },
+    {
+      path: '/publications/patents/:id',
+      name: 'patent-detail',
+      component: PatentDetailPage,
+    },
+    {
+      path: '/publications/awards/:id',
+      name: 'award-detail',
+      component: AwardDetailPage,
     },
     {
       path: '/publications/:id',

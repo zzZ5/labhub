@@ -11,10 +11,10 @@ from apps.members.models import Member
 from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
 from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer
-from apps.portal.models import ResearchDirection
-from apps.portal.serializers import ResearchDirectionSerializer
-from apps.publications.models import Patent, Project, Publication
-from apps.publications.serializers import PatentSerializer, ProjectSerializer, PublicationSerializer
+from apps.portal.models import ContactInfo, ResearchDirection, SiteSetting
+from apps.portal.serializers import ContactInfoSerializer, ResearchDirectionSerializer, SiteSettingSerializer
+from apps.publications.models import Award, Patent, Project, Publication
+from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
 
 
 class CmsParserMixin:
@@ -55,6 +55,18 @@ class CmsResearchDirectionViewSet(CmsParserMixin, viewsets.ModelViewSet):
     serializer_class = CmsResearchDirectionSerializer
     permission_classes = [CanManagePortalContent]
     lookup_field = "slug"
+
+
+class CmsSiteSettingViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = SiteSetting.objects.all().order_by("-updated_at")
+    serializer_class = SiteSettingSerializer
+    permission_classes = [CanManagePortalContent]
+
+
+class CmsContactInfoViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = ContactInfo.objects.all().order_by("-updated_at")
+    serializer_class = ContactInfoSerializer
+    permission_classes = [CanManagePortalContent]
 
 
 class CmsMemberViewSet(CmsParserMixin, viewsets.ModelViewSet):
@@ -165,6 +177,12 @@ class CmsProjectViewSet(CmsParserMixin, viewsets.ModelViewSet):
 class CmsPatentViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Patent.objects.all()
     serializer_class = PatentSerializer
+    permission_classes = [CanManagePortalContent]
+
+
+class CmsAwardViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = Award.objects.all()
+    serializer_class = AwardSerializer
     permission_classes = [CanManagePortalContent]
 
 

@@ -1,4 +1,4 @@
-from django.conf import settings
+﻿from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -7,7 +7,9 @@ class RoleCode(models.TextChoices):
     MEMBER = "member", "课题组成员"
     MASTER = "master", "硕士生"
     PHD = "phd", "博士生"
+    UNDERGRADUATE = "undergraduate", "本科生"
     POSTDOC = "postdoc", "博士后"
+    OTHER = "other", "其他"
     INSTRUMENT_MANAGER = "instrument_manager", "仪器管理员"
     DOCUMENT_MANAGER = "document_manager", "资料管理员"
     EDITOR = "editor", "网站编辑"
@@ -21,7 +23,9 @@ class UserProfile(models.Model):
         MEMBER = "member", "课题组成员"
         MASTER = "master", "硕士生"
         PHD = "phd", "博士生"
+        UNDERGRADUATE = "undergraduate", "本科生"
         POSTDOC = "postdoc", "博士后"
+        OTHER = "other", "其他"
         INSTRUMENT_MANAGER = "instrument_manager", "仪器管理员"
         DOCUMENT_MANAGER = "document_manager", "资料管理员"
         EDITOR = "editor", "网站编辑"

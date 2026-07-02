@@ -57,6 +57,22 @@ def can_manage_documents(user) -> bool:
     return user_has_role(user, RoleCode.ADMIN, RoleCode.PI, RoleCode.DOCUMENT_MANAGER)
 
 
+def can_upload_document(user) -> bool:
+    return is_approved_member(user)
+
+
+def can_edit_document(user, document: Document) -> bool:
+    if can_manage_documents(user):
+        return True
+    if not is_approved_member(user):
+        return False
+    return document.owner_id == user.id or document.maintainer_id == user.id
+
+
+def can_delete_document(user, document: Document) -> bool:
+    return can_edit_document(user, document)
+
+
 def visible_documents_for_user(user, queryset):
     public = queryset.filter(visibility=DocumentVisibility.PUBLIC)
     if not is_approved_member(user):

@@ -9,14 +9,14 @@
     </section>
     <section class="page-section">
       <div class="container research-grid">
-        <article v-for="item in displayDirections" :key="item.title" class="card research-card">
+        <RouterLink v-for="item in displayDirections" :key="item.title" class="card research-card" :to="item.to">
           <span>{{ item.index }}</span>
           <h2>{{ item.title }}</h2>
           <p>{{ item.summary }}</p>
           <div class="tag-row">
             <em v-for="tag in item.tags" :key="tag">{{ tag }}</em>
           </div>
-        </article>
+        </RouterLink>
       </div>
     </section>
   </PortalLayout>
@@ -40,10 +40,11 @@ const fallback = [
 ]
 
 const displayDirections = computed(() =>
-  (directions.value.length ? directions.value : fallback).map((item, index) => ({
+  (directions.value.length ? directions.value : fallback).map((item: any, index) => ({
     index: `0${index + 1}`,
     title: item.title,
     summary: item.summary,
+    to: item.slug ? `/research/${item.slug}` : '/research',
     tags: ['农业生态', '资源循环', '环境过程'],
   })),
 )
@@ -114,8 +115,11 @@ onMounted(async () => {
 }
 
 .research-card {
+  display: block;
   border-color: rgba(31, 61, 43, 0.1);
   padding: 22px;
+  color: inherit;
+  text-decoration: none;
   box-shadow: none;
 }
 

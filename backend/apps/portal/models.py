@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 
 
 class SiteSetting(models.Model):
@@ -6,6 +6,7 @@ class SiteSetting(models.Model):
     site_subtitle = models.CharField("站点副标题", max_length=200, blank=True)
     logo = models.ImageField("Logo", upload_to="portal/logos/", blank=True)
     favicon = models.ImageField("Favicon", upload_to="portal/favicons/", blank=True)
+    hero_image = models.ImageField("首页横幅图", upload_to="portal/hero/", blank=True)
     description = models.TextField("站点描述", blank=True)
     keywords = models.CharField("关键词", max_length=300, blank=True)
     footer_text = models.TextField("页脚文字", blank=True)

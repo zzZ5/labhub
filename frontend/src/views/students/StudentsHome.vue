@@ -1,11 +1,11 @@
-<template>
+﻿<template>
   <InternalLayout title="学生档案">
     <section class="student-page">
       <header class="surface-heading student-heading">
         <div>
           <span>学生档案与成员账号</span>
           <h1>学生信息、账号绑定与归档资料</h1>
-          <p>学生档案用于保存研究方向、多位导师、论文和开题报告等资料；成员管理负责登录账号和系统角色。二者通过“关联成员账号”打通。</p>
+          <p>学生档案用于保存导师信息、研究方向、开题、中期、论文和答辩等资料；成员管理负责登录账号和系统角色。二者通过“关联成员账号”打通。</p>
         </div>
         <el-button v-if="canManageStudents" type="primary" @click="startCreate">新建学生档案</el-button>
       </header>
@@ -14,10 +14,18 @@
         <aside class="card student-list">
           <div class="side-heading">
             <h2>学生列表</h2>
-            <span>{{ students.length }} 人</span>
+            <span>{{ filteredStudents.length }} / {{ students.length }} 人</span>
+          </div>
+          <div class="student-list-tools">
+            <el-input v-model="studentKeyword" size="small" clearable placeholder="搜索姓名、年级、方向" />
+            <el-select v-model="degreeFilter" size="small" placeholder="学位" clearable>
+              <el-option label="本科" value="undergraduate" />
+              <el-option label="硕士" value="master" />
+              <el-option label="博士" value="phd" />
+            </el-select>
           </div>
           <button
-            v-for="student in students"
+            v-for="student in pagedStudents"
             :key="student.id"
             :class="{ active: selectedStudent?.id === student.id }"
             @click="selectStudent(student.id)"
@@ -26,7 +34,12 @@
             <span>{{ student.degree_label }} · {{ student.grade || '未填写年级' }}</span>
             <small>{{ student.user_email || student.user_username || '未绑定账号' }}</small>
           </button>
-          <div v-if="!students.length" class="empty-note">暂无学生档案。</div>
+          <div v-if="!filteredStudents.length" class="empty-note">{{ students.length ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
+          <div v-if="studentTotalPages > 1" class="student-pager">
+            <button type="button" :disabled="studentPage === 1" @click="studentPage -= 1">上一页</button>
+            <span>{{ studentPage }} / {{ studentTotalPages }}</span>
+            <button type="button" :disabled="studentPage === studentTotalPages" @click="studentPage += 1">下一页</button>
+          </div>
         </aside>
 
         <main class="archive-panel">
@@ -61,36 +74,21 @@
                 <dt>可见范围</dt>
                 <dd>{{ selectedStudent.visibility_label }}</dd>
               </div>
+              <div>
+                <dt>登录账号</dt>
+                <dd>{{ selectedStudent.user_email || selectedStudent.user_username || '-' }}</dd>
+              </div>
+              <div>
+                <dt>账号权限</dt>
+                <dd>在成员管理中维护</dd>
+              </div>
             </dl>
           </section>
-
-          <section v-if="selectedStudent" class="card account-card">
-            <div class="panel-heading">
-              <div>
-                <h2>关联成员账号</h2>
-                <p>学生本人登录后，会根据这个绑定关系进入自己的档案并上传材料。</p>
-              </div>
-              <span class="status-tag normal">已绑定</span>
-            </div>
-            <div class="account-grid">
-              <div>
-                <small>成员账号</small>
-                <strong>{{ selectedStudent.user_username }}</strong>
-                <span>{{ selectedStudent.user_email || selectedStudent.user_username }}</span>
-              </div>
-              <div>
-                <small>权限来源</small>
-                <strong>成员管理</strong>
-                <span>账号审核、角色分配和管理员权限在“成员管理”中维护。</span>
-              </div>
-            </div>
-          </section>
-
-          <section v-if="selectedStudent" class="card files-panel">
+<section v-if="selectedStudent" class="card files-panel">
             <div class="panel-heading">
               <div>
                 <h2>归档资料</h2>
-                <p>用于保存毕业论文、开题报告、答辩材料、论文和原始数据说明等个人资料。</p>
+                <p>用于保存开题、中期、毕业论文、答辩材料和其它个人归档资料。</p>
               </div>
               <span class="status-tag normal">{{ displayFiles.length }} 份资料</span>
             </div>
@@ -141,7 +139,7 @@
           <div class="panel-heading compact">
             <div>
               <h2>{{ editingId ? '编辑学生档案' : '学生档案设置' }}</h2>
-              <p>{{ canManageStudents ? '管理员和硕博导师可绑定学生账号和导师关系。' : '你可以维护自己的学生档案。' }}</p>
+              <p>{{ canManageStudents ? '管理员可绑定学生账号，导师信息在档案内维护。' : '你可以维护自己的学生档案。' }}</p>
             </div>
           </div>
 
@@ -162,6 +160,7 @@
             <div class="form-pair">
               <el-form-item label="学位类型">
                 <el-select v-model="profileForm.degree_type">
+                  <el-option label="本科" value="undergraduate" />
                   <el-option label="硕士" value="master" />
                   <el-option label="博士" value="phd" />
                 </el-select>
@@ -214,12 +213,12 @@
             <el-select v-model="uploadForm.file_type">
               <el-option label="开题报告" value="proposal_report" />
               <el-option label="开题 PPT" value="proposal_ppt" />
+              <el-option label="中期报告" value="midterm_report" />
+              <el-option label="中期 PPT" value="midterm_ppt" />
               <el-option label="毕业论文" value="thesis" />
               <el-option label="答辩 PPT" value="defense_ppt" />
-              <el-option label="原始数据说明" value="raw_data_note" />
-              <el-option label="代码" value="code" />
               <el-option label="发表论文" value="paper" />
-              <el-option label="毕业交接材料" value="handover" />
+              <el-option label="其它" value="other" />
             </el-select>
           </el-form-item>
           <el-form-item label="标题">
@@ -242,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Download, Document, Files, PictureFilled, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -272,6 +271,10 @@ const uploading = ref(false)
 const formVisible = ref(false)
 const savingProfile = ref(false)
 const editingId = ref<number | null>(null)
+const studentKeyword = ref('')
+const degreeFilter = ref('')
+const studentPage = ref(1)
+const studentPageSize = 12
 
 const profileForm = reactive<StudentProfilePayload>({
   user: 0,
@@ -297,17 +300,34 @@ const uploadForm = reactive({
   file: undefined as File | undefined,
 })
 
-const selectedStudent = computed(() => students.value.find((item) => item.id === selectedId.value) || students.value[0])
+const filteredStudents = computed(() => {
+  const keyword = studentKeyword.value.trim().toLowerCase()
+  return students.value.filter((student) => {
+    const matchesDegree = !degreeFilter.value || student.degree_type === degreeFilter.value
+    const haystack = `${student.name} ${student.grade} ${student.research_direction} ${student.research_topic} ${student.user_email} ${student.user_username}`.toLowerCase()
+    return matchesDegree && (!keyword || haystack.includes(keyword))
+  })
+})
+const studentTotalPages = computed(() => Math.max(1, Math.ceil(filteredStudents.value.length / studentPageSize)))
+const pagedStudents = computed(() => filteredStudents.value.slice((studentPage.value - 1) * studentPageSize, studentPage.value * studentPageSize))
+const selectedStudent = computed(() => students.value.find((item) => item.id === selectedId.value) || filteredStudents.value[0] || students.value[0])
 const displayFiles = computed<StudentArchiveFile[]>(() => selectedStudent.value?.archive_files || [])
 const canManageStudents = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
 const usedUserIds = computed(() => new Set(students.value.filter((item) => item.id !== editingId.value).map((item) => item.user)))
 const studentUserOptions = computed(() => {
-  const candidates = canManageStudents.value ? users.value : users.value.filter((user) => user.id === session.user?.id)
+  const candidates = canManageStudents.value
+    ? users.value.filter(isStudentAccount)
+    : users.value.filter((user) => user.id === session.user?.id && isStudentAccount(user))
   return candidates.filter((user) => !usedUserIds.value.has(user.id) || user.id === profileForm.user)
 })
 const supervisorOptions = computed(() =>
   users.value.filter((user) => user.is_superuser || user.roles.includes('admin') || user.roles.includes('pi')),
 )
+
+function isStudentAccount(user: CurrentUser) {
+  const identity = user.profile?.role_type
+  return user.roles.includes('undergraduate') || user.roles.includes('master') || user.roles.includes('phd') || identity === 'undergraduate' || identity === 'master' || identity === 'phd'
+}
 
 function advisorText(student: StudentProfile) {
   if (student.advisor_names?.length) return student.advisor_names.join('、')
@@ -521,7 +541,7 @@ async function confirmDeleteArchiveFile(file: StudentArchiveFile) {
 
 async function loadStudents(preferredId?: number) {
   students.value = await fetchStudentProfiles()
-  selectedId.value = preferredId || students.value[0]?.id || null
+  selectedId.value = preferredId || selectedStudent.value?.id || filteredStudents.value[0]?.id || students.value[0]?.id || null
 }
 
 async function loadUsers() {
@@ -537,13 +557,24 @@ onMounted(async () => {
   await loadUsers()
   await loadStudents()
 })
+
+watch([studentKeyword, degreeFilter], () => {
+  studentPage.value = 1
+  if (filteredStudents.value.length && !filteredStudents.value.some((student) => student.id === selectedId.value)) {
+    selectedId.value = filteredStudents.value[0].id
+  }
+})
+
+watch(studentTotalPages, (total) => {
+  if (studentPage.value > total) studentPage.value = total
+})
 </script>
 
 <style scoped>
 .student-page,
 .archive-panel {
   display: grid;
-  gap: 20px;
+  gap: 14px;
 }
 
 .student-heading {
@@ -555,16 +586,15 @@ onMounted(async () => {
 
 .student-workspace {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 340px;
-  gap: 20px;
+  grid-template-columns: 300px minmax(0, 1fr) 330px;
+  gap: 18px;
 }
 
 .student-list,
 .profile-card,
-.account-card,
 .files-panel,
 .edit-panel {
-  padding: 22px;
+  padding: 16px;
 }
 
 .student-list,
@@ -577,7 +607,6 @@ onMounted(async () => {
 
 .student-list:hover,
 .profile-card:hover,
-.account-card:hover,
 .files-panel:hover,
 .edit-panel:hover {
   transform: none;
@@ -595,9 +624,9 @@ onMounted(async () => {
 
 .panel-heading,
 .side-heading {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   border-bottom: 1px solid var(--color-line);
-  padding-bottom: 12px;
+  padding-bottom: 10px;
 }
 
 .panel-heading.compact {
@@ -637,8 +666,8 @@ onMounted(async () => {
 }
 
 .profile-heading h1 {
-  margin-top: 4px;
-  font-size: clamp(28px, 3vw, 34px);
+  margin-top: 2px;
+  font-size: clamp(22px, 2.4vw, 28px);
   line-height: 1.2;
 }
 
@@ -646,14 +675,34 @@ onMounted(async () => {
   flex: 0 0 auto;
 }
 
+.student-list-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.student-list-tools :deep(.el-input__wrapper),
+.student-list-tools :deep(.el-select__wrapper) {
+  min-height: 38px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+.student-list-tools :deep(.el-input__wrapper:hover),
+.student-list-tools :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(0, 135, 60, 0.24) inset;
+}
+
 .student-list button {
-  display: block;
+  display: grid;
+  gap: 3px;
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  margin-bottom: 7px;
-  padding: 12px 13px;
-  background: transparent;
+  margin-bottom: 8px;
+  padding: 9px 11px;
+  background: #fff;
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
@@ -673,28 +722,71 @@ onMounted(async () => {
 .student-list span,
 .student-list small {
   display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-list strong {
+  color: var(--color-deep-green);
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .student-list span {
   color: var(--color-muted);
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.student-list small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.student-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--color-line);
+  margin-top: 10px;
+  padding-top: 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.student-pager button {
+  width: auto;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  padding: 5px 10px;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.student-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .profile-list {
   display: grid;
-  gap: 12px;
-  margin: 24px 0 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
   border-top: 1px solid var(--color-line);
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .profile-list div {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
-  gap: 16px;
+  gap: 4px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 13px 15px;
+  padding: 9px 11px;
   background: var(--color-panel);
 }
 
@@ -711,7 +803,8 @@ onMounted(async () => {
 .profile-list dd {
   color: var(--color-text);
   font-weight: 600;
-  line-height: 1.65;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .account-grid {
@@ -735,17 +828,17 @@ onMounted(async () => {
 
 .file-grid {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .file-card {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  align-items: flex-start;
-  gap: 14px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  padding: 14px;
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
   background: var(--color-panel);
 }
 
@@ -756,14 +849,14 @@ onMounted(async () => {
 
 .file-icon {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   background: #fff;
   color: var(--color-academic-blue);
-  font-size: 19px;
+  font-size: 16px;
 }
 
 .file-icon.pdf {
@@ -793,14 +886,14 @@ onMounted(async () => {
 .file-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .file-title-row strong {
   min-width: 0;
   overflow: hidden;
   color: var(--color-deep-green);
-  font-size: 16px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -809,7 +902,7 @@ onMounted(async () => {
   flex: 0 0 auto;
   border: 1px solid var(--color-line);
   border-radius: 999px;
-  padding: 2px 8px;
+  padding: 1px 7px;
   background: #fff;
   color: var(--color-muted);
   font-size: 12px;
@@ -818,13 +911,13 @@ onMounted(async () => {
 .file-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 6px;
+  margin-top: 3px;
 }
 
 .file-meta span {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .file-meta span + span::before {
@@ -834,10 +927,13 @@ onMounted(async () => {
 }
 
 .file-card p {
-  margin: 7px 0 0;
+  margin: 3px 0 0;
+  overflow: hidden;
   color: var(--color-muted);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-primary-action,
@@ -848,11 +944,11 @@ onMounted(async () => {
   gap: 5px;
   border: 1px solid rgba(0, 135, 60, 0.18);
   border-radius: var(--radius-sm);
-  min-height: 32px;
-  padding: 6px 10px;
+  min-height: 28px;
+  padding: 4px 8px;
   background: #fff;
   color: var(--color-cau-green);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -882,23 +978,23 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
+  min-height: 28px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  padding: 4px 8px;
   background: #fff;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .file-actions {
-  display: grid;
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
-  min-width: 112px;
-  gap: 7px;
-  justify-items: end;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .profile-form {
@@ -994,3 +1090,5 @@ onMounted(async () => {
   }
 }
 </style>
+
+

@@ -8,37 +8,75 @@
       </div>
     </section>
     <section class="page-section">
-      <div class="container member-grid">
-        <article v-for="member in displayMembers" :key="member.name" class="card member-card">
-          <img :src="member.avatar" :alt="member.name" />
-          <div>
-            <h2>{{ member.name }}</h2>
-            <span class="status-tag normal">{{ member.role_label }}</span>
-            <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
-            <small v-if="member.email">{{ member.email }}</small>
-          </div>
-        </article>
+      <div class="container">
+        <div class="team-filter card">
+          <el-input v-model="keyword" clearable placeholder="搜索姓名、研究方向、邮箱" />
+          <el-select v-model="roleFilter" clearable placeholder="成员类型">
+            <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
+          </el-select>
+          <span>{{ filteredMembers.length }} / {{ displayMembers.length }} 人</span>
+        </div>
+        <div class="member-grid">
+          <RouterLink v-for="member in pagedMembers" :key="member.name" class="card member-card" :to="member.to">
+            <img :src="member.avatar" :alt="member.name" />
+            <div>
+              <h2>{{ member.name }}</h2>
+              <span class="status-tag normal">{{ member.role_label }}</span>
+              <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
+              <small v-if="member.email">{{ member.email }}</small>
+            </div>
+          </RouterLink>
+        </div>
+        <div v-if="totalPages > 1" class="team-pager">
+          <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
+          <span>第 {{ page }} / {{ totalPages }} 页</span>
+          <button type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
+        </div>
       </div>
     </section>
   </PortalLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import { fetchMembers, type Member } from '../../api/publicPortal'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const members = ref<Member[]>([])
+const keyword = ref('')
+const roleFilter = ref('')
+const page = ref(1)
+const pageSize = 12
 
 const fallback = [
-  { name: '团队负责人', role_label: '硕博导师', research_direction: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '博士研究生', role_label: '博士生', research_direction: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '硕士研究生', role_label: '硕士生', research_direction: '参与有机肥产品开发、养分循环与土壤生态评价', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '毕业学生与合作成员', role_label: '团队网络', research_direction: '共同支撑资源利用、生态环境工程和农业应用场景研究', profile: '', avatar: '/favicon.svg', email: '' },
+  { name: '团队负责人', role_type: 'PI', role_label: '硕博导师', research_direction: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', profile: '', avatar: '/favicon.svg', email: '' },
+  { name: '博士研究生', role_type: 'phd', role_label: '博士生', research_direction: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', profile: '', avatar: '/favicon.svg', email: '' },
+  { name: '硕士研究生', role_type: 'master', role_label: '硕士生', research_direction: '参与有机肥产品开发、养分循环与土壤生态评价', profile: '', avatar: '/favicon.svg', email: '' },
+  { name: '毕业学生与合作成员', role_type: 'alumni', role_label: '团队网络', research_direction: '共同支撑资源利用、生态环境工程和农业应用场景研究', profile: '', avatar: '/favicon.svg', email: '' },
 ]
 
-const displayMembers = computed(() => (members.value.length > 1 ? members.value : fallback))
+const displayMembers = computed(() => (members.value.length ? members.value : fallback).map((member: any) => ({
+  ...member,
+  to: member.id ? `/team/${member.id}` : '/team',
+})))
+const roleOptions = computed(() => {
+  const map = new Map<string, string>()
+  displayMembers.value.forEach((member) => {
+    map.set(member.role_type || member.role_label, member.role_label)
+  })
+  return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+})
+const filteredMembers = computed(() => {
+  const q = keyword.value.trim().toLowerCase()
+  return displayMembers.value.filter((member) => {
+    const roleKey = member.role_type || member.role_label
+    const haystack = `${member.name} ${member.role_label} ${member.research_direction} ${member.profile} ${member.email}`.toLowerCase()
+    return (!roleFilter.value || roleKey === roleFilter.value) && (!q || haystack.includes(q))
+  })
+})
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredMembers.value.length / pageSize)))
+const pagedMembers = computed(() => filteredMembers.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 
 onMounted(async () => {
   try {
@@ -46,6 +84,14 @@ onMounted(async () => {
   } catch {
     members.value = []
   }
+})
+
+watch([keyword, roleFilter], () => {
+  page.value = 1
+})
+
+watch(totalPages, (total) => {
+  if (page.value > total) page.value = total
 })
 </script>
 
@@ -99,6 +145,22 @@ onMounted(async () => {
   background: var(--color-rice);
 }
 
+.team-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px;
+  box-shadow: none;
+}
+
+.team-filter span {
+  color: var(--color-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
 .member-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -111,6 +173,8 @@ onMounted(async () => {
   gap: 15px;
   border-color: rgba(31, 61, 43, 0.1);
   padding: 22px;
+  color: inherit;
+  text-decoration: none;
   box-shadow: none;
 }
 
@@ -139,6 +203,30 @@ onMounted(async () => {
   color: var(--color-cau-green);
 }
 
+.team-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.team-pager button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.team-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 @media (max-width: 980px) {
   .member-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -147,6 +235,10 @@ onMounted(async () => {
 
 @media (max-width: 640px) {
   .member-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-filter {
     grid-template-columns: 1fr;
   }
 }

@@ -16,6 +16,7 @@ class StudentVisibility(models.TextChoices):
 
 class StudentProfile(models.Model):
     class DegreeType(models.TextChoices):
+        UNDERGRADUATE = "undergraduate", "本科"
         MASTER = "master", "硕士"
         PHD = "phd", "博士"
 
@@ -53,9 +54,10 @@ class StudentArchiveFile(models.Model):
         THESIS = "thesis", "毕业论文"
         DEFENSE_PPT = "defense_ppt", "答辩 PPT"
         RAW_DATA_NOTE = "raw_data_note", "原始数据说明"
-        CODE = "code", "代码"
+        CODE = "code", "代码与分析脚本"
         PAPER = "paper", "发表论文"
         HANDOVER = "handover", "毕业交接材料"
+        OTHER = "other", "其它"
 
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="archive_files", verbose_name="学生")
     file_type = models.CharField("文件类型", max_length=40, choices=FileType.choices)

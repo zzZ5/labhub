@@ -1,6 +1,6 @@
 import { http } from './http'
 import type { Instrument } from './instruments'
-import type { Member, NewsArticle, NewsCategory, Patent, Project, Publication, ResearchDirection } from './publicPortal'
+import type { Award, ContactInfo, Member, NewsArticle, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
 
 export interface InstrumentCategory {
   id: number
@@ -11,6 +11,8 @@ export interface InstrumentCategory {
 }
 
 export type CmsResource =
+  | 'site-settings'
+  | 'contact-info'
   | 'research-directions'
   | 'members'
   | 'news-categories'
@@ -19,6 +21,7 @@ export type CmsResource =
   | 'publications'
   | 'projects'
   | 'patents'
+  | 'awards'
   | 'instrument-categories'
   | 'instruments'
 
@@ -72,6 +75,14 @@ export interface CmsNewsImage {
 }
 
 export const cmsApi = {
+  listSiteSettings: () => list<SiteSetting>('site-settings'),
+  createSiteSetting: (payload: Record<string, unknown>) => create<SiteSetting>('site-settings', payload),
+  updateSiteSetting: (id: number, payload: Record<string, unknown>) => update<SiteSetting>('site-settings', id, payload),
+
+  listContactInfo: () => list<ContactInfo>('contact-info'),
+  createContactInfo: (payload: Record<string, unknown>) => create<ContactInfo>('contact-info', payload),
+  updateContactInfo: (id: number, payload: Record<string, unknown>) => update<ContactInfo>('contact-info', id, payload),
+
   listResearch: () => list<ResearchDirection>('research-directions'),
   createResearch: (payload: Record<string, unknown>) => create<ResearchDirection>('research-directions', payload),
   updateResearch: (slug: string, payload: Record<string, unknown>) => update<ResearchDirection>('research-directions', slug, payload),
@@ -108,6 +119,11 @@ export const cmsApi = {
   createPatent: (payload: Record<string, unknown>) => create<Patent>('patents', payload),
   updatePatent: (id: number, payload: Record<string, unknown>) => update<Patent>('patents', id, payload),
   deletePatent: (id: number) => remove('patents', id),
+
+  listAwards: () => list<Award>('awards'),
+  createAward: (payload: Record<string, unknown>) => create<Award>('awards', payload),
+  updateAward: (id: number, payload: Record<string, unknown>) => update<Award>('awards', id, payload),
+  deleteAward: (id: number) => remove('awards', id),
 
   listInstrumentCategories: () => list<InstrumentCategory>('instrument-categories'),
   createInstrumentCategory: (payload: Record<string, unknown>) => create<InstrumentCategory>('instrument-categories', payload),
