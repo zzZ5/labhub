@@ -246,6 +246,7 @@ async function loadCategories() {
     categories.value = await fetchDocumentCategories()
   } catch {
     categories.value = []
+    ElMessage.error('资料分类加载失败，请确认已登录并刷新页面。')
   }
 }
 
