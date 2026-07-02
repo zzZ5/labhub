@@ -1825,12 +1825,44 @@ onMounted(loadAll)
     margin-bottom: 8px;
   }
 
+  .cms-tabs :deep(.el-tabs__nav-wrap) {
+    padding: 0;
+  }
+
+  .cms-tabs :deep(.el-tabs__nav-prev),
+  .cms-tabs :deep(.el-tabs__nav-next),
+  .cms-tabs :deep(.el-tabs__active-bar) {
+    display: none;
+  }
+
   .cms-tabs :deep(.el-tabs__nav-scroll) {
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .cms-tabs :deep(.el-tabs__nav) {
-    white-space: nowrap;
+    display: grid;
+    width: 100%;
+    float: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    transform: none !important;
+    white-space: normal;
+  }
+
+  .cms-tabs :deep(.el-tabs__item) {
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    padding: 0 8px;
+    background: var(--color-panel);
+    font-size: 13px;
+  }
+
+  .cms-tabs :deep(.el-tabs__item.is-active) {
+    border-color: rgba(0, 135, 60, 0.2);
+    background: var(--color-eco-green);
   }
 
   .editor-grid,
