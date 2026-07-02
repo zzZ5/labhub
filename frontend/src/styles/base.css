@@ -9,6 +9,13 @@
   scroll-padding-top: calc(var(--nav-height) + 16px);
 }
 
+html,
+body,
+#app {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -173,4 +180,14 @@ a {
 
 .el-message {
   border-radius: var(--radius-md);
+}
+
+@media (max-width: 720px) {
+  :root {
+    scroll-padding-top: 78px;
+  }
+
+  body {
+    min-width: 0;
+  }
 }

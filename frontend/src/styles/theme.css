@@ -205,4 +205,12 @@
   .container {
     width: min(var(--container), calc(100% - 28px));
   }
+
+  .page-section {
+    padding: 58px 0;
+  }
+
+  .surface-heading {
+    padding: 18px;
+  }
 }

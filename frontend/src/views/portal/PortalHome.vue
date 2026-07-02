@@ -927,6 +927,43 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
+  .hero {
+    background-position: 58% center;
+  }
+
+  .hero::before {
+    left: 14px;
+    width: calc(100vw - 28px);
+  }
+
+  .hero-inner {
+    padding: 46px 0 40px;
+  }
+
+  .hero-copy h1 {
+    font-size: 38px;
+  }
+
+  .hero-lead {
+    font-size: 18px;
+  }
+
+  .hero-text {
+    font-size: 15px;
+    line-height: 1.72;
+  }
+
+  .hero-actions {
+    gap: 10px;
+  }
+
+  .primary-action,
+  .secondary-action {
+    flex: 1 1 140px;
+    min-height: 42px;
+    padding: 10px 14px;
+  }
+
   .research-grid,
   .news-grid,
   .member-grid,
@@ -942,6 +979,16 @@ onMounted(async () => {
   .join-card {
     align-items: flex-start;
     flex-direction: column;
+    gap: 18px;
+    padding: 24px;
+  }
+
+  .join-card h2 {
+    font-size: 24px;
+  }
+
+  .join-card a {
+    width: 100%;
   }
 }
 </style>

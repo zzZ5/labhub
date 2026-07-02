@@ -1,32 +1,41 @@
 <template>
   <div class="portal-shell">
     <header class="portal-nav">
-      <RouterLink class="portal-brand" to="/">
+      <RouterLink class="portal-brand" to="/" @click="closeMenu">
         <span class="brand-emblem">
           <img src="/site-icon.png" alt="中农雨磷" />
         </span>
-        <span>
+        <span class="brand-text">
           <strong>中农雨磷</strong>
           <small>中国农业大学资源与环境学院</small>
         </span>
       </RouterLink>
-      <nav class="portal-links" aria-label="主导航">
-        <RouterLink to="/">首页</RouterLink>
-        <RouterLink to="/research">研究方向</RouterLink>
-        <RouterLink to="/team">团队成员</RouterLink>
-        <RouterLink to="/publications">科研成果</RouterLink>
-        <RouterLink to="/news">新闻活动</RouterLink>
-        <RouterLink class="internal-entry" to="/dashboard">内部平台</RouterLink>
+
+      <button class="nav-toggle" type="button" :aria-expanded="menuOpen" aria-label="打开导航菜单" @click="menuOpen = !menuOpen">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="portal-links" :class="{ open: menuOpen }" aria-label="主导航">
+        <RouterLink to="/" @click="closeMenu">首页</RouterLink>
+        <RouterLink to="/research" @click="closeMenu">研究方向</RouterLink>
+        <RouterLink to="/team" @click="closeMenu">团队成员</RouterLink>
+        <RouterLink to="/publications" @click="closeMenu">科研成果</RouterLink>
+        <RouterLink to="/news" @click="closeMenu">新闻活动</RouterLink>
+        <RouterLink class="internal-entry" to="/dashboard" @click="closeMenu">内部平台</RouterLink>
       </nav>
     </header>
+
     <main class="portal-main">
       <slot />
     </main>
+
     <footer class="portal-footer">
       <div class="container footer-grid">
         <div>
           <strong>中农雨磷</strong>
-          <p>面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源转化与高值产品开发研究。</p>
+          <p>面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。</p>
         </div>
         <div class="footer-address">
           <span>中国农业大学资源与环境学院生态系</span>
@@ -37,9 +46,20 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const menuOpen = ref(false)
+
+function closeMenu() {
+  menuOpen.value = false
+}
+</script>
+
 <style scoped>
 .portal-shell {
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     linear-gradient(180deg, rgba(234, 245, 238, 0.36), rgba(248, 247, 242, 0) 360px),
     var(--color-rice);
@@ -69,9 +89,11 @@
 .portal-brand {
   display: inline-flex;
   align-items: center;
+  min-width: 278px;
   height: 100%;
   gap: 12px;
-  min-width: 278px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .brand-emblem {
@@ -92,9 +114,16 @@
   object-fit: cover;
 }
 
+.brand-text {
+  min-width: 0;
+}
+
 .portal-brand strong,
 .portal-brand small {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .portal-brand strong {
@@ -128,6 +157,7 @@
   min-height: 0;
   color: var(--color-text);
   font-weight: 600;
+  text-decoration: none;
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -174,6 +204,36 @@
   background: var(--color-eco-green);
 }
 
+.nav-toggle {
+  position: relative;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 135, 60, 0.16);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+}
+
+.nav-toggle span {
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-deep-green);
+}
+
+.nav-toggle span:nth-child(1) {
+  transform: translateY(-6px);
+}
+
+.nav-toggle span:nth-child(3) {
+  transform: translateY(6px);
+}
+
 .portal-footer {
   background:
     linear-gradient(90deg, rgba(0, 135, 60, 0.22), transparent 46%),
@@ -195,16 +255,16 @@
 }
 
 .footer-grid p {
-  margin: 8px 0 0;
   max-width: 560px;
+  margin: 8px 0 0;
   color: rgba(255, 255, 255, 0.74);
   line-height: 1.7;
 }
 
 .footer-address {
   display: grid;
-  gap: 8px;
   align-content: center;
+  gap: 8px;
   color: rgba(255, 255, 255, 0.78);
 }
 
@@ -215,25 +275,90 @@
 }
 
 @media (max-width: 980px) {
-  .portal-links {
-    min-width: 0;
-    gap: 18px;
-    overflow-x: auto;
-    padding-bottom: 4px;
+  .portal-nav {
+    gap: 12px;
+    padding: 0 16px;
   }
 
-  .portal-links a {
-    height: 100%;
+  .portal-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .portal-links {
+    position: absolute;
+    top: calc(var(--nav-height) - 1px);
+    right: 12px;
+    left: 12px;
+    display: none;
+    height: auto;
+    max-height: calc(100vh - var(--nav-height) - 18px);
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 12px 28px rgba(31, 61, 43, 0.12);
+    font-size: 15px;
+  }
+
+  .portal-links.open {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .portal-links a,
+  .portal-links .internal-entry {
+    justify-content: center;
+    height: 42px;
+    border-radius: var(--radius-sm);
+    padding: 0 10px;
+  }
+
+  .portal-links a::after {
+    display: none;
+  }
+
+  .portal-links a.router-link-active {
+    background: var(--color-eco-green);
+  }
+
+  .nav-toggle {
+    display: inline-flex;
   }
 }
 
 @media (max-width: 640px) {
-  .portal-brand {
-    min-width: 0;
+  .portal-nav {
+    height: 62px;
+  }
+
+  .portal-main {
+    padding-top: 62px;
+  }
+
+  .brand-emblem {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .portal-brand strong {
+    font-size: 16px;
   }
 
   .portal-brand small {
-    display: none;
+    max-width: 190px;
+    font-size: 11px;
+  }
+
+  .portal-links {
+    top: 61px;
+  }
+
+  .portal-links.open {
+    grid-template-columns: 1fr;
   }
 
   .footer-grid {
