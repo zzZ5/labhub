@@ -1781,4 +1781,184 @@ onMounted(loadAll)
     max-height: 420px;
   }
 }
+
+@media (max-width: 720px) {
+  .cms-page {
+    gap: 10px;
+  }
+
+  .cms-heading {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .cms-heading h1 {
+    font-size: 21px;
+  }
+
+  .heading-actions,
+  .cms-stat-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .cms-stat-strip {
+    max-height: 78px;
+    overflow: auto;
+  }
+
+  .cms-stat-strip span,
+  .preview-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .cms-tabs {
+    border-radius: var(--radius-sm);
+    padding: 6px;
+  }
+
+  .cms-tabs :deep(.el-tabs__header) {
+    margin-bottom: 8px;
+  }
+
+  .cms-tabs :deep(.el-tabs__nav-scroll) {
+    overflow-x: auto;
+  }
+
+  .cms-tabs :deep(.el-tabs__nav) {
+    white-space: nowrap;
+  }
+
+  .editor-grid,
+  .editor-single {
+    gap: 10px;
+  }
+
+  .list-panel,
+  .form-panel {
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+
+  .list-panel {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .list-panel :deep(.list-toolbar) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    min-height: 0;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+
+  .list-panel :deep(.list-toolbar strong) {
+    font-size: 17px;
+  }
+
+  .list-panel :deep(.list-toolbar .el-button) {
+    width: 100%;
+    min-height: 36px;
+  }
+
+  .list-panel :deep(.list-search) {
+    min-height: 38px;
+    margin-bottom: 10px;
+  }
+
+  .list-panel :deep(.content-list-scroll) {
+    max-height: 48vh;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .list-panel :deep(.content-row) {
+    margin-bottom: 8px;
+    padding: 10px 11px;
+  }
+
+  .list-panel :deep(.content-row strong),
+  .list-panel :deep(.content-row span) {
+    white-space: normal;
+  }
+
+  .list-panel :deep(.content-row strong) {
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .list-panel :deep(.content-row span) {
+    display: -webkit-box;
+    margin-top: 5px;
+    overflow: hidden;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .list-panel :deep(.list-pager) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+  }
+
+  .list-panel :deep(.list-pager button) {
+    min-height: 34px;
+    padding: 0 8px;
+  }
+
+  .list-panel :deep(.list-pager span) {
+    align-self: center;
+    white-space: nowrap;
+  }
+
+  .import-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .import-strip span {
+    white-space: normal;
+  }
+
+  .import-strip input,
+  .import-strip a {
+    width: 100%;
+    flex: none;
+  }
+
+  .form-heading {
+    display: grid;
+    gap: 8px;
+  }
+
+  .form-heading h2 {
+    font-size: 18px;
+  }
+
+  .form-actions {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr;
+    margin: 14px 0 0;
+    padding: 12px 0 0;
+  }
+
+  .form-actions :deep(.el-button) {
+    width: 100%;
+    margin: 0;
+  }
+}
 </style>
