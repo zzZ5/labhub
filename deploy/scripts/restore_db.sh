@@ -3,6 +3,12 @@ set -euo pipefail
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 if [ $# -ne 1 ]; then
   echo "Usage: bash deploy/scripts/restore_db.sh path/to/backup.sql"
   exit 1

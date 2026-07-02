@@ -25,7 +25,7 @@ Open:
 ## Production
 
 ```bash
-cp .env.example .env
+cp .env.production.example .env
 # edit .env before production use
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec backend python manage.py migrate
@@ -38,6 +38,8 @@ Or run:
 ```bash
 bash deploy/scripts/init.sh
 ```
+
+For a simple GitHub-based server deployment, see `docs/github-deploy.md`.
 
 ## Common Commands
 

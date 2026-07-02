@@ -4,10 +4,14 @@ set -euo pipefail
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
 if [ ! -f .env ]; then
-  echo ".env not found. Copying .env.example to .env."
-  cp .env.example .env
+  echo ".env not found. Copying .env.production.example to .env."
+  cp .env.production.example .env
   echo "Edit .env before using this script in production."
 fi
+
+set -a
+. ./.env
+set +a
 
 docker compose -f "$COMPOSE_FILE" build
 docker compose -f "$COMPOSE_FILE" up -d db redis

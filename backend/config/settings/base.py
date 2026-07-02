@@ -7,6 +7,7 @@ ROOT_DIR = BASE_DIR.parent
 
 env = environ.Env(
     DJANGO_DEBUG=(bool, False),
+    DJANGO_SECURE_COOKIES=(bool, False),
     POSTGRES_PORT=(int, 5432),
 )
 environ.Env.read_env(ROOT_DIR / ".env")
