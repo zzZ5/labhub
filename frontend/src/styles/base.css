@@ -190,4 +190,99 @@ a {
   body {
     min-width: 0;
   }
+
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+    margin: 12px auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 14px 16px;
+  }
+
+  .el-dialog__body {
+    max-height: calc(100vh - 150px);
+    overflow: auto;
+    padding: 16px;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px 14px;
+  }
+
+  .el-tabs__nav-scroll {
+    overflow-x: auto;
+  }
+
+  .el-tabs__nav {
+    white-space: nowrap;
+  }
+
+  .el-form-item {
+    margin-bottom: 14px;
+  }
+
+  .el-select,
+  .el-date-editor,
+  .el-input-number {
+    width: 100% !important;
+  }
+
+  .el-table {
+    font-size: 13px;
+  }
+
+  .dashboard-hero,
+  .library-hero,
+  .instrument-hero,
+  .surface-heading,
+  .cms-heading {
+    padding: 16px !important;
+  }
+
+  .dashboard-hero h1,
+  .library-hero h1,
+  .surface-heading h1,
+  .cms-heading h1 {
+    font-size: 22px !important;
+    line-height: 1.25;
+  }
+
+  .dashboard-stats,
+  .instrument-stats,
+  .stats-grid,
+  .library-hero dl {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .editor-grid,
+  .editor-single,
+  .form-two-col,
+  .filter-bar,
+  .instrument-toolbar,
+  .students-layout,
+  .archive-layout,
+  .member-admin-grid,
+  .account-form-grid,
+  .filters,
+  .gallery-upload {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cms-tabs {
+    padding: 8px !important;
+  }
+
+  .card,
+  .surface-card {
+    border-radius: 10px;
+  }
+
+  .form-actions {
+    position: static !important;
+    margin: 14px 0 0 !important;
+    padding: 12px 0 0 !important;
+  }
 }
