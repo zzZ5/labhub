@@ -47,6 +47,7 @@ For a simple GitHub-based server deployment, see `docs/github-deploy.md`.
 docker compose -f docker-compose.prod.yml logs -f backend
 docker compose -f docker-compose.prod.yml logs -f nginx
 docker compose -f docker-compose.prod.yml logs -f celery_worker
+bash deploy/scripts/restart.sh
 bash deploy/scripts/deploy.sh
 bash deploy/scripts/backup_db.sh
 bash deploy/scripts/backup_media.sh

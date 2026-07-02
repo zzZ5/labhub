@@ -88,7 +88,16 @@ cd /opt/labhub
 bash deploy/scripts/deploy.sh
 ```
 
-## 6. 常用命令
+## 6. 只重启服务
+
+如果只是修改了 `.env`，或想手动重启生产服务：
+
+```bash
+cd /srv/labhub
+bash deploy/scripts/restart.sh
+```
+
+## 7. 常用命令
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
