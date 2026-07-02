@@ -17,18 +17,12 @@
       </div>
     </section>
     <section class="page-section intro-section">
-      <div class="container intro-grid">
+      <div class="container intro-grid intro-single">
         <SectionHeader
           kicker="课题组简介"
           :title="introTitle"
           :description="introDescription"
         />
-        <div class="intro-facts">
-          <div v-for="item in facts" :key="item.label">
-            <strong>{{ item.value }}</strong>
-            <span>{{ item.label }}</span>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -55,8 +49,8 @@
     <section class="page-section publication-section">
       <div class="container publication-grid">
         <div>
-          <SectionHeader kicker="科研成果" title="近期进展" description="论文、项目、专利和获奖成果统一纳入门户展示，首页按门户内容排序展示近期代表进展。" />
-          <div class="stats-row">
+          <SectionHeader kicker="科研成果" title="科研进展" description="展示课题组近期公开发表和授权、立项、获奖等成果动态；完整论文、项目、专利与获奖信息可进入科研成果页查看。" />
+          <div class="stats-row compact-stats">
             <div v-for="item in displayStats" :key="item.label">
               <strong>{{ item.value }}</strong>
               <span>{{ item.label }}</span>
@@ -80,13 +74,17 @@
 
     <section class="page-section team-section">
       <div class="container">
-        <SectionHeader kicker="团队成员" title="团队成员" description="课题组由导师、博士研究生、硕士研究生和毕业学生共同组成，围绕资源环境与生态过程开展协同研究。" />
+        <SectionHeader kicker="团队成员" title="团队成员" description="团队围绕农业有机废弃物资源化、堆肥微生物过程与生态环境效应开展研究，长期欢迎具有生态学、环境科学、农学和微生物学背景的同学加入交流。" />
         <div class="member-grid">
           <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
             <img :src="member.avatar" :alt="member.name" />
-            <h3>{{ member.name }}</h3>
-            <span class="status-tag normal">{{ member.role }}</span>
-            <p>{{ member.focus }}</p>
+            <div class="member-info">
+              <div class="member-title-row">
+                <h3>{{ member.name }}</h3>
+                <span class="status-tag normal">{{ member.role }}</span>
+              </div>
+              <p>{{ member.focus }}</p>
+            </div>
           </RouterLink>
         </div>
         <div v-if="!displayMembers.length" class="empty-inline">暂无公开团队成员。</div>
@@ -205,11 +203,22 @@ const heroBackgroundStyle = computed(() => {
   }
 })
 
-const facts = computed(() => [
-  { value: `${apiResearchDirections.value.length}`, label: '研究方向' },
-  { value: apiStats.value ? `${apiStats.value.publications}` : '论文', label: '论文成果' },
-  { value: apiStats.value ? `${apiStats.value.projects + apiStats.value.patents}` : '项目/专利', label: '项目与专利' },
-])
+const displayStats = computed(() => {
+  if (!apiStats.value) {
+    return [
+      { value: '0', label: '论文' },
+      { value: '0', label: '项目' },
+      { value: '0', label: '专利' },
+      { value: '0', label: '获奖' },
+    ]
+  }
+  return [
+    { value: `${apiStats.value.publications}`, label: '论文' },
+    { value: `${apiStats.value.projects}`, label: '项目' },
+    { value: `${apiStats.value.patents}`, label: '专利' },
+    { value: `${apiStats.value.awards}`, label: '获奖' },
+  ]
+})
 
 const displayResearchDirections = computed(() => {
   if (!apiResearchDirections.value.length) return []
@@ -234,21 +243,6 @@ function splitKeywords(value?: string) {
     .map((item) => item.trim())
     .filter(Boolean)
 }
-
-const displayStats = computed(() => {
-  if (!apiStats.value) {
-    return [
-      { value: '0', label: '公开论文' },
-      { value: '0', label: '科研项目' },
-      { value: '0', label: '专利成果' },
-    ]
-  }
-  return [
-    { value: `${apiStats.value.publications}`, label: '公开论文' },
-    { value: `${apiStats.value.projects}`, label: '科研项目' },
-    { value: `${apiStats.value.patents}`, label: '专利成果' },
-  ]
-})
 
 function dateRank(value?: string | null, fallback = 0) {
   if (!value) return fallback
@@ -329,12 +323,16 @@ const displayAchievements = computed(() => {
 const displayMembers = computed(() => {
   return apiMembers.value.slice(0, 4).map((member) => ({
     name: member.name,
-    role: member.role_label,
+    role: memberIdentity(member),
     focus: member.research_direction || '农业生态环境过程',
     avatar: member.avatar || '/site-icon.png',
     to: `/team/${member.id}`,
   }))
 })
+
+function memberIdentity(member: Member) {
+  return member.role_label || member.role_type || '团队成员'
+}
 
 const displayNews = computed(() => {
   return apiNews.value.slice(0, 3).map((item) => ({
@@ -490,8 +488,12 @@ onMounted(async () => {
 }
 
 .intro-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.48fr);
-  gap: 52px;
+  grid-template-columns: minmax(0, 820px);
+  gap: 0;
+}
+
+.intro-single {
+  justify-content: start;
 }
 
 .publication-section,
@@ -533,20 +535,17 @@ onMounted(async () => {
   color: var(--color-cau-green);
 }
 
-.intro-facts,
 .stats-row {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  border-top: 1px solid var(--color-border);
 }
 
 .stats-row {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-top-color: rgba(31, 61, 43, 0.14);
 }
 
-.intro-facts div,
 .stats-row div {
   border-left: 0;
   border-bottom: 1px solid var(--color-border);
@@ -560,7 +559,15 @@ onMounted(async () => {
   padding: 12px 0 12px 18px;
 }
 
-.intro-facts strong,
+.compact-stats {
+  max-width: 520px;
+  margin-top: 22px;
+}
+
+.compact-stats div {
+  padding: 8px 0 8px 14px;
+}
+
 .stats-row strong {
   display: block;
   color: var(--color-cau-green);
@@ -569,18 +576,13 @@ onMounted(async () => {
   line-height: 1;
 }
 
-.intro-facts strong {
-  color: var(--color-cau-green);
+.compact-stats strong {
+  font-size: 24px;
 }
 
-.intro-facts span,
 .stats-row span {
   color: var(--color-muted);
   font-size: 14px;
-}
-
-.intro-facts span {
-  color: var(--color-muted);
 }
 
 .research-section,
@@ -772,19 +774,47 @@ onMounted(async () => {
 
 .member-card {
   display: grid;
-  grid-template-columns: 58px 1fr;
-  gap: 15px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: #fff;
 }
 
 .member-card img {
-  width: 58px;
-  height: 58px;
+  width: 64px;
+  height: 64px;
   border: 1px solid var(--color-line);
   border-radius: 16px;
   object-fit: cover;
+}
+
+.member-info {
+  min-width: 0;
+}
+
+.member-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.member-title-row h3 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-title-row .status-tag {
+  min-height: 24px;
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .member-card p {
@@ -967,13 +997,23 @@ onMounted(async () => {
   .research-grid,
   .news-grid,
   .member-grid,
-  .intro-facts,
   .stats-row {
     grid-template-columns: 1fr;
   }
 
   .member-card {
-    grid-template-columns: 56px 1fr;
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .member-card img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .member-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .join-card {

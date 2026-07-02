@@ -15,7 +15,6 @@ class MemberExperienceInline(admin.TabularInline):
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ("name", "role_type", "grade", "research_direction", "is_public", "sort_order")
-    list_filter = ("role_type", "is_public")
+    list_display = ("name", "role_type", "research_direction", "sort_order")
     search_fields = ("name", "name_en", "research_direction", "email")
     inlines = [MemberEducationInline, MemberExperienceInline]

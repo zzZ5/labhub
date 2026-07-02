@@ -11,7 +11,7 @@
       <div class="container">
         <div class="team-filter card">
           <el-input v-model="keyword" clearable placeholder="搜索姓名、研究方向、邮箱" />
-          <el-select v-model="roleFilter" clearable placeholder="成员类型">
+          <el-select v-model="roleFilter" clearable placeholder="身份头衔">
             <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
           </el-select>
           <span>{{ filteredMembers.length }} / {{ displayMembers.length }} 人</span>
@@ -21,7 +21,7 @@
             <img :src="member.avatar" :alt="member.name" />
             <div>
               <h2>{{ member.name }}</h2>
-              <span class="status-tag normal">{{ member.role_label }}</span>
+              <span class="status-tag normal">{{ member.role_label || '团队成员' }}</span>
               <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
               <small v-if="member.email">{{ member.email }}</small>
             </div>
@@ -57,15 +57,16 @@ const displayMembers = computed(() => members.value.map((member) => ({
 const roleOptions = computed(() => {
   const map = new Map<string, string>()
   displayMembers.value.forEach((member) => {
-    map.set(member.role_type || member.role_label, member.role_label)
+    const title = member.role_label || member.role_type || '团队成员'
+    map.set(title, title)
   })
   return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
 })
 const filteredMembers = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return displayMembers.value.filter((member) => {
-    const roleKey = member.role_type || member.role_label
-    const haystack = `${member.name} ${member.role_label} ${member.research_direction} ${member.profile} ${member.email}`.toLowerCase()
+    const roleKey = member.role_label || member.role_type || '团队成员'
+    const haystack = `${member.name} ${roleKey} ${member.research_direction} ${member.profile} ${member.email}`.toLowerCase()
     return (!roleFilter.value || roleKey === roleFilter.value) && (!q || haystack.includes(q))
   })
 })

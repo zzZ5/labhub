@@ -51,6 +51,7 @@ export interface Member {
   join_date?: string | null
   graduation_date?: string | null
   destination?: string
+  sort_order?: number
   educations?: { school: string; degree: string; major: string; start_date: string | null; end_date: string | null; description: string }[]
   experiences?: { organization: string; position: string; start_date: string | null; end_date: string | null; description: string }[]
 }

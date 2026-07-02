@@ -1,6 +1,6 @@
 import { http } from './http'
 import type { Instrument } from './instruments'
-import type { Award, ContactInfo, Member, NewsArticle, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
+import type { Award, ContactInfo, Member, NewsArticle, NewsCategory, PaginatedResult, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
 
 export interface InstrumentCategory {
   id: number
@@ -26,8 +26,8 @@ export type CmsResource =
   | 'instruments'
 
 async function list<T>(resource: CmsResource) {
-  const response = await http.get<T[]>(`/cms/${resource}/`)
-  return response.data
+  const response = await http.get<T[] | PaginatedResult<T>>(`/cms/${resource}/`)
+  return Array.isArray(response.data) ? response.data : response.data.results
 }
 
 function toRequestBody(payload: Record<string, unknown>) {

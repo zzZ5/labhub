@@ -18,7 +18,20 @@ class MemberExperienceSerializer(serializers.ModelSerializer):
 class MemberSerializer(serializers.ModelSerializer):
     educations = MemberEducationSerializer(many=True, read_only=True)
     experiences = MemberExperienceSerializer(many=True, read_only=True)
-    role_label = serializers.CharField(source="get_role_type_display", read_only=True)
+    role_label = serializers.SerializerMethodField()
+
+    def get_role_label(self, obj):
+        legacy_labels = {
+            "PI": "硕博导师",
+            "teacher": "教师",
+            "postdoc": "博士后",
+            "phd": "博士生",
+            "master": "硕士生",
+            "undergraduate": "本科生",
+            "alumni": "已毕业学生",
+            "visitor": "访问学生",
+        }
+        return legacy_labels.get(obj.role_type, obj.role_type or "团队成员")
 
     class Meta:
         model = Member

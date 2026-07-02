@@ -2,20 +2,10 @@ from django.db import models
 
 
 class Member(models.Model):
-    class RoleType(models.TextChoices):
-        PI = "PI", "硕博导师"
-        TEACHER = "teacher", "教师"
-        POSTDOC = "postdoc", "博士后"
-        PHD = "phd", "博士生"
-        MASTER = "master", "硕士生"
-        UNDERGRADUATE = "undergraduate", "本科生"
-        ALUMNI = "alumni", "已毕业学生"
-        VISITOR = "visitor", "访问学生"
-
     name = models.CharField("姓名", max_length=80)
     name_en = models.CharField("英文名", max_length=120, blank=True)
     avatar = models.ImageField("头像", upload_to="members/avatars/", blank=True)
-    role_type = models.CharField("成员类型", max_length=32, choices=RoleType.choices)
+    role_type = models.CharField("身份头衔", max_length=120, blank=True, default="")
     grade = models.CharField("年级", max_length=40, blank=True)
     research_direction = models.CharField("研究方向", max_length=200, blank=True)
     email = models.EmailField("邮箱", blank=True)
@@ -31,7 +21,7 @@ class Member(models.Model):
     class Meta:
         verbose_name = "成员"
         verbose_name_plural = "成员"
-        ordering = ["sort_order", "role_type", "name"]
+        ordering = ["sort_order", "name"]
 
     def __str__(self) -> str:
         return self.name

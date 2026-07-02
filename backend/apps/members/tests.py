@@ -6,8 +6,8 @@ from .models import Member
 
 @pytest.mark.django_db
 def test_public_members_only(client):
-    Member.objects.create(name="公开成员", role_type=Member.RoleType.PHD, is_public=True)
-    Member.objects.create(name="隐藏成员", role_type=Member.RoleType.MASTER, is_public=False)
+    Member.objects.create(name="公开成员", role_type="博士研究生", sort_order=1)
+    Member.objects.create(name="隐藏成员", role_type="硕士研究生", sort_order=0)
 
     response = client.get(reverse("public-member-list"))
 

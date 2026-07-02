@@ -10,4 +10,4 @@ class MemberViewSet(ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Member.objects.filter(is_public=True).prefetch_related("educations", "experiences")
+        return Member.objects.filter(sort_order__gt=0).order_by("sort_order", "name").prefetch_related("educations", "experiences")

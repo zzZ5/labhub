@@ -6,7 +6,7 @@
         <div>
           <p class="section-kicker">团队成员</p>
           <h1>{{ member?.name || '团队成员' }}</h1>
-          <span class="status-tag normal">{{ member?.role_label || '成员' }}</span>
+          <span class="status-tag normal">{{ member?.role_label || '团队成员' }}</span>
           <p>{{ member?.research_direction || member?.profile || '研究方向待补充。' }}</p>
         </div>
       </div>
@@ -49,7 +49,7 @@
         <aside class="card side-card">
           <dl>
             <div>
-              <dt>成员类型</dt>
+              <dt>身份头衔</dt>
               <dd>{{ member?.role_label || '-' }}</dd>
             </div>
             <div>

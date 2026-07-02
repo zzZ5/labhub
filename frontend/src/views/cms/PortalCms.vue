@@ -114,17 +114,8 @@
               <el-form label-position="top">
                 <el-form-item label="姓名"><el-input v-model="memberForm.name" /></el-form-item>
                 <div class="form-two-col">
-                  <el-form-item label="成员类型">
-                    <el-select v-model="memberForm.role_type">
-                      <el-option label="硕博导师" value="PI" />
-                      <el-option label="教师" value="teacher" />
-                      <el-option label="博士后" value="postdoc" />
-                      <el-option label="博士生" value="phd" />
-                      <el-option label="硕士生" value="master" />
-                      <el-option label="本科生" value="undergraduate" />
-                      <el-option label="已毕业学生" value="alumni" />
-                      <el-option label="访问学生" value="visitor" />
-                    </el-select>
+                  <el-form-item label="身份头衔">
+                    <el-input v-model="memberForm.role_type" placeholder="如：副教授 / 博士生导师、博士研究生、硕士研究生" />
                   </el-form-item>
                   <el-form-item label="邮箱"><el-input v-model="memberForm.email" /></el-form-item>
                 </div>
@@ -134,10 +125,10 @@
                   <small v-if="editingMemberAvatar">当前头像：{{ editingMemberAvatar }}</small>
                 </el-form-item>
                 <el-form-item label="简介"><el-input v-model="memberForm.profile" type="textarea" :rows="4" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="排序"><el-input-number v-model="memberForm.sort_order" :min="0" /></el-form-item>
-                  <el-form-item label="公开展示"><el-switch v-model="memberForm.is_public" /></el-form-item>
-                </div>
+                <el-form-item label="展示排序">
+                  <el-input-number v-model="memberForm.sort_order" :min="0" />
+                  <small>0 表示不在公开网站展示；大于 0 时按数字从小到大排序。</small>
+                </el-form-item>
               </el-form>
               <FormActions :saving="saving" :deletable="Boolean(editingMemberId)" @save="saveMember" @delete="deleteMember" />
             </article>
@@ -535,13 +526,12 @@ const contactForm = reactive<CmsForm>({
 })
 const memberForm = reactive<CmsForm>({
   name: '',
-  role_type: 'master',
+  role_type: '',
   research_direction: '',
   email: '',
   avatar: undefined,
   profile: '',
   sort_order: 0,
-  is_public: true,
 })
 const newsForm = reactive<CmsForm>({
   title: '',
@@ -614,7 +604,7 @@ const memberRows = computed<Row<Member>[]>(() =>
   memberItems.value.map((item) => ({
     key: item.id,
     title: item.name,
-    meta: `${roleText(item.role_type)} · ${item.research_direction || '研究方向待补充'}`,
+    meta: `${item.sort_order ? `排序 ${item.sort_order}` : '不展示'} · ${roleText(item.role_type) || '身份头衔待补充'} · ${item.research_direction || '研究方向待补充'}`,
     source: item,
   })),
 )
@@ -650,7 +640,7 @@ const cmsOverview = computed(() => [
 ])
 
 async function loadAll() {
-  const [settings, contacts, research, members, categories, news, publications, projects, patents, awards] = await Promise.all([
+  const [settings, contacts, research, members, categories, news, publications, projects, patents, awards] = await Promise.allSettled([
     cmsApi.listSiteSettings(),
     cmsApi.listContactInfo(),
     cmsApi.listResearch(),
@@ -662,17 +652,27 @@ async function loadAll() {
     cmsApi.listPatents(),
     cmsApi.listAwards(),
   ])
-  siteSettings.value = settings
-  contactInfoItems.value = contacts
-  fillSiteForms(settings[0], contacts[0])
-  researchItems.value = research
-  memberItems.value = members
-  newsCategories.value = categories
-  newsItems.value = news
-  publicationItems.value = publications
-  projectItems.value = projects
-  patentItems.value = patents
-  awardItems.value = awards
+  const settingsValue = resultValue(settings, siteSettings.value)
+  const contactsValue = resultValue(contacts, contactInfoItems.value)
+  siteSettings.value = settingsValue
+  contactInfoItems.value = contactsValue
+  fillSiteForms(settingsValue[0], contactsValue[0])
+  researchItems.value = resultValue(research, researchItems.value)
+  memberItems.value = resultValue(members, memberItems.value)
+  newsCategories.value = resultValue(categories, newsCategories.value)
+  newsItems.value = resultValue(news, newsItems.value)
+  publicationItems.value = resultValue(publications, publicationItems.value)
+  projectItems.value = resultValue(projects, projectItems.value)
+  patentItems.value = resultValue(patents, patentItems.value)
+  awardItems.value = resultValue(awards, awardItems.value)
+
+  if ([settings, contacts, research, members, categories, news, publications, projects, patents, awards].some((item) => item.status === 'rejected')) {
+    ElMessage.warning('部分门户内容加载失败，请刷新或检查当前账号是否有门户编辑权限。')
+  }
+}
+
+function resultValue<T>(result: PromiseSettledResult<T[]>, fallback: T[]) {
+  return result.status === 'fulfilled' ? result.value : fallback
 }
 
 function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
@@ -754,13 +754,12 @@ function resetMember() {
   editingMemberAvatar.value = ''
   Object.assign(memberForm, {
     name: '',
-    role_type: 'master',
+    role_type: '',
     research_direction: '',
     email: '',
     avatar: undefined,
     profile: '',
     sort_order: 0,
-    is_public: true,
   })
 }
 
@@ -769,13 +768,12 @@ function editMember(item: Member) {
   editingMemberAvatar.value = item.avatar || ''
   Object.assign(memberForm, {
     name: item.name,
-    role_type: item.role_type || 'master',
+    role_type: item.role_label || item.role_type || '',
     research_direction: item.research_direction || '',
     email: item.email || '',
     avatar: undefined,
     profile: item.profile || '',
     sort_order: (item as Member & { sort_order?: number }).sort_order || 0,
-    is_public: true,
   })
 }
 
