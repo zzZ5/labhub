@@ -17,6 +17,10 @@
 
     <section class="internal-main">
       <header class="internal-topbar">
+        <button class="mobile-menu-button" type="button" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen">
+          <span></span>
+          菜单
+        </button>
         <div class="topbar-title">
           <small>中国农业大学资源与环境学院生态系</small>
           <strong>{{ title }}</strong>
@@ -28,8 +32,8 @@
         </div>
       </header>
 
-      <nav class="mobile-menu" aria-label="移动端内部平台导航">
-        <RouterLink v-for="item in menu" :key="item.path" :to="item.path">
+      <nav class="mobile-menu" :class="{ open: menuOpen }" aria-label="移动端内部平台导航">
+        <RouterLink v-for="item in menu" :key="item.path" :to="item.path" @click="menuOpen = false">
           <component :is="item.icon" />
           <span>{{ item.label }}</span>
         </RouterLink>
@@ -43,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, UserFilled } from '@element-plus/icons-vue'
 
@@ -53,6 +57,7 @@ defineProps<{
   title: string
 }>()
 
+const menuOpen = ref(false)
 const menu = [
   { label: '工作台', path: '/dashboard', icon: Odometer },
   { label: '内部资料', path: '/documents', icon: Files },
@@ -184,7 +189,7 @@ async function handleLogout() {
 .internal-topbar {
   position: sticky;
   top: 0;
-  z-index: 8;
+  z-index: 9;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -239,12 +244,35 @@ async function handleLogout() {
   white-space: nowrap;
 }
 
-.login-link {
+.login-link,
+.mobile-menu-button {
   border: 1px solid var(--color-cau-green);
   border-radius: var(--radius-sm);
-  padding: 7px 14px;
+  background: #fff;
   color: var(--color-cau-green);
   font-weight: 600;
+}
+
+.login-link {
+  padding: 7px 14px;
+}
+
+.mobile-menu-button {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 11px;
+}
+
+.mobile-menu-button span {
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow:
+    0 -5px 0 currentColor,
+    0 5px 0 currentColor;
 }
 
 .mobile-menu {
@@ -267,8 +295,13 @@ async function handleLogout() {
 
   .internal-topbar {
     min-height: 62px;
-    gap: 12px;
-    padding: 9px 14px;
+    gap: 8px;
+    padding: 9px 12px;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+    flex: 0 0 auto;
   }
 
   .internal-topbar small {
@@ -276,7 +309,7 @@ async function handleLogout() {
   }
 
   .internal-topbar strong {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .topbar-actions {
@@ -284,7 +317,7 @@ async function handleLogout() {
   }
 
   .user-chip {
-    max-width: 112px;
+    max-width: 96px;
     padding: 5px 9px;
     font-size: 12px;
   }
@@ -297,24 +330,23 @@ async function handleLogout() {
   .mobile-menu {
     position: sticky;
     top: 62px;
-    z-index: 7;
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
+    z-index: 8;
     border-bottom: 1px solid var(--color-border);
-    padding: 8px 12px;
+    padding: 8px 12px 10px;
     background: rgba(255, 255, 255, 0.98);
-    scrollbar-width: none;
+    box-shadow: 0 8px 18px rgba(31, 61, 43, 0.08);
   }
 
-  .mobile-menu::-webkit-scrollbar {
-    display: none;
+  .mobile-menu.open {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .mobile-menu a {
-    flex: 0 0 auto;
-    min-height: 36px;
-    padding: 0 11px;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 9px;
     white-space: nowrap;
   }
 
@@ -331,6 +363,10 @@ async function handleLogout() {
 @media (max-width: 420px) {
   .user-chip {
     display: none;
+  }
+
+  .mobile-menu.open {
+    grid-template-columns: 1fr;
   }
 }
 </style>

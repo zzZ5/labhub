@@ -197,6 +197,15 @@ a {
     margin: 12px auto !important;
   }
 
+  .el-drawer {
+    width: min(100vw, 420px) !important;
+  }
+
+  .el-message-box {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px);
+  }
+
   .el-dialog__header {
     padding: 14px 16px;
   }
@@ -230,7 +239,14 @@ a {
   }
 
   .el-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
     font-size: 13px;
+  }
+
+  .el-table__inner-wrapper {
+    min-width: 640px;
   }
 
   .dashboard-hero,
@@ -284,5 +300,163 @@ a {
     position: static !important;
     margin: 14px 0 0 !important;
     padding: 12px 0 0 !important;
+  }
+
+  .internal-content,
+  .internal-content > *,
+  .internal-content .card,
+  .internal-content .surface-card {
+    min-width: 0;
+  }
+
+  .student-workspace,
+  .document-shell,
+  .document-shell.is-reading,
+  .member-grid,
+  .account-row-card,
+  .review-card,
+  .instrument-grid,
+  .content-grid,
+  .document-grid,
+  .reader-meta,
+  .profile-list,
+  .account-grid,
+  .form-pair,
+  .permission-summary,
+  .status-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .student-list,
+  .edit-panel,
+  .category-tree {
+    position: static !important;
+    top: auto !important;
+    max-height: none !important;
+  }
+
+  .student-list,
+  .profile-card,
+  .files-panel,
+  .edit-panel,
+  .category-tree,
+  .filter-bar,
+  .document-card,
+  .embedded-reader,
+  .panel,
+  .stat-card {
+    padding: 14px !important;
+  }
+
+  .student-heading,
+  .member-heading,
+  .page-heading,
+  .panel-heading,
+  .side-heading,
+  .profile-heading,
+  .profile-actions,
+  .account-toolbar,
+  .reader-heading,
+  .document-card footer,
+  .instrument-title,
+  .instrument-actions,
+  .heading-actions,
+  .action-row,
+  .assign-cell,
+  .identity-cell {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    justify-content: start !important;
+  }
+
+  .filters,
+  .account-actions,
+  .file-actions,
+  .document-actions,
+  .reader-actions {
+    display: flex !important;
+    flex-wrap: wrap;
+    justify-content: flex-start !important;
+  }
+
+  .filters .el-input,
+  .filters .el-select,
+  .identity-cell .el-select,
+  .assign-cell .el-select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .student-list-tools {
+    grid-template-columns: 1fr !important;
+  }
+
+  .file-card {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  .file-actions {
+    grid-column: 1 / -1;
+  }
+
+  .file-primary-action,
+  .file-secondary-action,
+  .file-preview-note,
+  .document-actions .el-button,
+  .account-actions .el-button,
+  .reader-actions .el-button {
+    flex: 1 1 120px;
+  }
+
+  .document-card,
+  .instrument-card {
+    min-height: 0 !important;
+  }
+
+  .document-card dl div,
+  .instrument-card dl div {
+    grid-template-columns: 1fr !important;
+    gap: 2px !important;
+  }
+
+  .document-card footer,
+  .instrument-actions {
+    gap: 10px !important;
+  }
+
+  .document-reader iframe {
+    min-height: 56vh !important;
+  }
+
+  .reader-meta {
+    gap: 8px !important;
+  }
+
+  .cms-heading,
+  .heading-actions,
+  .cms-stat-strip {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: stretch !important;
+  }
+
+  .cms-stat-strip {
+    max-height: 86px;
+    overflow: auto;
+  }
+
+  .import-strip {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .list-panel {
+    max-height: none !important;
+  }
+
+  .list-panel .content-list-scroll {
+    max-height: 300px;
   }
 }
