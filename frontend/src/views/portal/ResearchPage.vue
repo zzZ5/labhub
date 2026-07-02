@@ -18,6 +18,9 @@
           </div>
         </RouterLink>
       </div>
+      <div v-if="!displayDirections.length" class="container">
+        <div class="card empty-panel">暂无公开研究方向，请在内部平台“门户内容”中维护。</div>
+      </div>
     </section>
   </PortalLayout>
 </template>
@@ -30,21 +33,12 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const directions = ref<ResearchDirection[]>([])
 
-const fallback = [
-  { title: '微生物生态', summary: '解析有机废弃物转化、土壤生态过程中的关键微生物群落与功能机制。' },
-  { title: '有机废弃物资源转化', summary: '面向农业和食品加工废弃物，研究低碳转化、稳定化和资源化利用路径。' },
-  { title: '高值产品开发', summary: '围绕有机肥、水溶肥和生态产品，推进从工艺优化到应用评价的转化研究。' },
-  { title: '堆肥腐殖化调控', summary: '研究堆肥过程中腐殖酸形成、臭气减排和品质提升的过程调控机制。' },
-  { title: '养分循环与土壤健康', summary: '评价有机物料还田、养分循环利用及其对土壤生态功能的影响。' },
-  { title: '农业低碳生态转化', summary: '服务农业废弃物低碳处理和绿色农业场景，探索可推广的技术模式。' },
-]
-
 const displayDirections = computed(() =>
-  (directions.value.length ? directions.value : fallback).map((item: any, index) => ({
+  directions.value.map((item, index) => ({
     index: `0${index + 1}`,
     title: item.title,
     summary: item.summary,
-    to: item.slug ? `/research/${item.slug}` : '/research',
+    to: `/research/${item.slug}`,
     tags: ['农业生态', '资源循环', '环境过程'],
   })),
 )
@@ -120,6 +114,12 @@ onMounted(async () => {
   padding: 22px;
   color: inherit;
   text-decoration: none;
+  box-shadow: none;
+}
+
+.empty-panel {
+  padding: 28px;
+  color: var(--color-muted);
   box-shadow: none;
 }
 

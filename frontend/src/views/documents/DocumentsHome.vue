@@ -153,7 +153,7 @@
     <el-dialog v-model="uploadVisible" title="上传内部资料" width="560px">
       <el-form label-position="top">
         <el-form-item label="资料标题">
-          <el-input v-model="uploadForm.title" placeholder="例如：堆肥反应器操作 SOP" />
+          <el-input v-model="uploadForm.title" placeholder="请输入资料标题" />
         </el-form-item>
         <el-form-item label="资料分类">
           <el-select v-model="uploadForm.category_id" clearable placeholder="选择分类">
@@ -226,43 +226,8 @@ const uploadForm = reactive({
   file: undefined as File | undefined,
 })
 
-const fallbackCategories = [
-  { id: 1, name: '组内制度与通知', slug: 'lab-policy', parent: null, description: '实验室制度、值日安排、通知公告与常用流程。', sort_order: 1, visibility: 'members' },
-  { id: 2, name: '实验室安全', slug: 'lab-safety', parent: null, description: '安全培训、危险源提示、废弃物处置与应急流程。', sort_order: 2, visibility: 'members' },
-  { id: 3, name: '实验方法与 SOP', slug: 'sop', parent: null, description: '仪器操作、样品前处理、实验步骤与质量控制。', sort_order: 3, visibility: 'members' },
-  { id: 4, name: '仪器设备资料', slug: 'instrument-docs', parent: null, description: '仪器说明书、维护记录、操作说明和配套软件。', sort_order: 4, visibility: 'members' },
-  { id: 5, name: '数据与代码规范', slug: 'data-code', parent: null, description: '数据模板、统计分析、绘图规范与代码归档要求。', sort_order: 5, visibility: 'members' },
-  { id: 6, name: '项目与经费材料', slug: 'project-admin', parent: null, description: '项目申报、过程管理、结题材料和经费相关模板。', sort_order: 6, visibility: 'members' },
-  { id: 7, name: '论文写作与投稿', slug: 'paper-writing', parent: null, description: '论文模板、投稿说明、图表规范与回复审稿材料。', sort_order: 7, visibility: 'members' },
-  { id: 8, name: '组会与学术交流', slug: 'seminars', parent: null, description: '组会汇报、文献分享、会议报告和讲座资料。', sort_order: 8, visibility: 'members' },
-  { id: 9, name: '学生资料模板', slug: 'student-templates', parent: null, description: '开题、中期、答辩、毕业归档等学生常用模板。', sort_order: 9, visibility: 'members' },
-  { id: 10, name: '行政表格与模板', slug: 'admin-forms', parent: null, description: '学院、学校和课题组常用行政表格。', sort_order: 10, visibility: 'members' },
-]
-
-const fallbackDocuments: LabDocument[] = [
-  {
-    id: 0,
-    title: '堆肥反应器操作 SOP',
-    category: fallbackCategories[0],
-    description: '包含开机检查、温度控制、通风参数、采样记录和安全注意事项。',
-    current_version: 'v1.3',
-    visibility: 'members',
-    visibility_label: '成员可见',
-    allow_download: true,
-    status: 'active',
-    status_label: '有效',
-    updated_at: '2026-06-20T00:00:00+08:00',
-    versions: [],
-    can_view: true,
-    can_preview: false,
-    can_download: false,
-    can_edit: false,
-    can_delete: false,
-  },
-]
-
-const displayCategories = computed(() => (categories.value.length ? categories.value : fallbackCategories))
-const displayDocuments = computed(() => (documents.value.length ? documents.value : fallbackDocuments))
+const displayCategories = computed(() => categories.value)
+const displayDocuments = computed(() => documents.value)
 const previewUrl = computed(() => (previewDocument.value ? previewDocumentUrl(previewDocument.value) : ''))
 const previewableCount = computed(() => displayDocuments.value.filter((doc) => doc.can_preview).length)
 const activeCategoryName = computed(() => {

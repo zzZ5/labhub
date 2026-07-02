@@ -27,6 +27,7 @@
             </div>
           </RouterLink>
         </div>
+        <div v-if="!filteredMembers.length" class="card empty-panel">暂无公开团队成员，请在内部平台“门户内容”中维护。</div>
         <div v-if="totalPages > 1" class="team-pager">
           <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
           <span>第 {{ page }} / {{ totalPages }} 页</span>
@@ -49,14 +50,7 @@ const roleFilter = ref('')
 const page = ref(1)
 const pageSize = 12
 
-const fallback = [
-  { name: '团队负责人', role_type: 'PI', role_label: '硕博导师', research_direction: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '博士研究生', role_type: 'phd', role_label: '博士生', research_direction: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '硕士研究生', role_type: 'master', role_label: '硕士生', research_direction: '参与有机肥产品开发、养分循环与土壤生态评价', profile: '', avatar: '/favicon.svg', email: '' },
-  { name: '毕业学生与合作成员', role_type: 'alumni', role_label: '团队网络', research_direction: '共同支撑资源利用、生态环境工程和农业应用场景研究', profile: '', avatar: '/favicon.svg', email: '' },
-]
-
-const displayMembers = computed(() => (members.value.length ? members.value : fallback).map((member: any) => ({
+const displayMembers = computed(() => members.value.map((member) => ({
   ...member,
   to: member.id ? `/team/${member.id}` : '/team',
 })))
@@ -225,6 +219,12 @@ watch(totalPages, (total) => {
 .team-pager button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.empty-panel {
+  padding: 28px;
+  color: var(--color-muted);
+  box-shadow: none;
 }
 
 @media (max-width: 980px) {

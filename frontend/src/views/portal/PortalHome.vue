@@ -73,6 +73,7 @@
               <span>查看详情</span>
             </div>
           </RouterLink>
+          <div v-if="!displayAchievements.length" class="empty-inline">暂无公开成果。</div>
           <RouterLink class="section-link compact" to="/publications">查看全部成果</RouterLink>
         </div>
       </div>
@@ -89,6 +90,7 @@
             <p>{{ member.focus }}</p>
           </RouterLink>
         </div>
+        <div v-if="!displayMembers.length" class="empty-inline">暂无公开团队成员。</div>
         <RouterLink class="section-link" to="/team">查看团队成员</RouterLink>
       </div>
     </section>
@@ -98,7 +100,8 @@
         <SectionHeader kicker="新闻活动" title="新闻活动" description="记录田间采样、学术交流、实验培训与组内科研动态。" />
         <div class="news-grid">
           <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
-            <img :src="item.image" :alt="item.title" />
+            <img v-if="item.image" :src="item.image" :alt="item.title" />
+            <div v-else class="news-image-placeholder">暂无封面</div>
             <div>
               <span>{{ item.date }} · {{ item.category }}</span>
               <h3>{{ item.title }}</h3>
@@ -106,6 +109,7 @@
             </div>
           </RouterLink>
         </div>
+        <div v-if="!displayNews.length" class="empty-inline">暂无新闻活动。</div>
         <RouterLink class="section-link" to="/news">查看新闻活动</RouterLink>
       </div>
     </section>
@@ -184,48 +188,22 @@ const introDescription = computed(() => siteSetting.value.footer_text || '中农
 const contactTitle = computed(() => contactInfo.value.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入')
 const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
 const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
-const defaultHeroImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1900&q=88'
 const heroBackgroundStyle = computed(() => {
-  const image = siteSetting.value.hero_image || defaultHeroImage
+  const layers = [
+    'linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%)',
+    'linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08))',
+  ]
+  if (siteSetting.value.hero_image) layers.push(`url("${siteSetting.value.hero_image}")`)
   return {
-    backgroundImage: [
-      'linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%)',
-      'linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08))',
-      `url("${image}")`,
-    ].join(', '),
+    backgroundImage: layers.join(', '),
   }
 })
 
 const facts = computed(() => [
-  { value: `${apiResearchDirections.value.length || 6}`, label: '研究方向' },
+  { value: `${apiResearchDirections.value.length}`, label: '研究方向' },
   { value: apiStats.value ? `${apiStats.value.publications}` : '论文', label: '论文成果' },
   { value: apiStats.value ? `${apiStats.value.projects + apiStats.value.patents}` : '项目/专利', label: '项目与专利' },
 ])
-
-const fallbackStats = [
-  { value: '论文', label: '研究成果持续积累' },
-  { value: '项目', label: '支撑团队稳定开展研究' },
-  { value: '专利', label: '推动技术转化与应用' },
-]
-
-const fallbackAchievements: HomeAchievement[] = [
-  { id: 0, type: 'paper', badge: '论文', title: 'Microbial Necromass Accelerates Humic Acid Formation by Reshaping DOM Transformation Pathways During Composting', source: 'Environmental Research · 2026', to: '/publications', sortOrder: 0, dateRank: 2026 },
-  { id: 1, type: 'project', badge: '项目', title: '农业有机废弃物资源化与生态环境过程调控相关项目', source: '科研项目 · 进行中', to: '/publications?tab=projects', sortOrder: 1, dateRank: 2025 },
-  { id: 2, type: 'patent', badge: '专利', title: '有机废弃物腐殖化调控与资源化利用相关技术成果', source: '专利成果 · 技术转化', to: '/publications?tab=patents', sortOrder: 2, dateRank: 2025 },
-]
-
-const fallbackMembers = [
-  { name: '团队负责人', role: '硕博导师', focus: '统筹微生物生态、有机废弃物资源转化与高值产品开发方向', avatar: '/favicon.svg', to: '/team' },
-  { name: '博士研究生', role: '博士生', focus: '围绕功能微生物、堆肥腐殖化与低碳转化机制开展研究', avatar: '/favicon.svg', to: '/team' },
-  { name: '硕士研究生', role: '硕士生', focus: '参与有机肥产品开发、养分循环与土壤生态评价', avatar: '/favicon.svg', to: '/team' },
-  { name: '毕业学生与合作成员', role: '团队网络', focus: '共同支撑资源利用、生态环境工程和农业应用场景研究', avatar: '/favicon.svg', to: '/team' },
-]
-
-const fallbackNews = [
-  { slug: 'field-sampling', date: '2026-06-18', category: '田间试验', title: '课题组完成夏季堆肥产品田间施用试验采样', summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。', image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80' },
-  { slug: 'seminar', date: '2026-05-29', category: '学术交流', title: '实验室举办农业废弃物资源化专题组会', summary: '师生围绕腐殖化过程调控和智能监测模型进行讨论。', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=700&q=80' },
-  { slug: 'training', date: '2026-05-12', category: '实验培训', title: '完成堆肥反应器与气体采样系统操作培训', summary: '面向新进学生开展仪器安全、样品记录和数据归档培训。', image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=700&q=80' },
-]
 
 const displayResearchDirections = computed(() => {
   if (!apiResearchDirections.value.length) return []
@@ -239,9 +217,13 @@ const displayResearchDirections = computed(() => {
 })
 
 const displayStats = computed(() => {
-  if (!apiStats.value) return fallbackStats
-  const looksLikeSeedData = apiStats.value.publications < 20 && apiStats.value.patents < 10
-  if (looksLikeSeedData) return fallbackStats
+  if (!apiStats.value) {
+    return [
+      { value: '0', label: '公开论文' },
+      { value: '0', label: '科研项目' },
+      { value: '0', label: '专利成果' },
+    ]
+  }
   return [
     { value: `${apiStats.value.publications}`, label: '公开论文' },
     { value: `${apiStats.value.projects}`, label: '科研项目' },
@@ -303,7 +285,7 @@ const displayAchievements = computed(() => {
       dateRank: dateRank(award.award_date),
     })),
   ]
-  if (!items.length) return fallbackAchievements
+  if (!items.length) return []
   const typeOrder: HomeAchievement['type'][] = ['paper', 'project', 'patent', 'award']
   const sortOrders = Array.from(new Set(items.map((item) => item.sortOrder))).sort((a, b) => a - b)
   const ordered: HomeAchievement[] = []
@@ -326,25 +308,23 @@ const displayAchievements = computed(() => {
 })
 
 const displayMembers = computed(() => {
-  if (!apiMembers.value.length) return fallbackMembers
   return apiMembers.value.slice(0, 4).map((member) => ({
     name: member.name,
     role: member.role_label,
     focus: member.research_direction || '农业生态环境过程',
-    avatar: member.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=220&q=80',
+    avatar: member.avatar || '/site-icon.png',
     to: `/team/${member.id}`,
   }))
 })
 
 const displayNews = computed(() => {
-  if (!apiNews.value.length) return fallbackNews
   return apiNews.value.slice(0, 3).map((item) => ({
     slug: item.slug,
     date: item.event_date || '近期',
     category: item.category?.name || '新闻活动',
     title: item.title,
     summary: item.summary || '新闻摘要待补充。',
-    image: item.cover_image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=700&q=80',
+    image: item.cover_image || '',
   }))
 })
 
@@ -792,6 +772,16 @@ onMounted(async () => {
   filter: saturate(0.92);
 }
 
+.news-image-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 8.5;
+  background: var(--color-eco-green);
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
 .news-card div {
   padding: 15px 16px 17px;
 }
@@ -814,6 +804,15 @@ onMounted(async () => {
 
 .section-link.compact {
   margin-top: 14px;
+}
+
+.empty-inline {
+  border: 1px dashed rgba(31, 61, 43, 0.16);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-muted);
+  font-size: 14px;
 }
 
 .join-section {

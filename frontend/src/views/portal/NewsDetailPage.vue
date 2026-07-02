@@ -14,10 +14,10 @@
       </div>
     </section>
 
-    <section class="page-section">
+    <section v-if="article" class="page-section">
       <div class="container article-layout">
         <main class="card article-card">
-          <img v-if="coverImage" class="cover-image" :src="coverImage" :alt="article?.title" />
+          <img v-if="article.cover_image" class="cover-image" :src="article.cover_image" :alt="article.title" />
           <p v-if="article?.summary" class="lead">{{ article.summary }}</p>
           <div v-if="article?.word_html" class="article-body word-body" v-html="article.word_html"></div>
           <div v-else class="article-body">
@@ -53,6 +53,11 @@
         </aside>
       </div>
     </section>
+    <section v-else class="page-section">
+      <div class="container">
+        <div class="card empty-panel">未找到这条新闻，可能已删除或尚未发布。</div>
+      </div>
+    </section>
   </PortalLayout>
 </template>
 
@@ -66,46 +71,8 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 const route = useRoute()
 const article = ref<NewsArticle | null>(null)
 
-const fallbackImage = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=82'
-const fallbackArticles: Record<string, NewsArticle> = {
-  'field-sampling': {
-    id: 0,
-    title: '课题组完成夏季堆肥产品田间施用试验采样',
-    slug: 'field-sampling',
-    summary: '围绕土壤养分变化、作物生长和环境风险指标开展连续监测。',
-    content: '课题组近期完成夏季田间试验采样工作，重点关注堆肥产品施用后的土壤养分变化、作物生长状态和潜在环境风险指标。\n\n后续团队将结合室内分析、微生物群落测定和田间连续观测数据，评估有机物料还田对土壤生态功能和农业资源循环的综合影响。',
-    cover_image: fallbackImage,
-    event_date: '2026-06-18',
-    location: '中国农业大学西校区',
-    category: { name: '田间试验' },
-  },
-  seminar: {
-    id: 1,
-    title: '实验室举办农业废弃物资源化专题组会',
-    slug: 'seminar',
-    summary: '师生围绕腐殖化过程调控和智能监测模型进行讨论。',
-    content: '本次组会围绕农业废弃物资源化、堆肥腐殖化调控和过程监测模型展开讨论。\n\n与会成员结合近期实验数据，对后续采样计划、指标体系和模型验证方案进行了梳理。',
-    cover_image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=82',
-    event_date: '2026-05-29',
-    location: '资源与环境学院',
-    category: { name: '学术交流' },
-  },
-  training: {
-    id: 2,
-    title: '完成堆肥反应器与气体采样系统操作培训',
-    slug: 'training',
-    summary: '面向新进学生开展仪器安全、样品记录和数据归档培训。',
-    content: '课题组面向新进学生开展堆肥反应器、气体采样系统和实验记录规范培训。\n\n培训内容覆盖仪器安全、样品编号、过程记录、数据归档和异常情况处理，帮助成员尽快熟悉组内实验规范。',
-    cover_image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=1200&q=82',
-    event_date: '2026-05-12',
-    location: '生态过程实验室',
-    category: { name: '实验培训' },
-  },
-}
-
-const coverImage = computed(() => article.value?.cover_image || fallbackImage)
 const paragraphs = computed(() => {
-  const content = article.value?.content || article.value?.summary || '新闻正文待补充。'
+  const content = article.value?.content || article.value?.summary || ''
   return content
     .split(/\n+/)
     .map((line) => line.trim())
@@ -117,7 +84,7 @@ onMounted(async () => {
   try {
     article.value = await fetchNewsArticle(slug)
   } catch {
-    article.value = fallbackArticles[slug] || null
+    article.value = null
   }
 })
 </script>
@@ -161,6 +128,12 @@ onMounted(async () => {
 
 .page-section {
   background: var(--color-rice);
+}
+
+.empty-panel {
+  padding: 28px;
+  color: var(--color-muted);
+  box-shadow: none;
 }
 
 .article-layout {

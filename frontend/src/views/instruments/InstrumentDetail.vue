@@ -4,7 +4,8 @@
       <RouterLink class="back-link" to="/instruments">返回仪器平台</RouterLink>
 
       <article class="card detail-card">
-        <img :src="instrument.image || fallbackImage(instrument.status)" :alt="instrument.name" />
+        <img v-if="instrument.image" :src="instrument.image" :alt="instrument.name" />
+        <div v-else class="detail-image-placeholder">暂无图片</div>
         <div class="detail-content">
           <div class="detail-heading">
             <div>
@@ -54,21 +55,7 @@ const router = useRouter()
 const session = useSessionStore()
 const instruments = ref<Instrument[]>([])
 
-const fallbackInstruments: Instrument[] = [
-  {
-    id: 0,
-    name: '智能堆肥反应器',
-    model: '中试反应器系统',
-    room: '生态过程实验室 A201',
-    location_detail: '',
-    image: null,
-    status: 'normal',
-    status_label: '正常',
-    notes: '用于堆肥过程调控、温度通风监测和腐殖化过程实验。',
-  },
-]
-
-const displayInstruments = computed(() => (instruments.value.length ? instruments.value : fallbackInstruments))
+const displayInstruments = computed(() => instruments.value)
 const instrument = computed(() => {
   const id = Number(route.params.id)
   return displayInstruments.value.find((item) => item.id === id) || null
@@ -117,11 +104,6 @@ function statusText(status: string) {
   )
 }
 
-function fallbackImage(status: string) {
-  if (status === 'maintenance') return 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1200&q=82'
-  return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=1200&q=82'
-}
-
 onMounted(async () => {
   if (!session.initialized) await session.loadCurrentUser()
   await loadInstruments()
@@ -158,6 +140,14 @@ onMounted(async () => {
   max-height: 420px;
   object-fit: cover;
   filter: saturate(0.94);
+}
+
+.detail-image-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  background: var(--color-eco-green);
+  color: var(--color-muted);
 }
 
 .detail-content {

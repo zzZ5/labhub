@@ -38,7 +38,8 @@
             class="card instrument-card"
             @click="goDetail(instrument.id)"
           >
-            <img :src="instrument.image || fallbackImage(instrument.status)" :alt="instrument.name" />
+            <img v-if="instrument.image" :src="instrument.image" :alt="instrument.name" />
+            <div v-else class="instrument-image-placeholder">暂无图片</div>
             <div class="instrument-body">
               <div class="instrument-title">
                 <h2>{{ instrument.name }}</h2>
@@ -124,21 +125,7 @@ const instrumentForm = reactive({
   image: undefined as File | undefined,
 })
 
-const fallbackInstruments: Instrument[] = [
-  {
-    id: 0,
-    name: '智能堆肥反应器',
-    model: '中试反应器系统',
-    room: '生态过程实验室 A201',
-    location_detail: '',
-    image: null,
-    status: 'normal',
-    status_label: '正常',
-    notes: '用于堆肥过程调控、温度通风监测和腐殖化过程实验。',
-  },
-]
-
-const displayInstruments = computed(() => (instruments.value.length ? instruments.value : fallbackInstruments))
+const displayInstruments = computed(() => instruments.value)
 const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'instrument_manager'])))
 const filteredInstruments = computed(() => {
   const q = keyword.value.trim().toLowerCase()
@@ -235,11 +222,6 @@ function statusText(status: string) {
       disabled: '停用',
     }[status] || '待确认'
   )
-}
-
-function fallbackImage(status: string) {
-  if (status === 'maintenance') return 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=700&q=80'
-  return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=700&q=80'
 }
 
 onMounted(async () => {
@@ -423,6 +405,16 @@ onMounted(async () => {
   aspect-ratio: 16 / 8.5;
   object-fit: cover;
   filter: saturate(0.92);
+}
+
+.instrument-image-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 8.5;
+  background: var(--color-eco-green);
+  color: var(--color-muted);
+  font-size: 14px;
 }
 
 .instrument-body {
