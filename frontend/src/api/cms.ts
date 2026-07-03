@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios'
 import { http } from './http'
 import type { Instrument } from './instruments'
 import type { Award, ContactInfo, Member, NewsArticle, NewsCategory, PaginatedResult, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
@@ -44,13 +45,21 @@ function toRequestBody(payload: Record<string, unknown>) {
   return formData
 }
 
-async function create<T>(resource: CmsResource, payload: Record<string, unknown>) {
-  const response = await http.post<T>(`/cms/${resource}/`, toRequestBody(payload))
+async function create<T>(resource: CmsResource, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = toRequestBody(payload)
+  const response = await http.post<T>(`/cms/${resource}/`, body, {
+    timeout: body instanceof FormData ? 5400000 : undefined,
+    onUploadProgress,
+  })
   return response.data
 }
 
-async function update<T>(resource: CmsResource, idOrSlug: number | string, payload: Record<string, unknown>) {
-  const response = await http.patch<T>(`/cms/${resource}/${idOrSlug}/`, toRequestBody(payload))
+async function update<T>(resource: CmsResource, idOrSlug: number | string, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = toRequestBody(payload)
+  const response = await http.patch<T>(`/cms/${resource}/${idOrSlug}/`, body, {
+    timeout: body instanceof FormData ? 5400000 : undefined,
+    onUploadProgress,
+  })
   return response.data
 }
 
@@ -100,10 +109,10 @@ export const cmsApi = {
   deleteNewsCategory: (slug: string) => remove('news-categories', slug),
 
   listNews: () => list<CmsNewsArticle>('news-articles'),
-  createNews: (payload: Record<string, unknown>) => create<CmsNewsArticle>('news-articles', payload),
-  updateNews: (slug: string, payload: Record<string, unknown>) => update<CmsNewsArticle>('news-articles', slug, payload),
+  createNews: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<CmsNewsArticle>('news-articles', payload, onUploadProgress),
+  updateNews: (slug: string, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<CmsNewsArticle>('news-articles', slug, payload, onUploadProgress),
   deleteNews: (slug: string) => remove('news-articles', slug),
-  createNewsImage: (payload: Record<string, unknown>) => create<CmsNewsImage>('news-images', payload),
+  createNewsImage: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<CmsNewsImage>('news-images', payload, onUploadProgress),
   deleteNewsImage: (id: number) => remove('news-images', id),
 
   listPublications: () => list<Publication>('publications'),

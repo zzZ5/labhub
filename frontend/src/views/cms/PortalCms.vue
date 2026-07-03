@@ -178,8 +178,13 @@
                 <el-form-item label="摘要"><el-input v-model="newsForm.summary" type="textarea" :rows="3" /></el-form-item>
                 <el-form-item label="Word 稿件">
                   <input class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
+                  <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
                   <small>上传 .docx 后保存，新闻详情页会优先展示 Word 转 HTML 的内容；下方正文可作为不用 Word 时的备用正文。</small>
                 </el-form-item>
+                <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress">
+                  <el-progress :percentage="newsUploadProgress" :status="newsUploadProgress === 100 ? 'success' : undefined" />
+                  <span>{{ newsUploadProgress < 100 ? '正在上传新闻文件，请不要关闭页面。' : '上传完成，正在保存新闻内容。' }}</span>
+                </div>
                 <el-form-item label="正文"><el-input v-model="newsForm.content" type="textarea" :rows="8" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
@@ -481,6 +486,8 @@ const FormActions = defineComponent({
 const activeTab = ref('site')
 const saving = ref(false)
 const uploadingNewsImage = ref(false)
+const newsUploadProgress = ref(0)
+const newsImageUploadProgress = ref(0)
 
 const researchItems = ref<ResearchDirection[]>([])
 const siteSettings = ref<SiteSetting[]>([])
@@ -634,6 +641,7 @@ const newsRows = computed<Row<CmsNewsArticle>[]>(() =>
     source: item,
   })),
 )
+const selectedNewsWordFile = computed(() => (newsForm.word_file instanceof File ? newsForm.word_file : null))
 const publicationRows = computed<Row<Publication>[]>(() =>
   publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
 )
@@ -776,6 +784,7 @@ async function saveContactSection() {
 function setFile(event: Event, form: CmsForm, field: FileField) {
   const input = event.target as HTMLInputElement
   form[field] = input.files?.[0]
+  if (form === newsForm && (field === 'word_file' || field === 'cover_image')) newsUploadProgress.value = 0
 }
 
 function displayFileName(value: string) {
@@ -788,6 +797,23 @@ function displayFileName(value: string) {
     decoded = filename
   }
   return decoded.length > 42 ? `${decoded.slice(0, 18)}...${decoded.slice(-18)}` : decoded
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
+}
+
+function uploadErrorMessage(error: any, fallback: string) {
+  const data = error?.response?.data
+  if (data?.detail) return data.detail
+  if (data?.word_file?.length) return data.word_file[0]
+  if (data?.image?.length) return data.image[0]
+  if (data?.cover_image?.length) return data.cover_image[0]
+  if (error?.code === 'ECONNABORTED') return '上传超时，请检查网络后重试。'
+  if (!error?.response) return '上传连接失败，请检查网络或服务器上传限制。'
+  return fallback
 }
 
 function resetResearch() {
@@ -899,15 +925,26 @@ function editNews(item: CmsNewsArticle) {
 
 async function saveNews() {
   saving.value = true
+  newsUploadProgress.value = 0
   try {
-    const saved = editingNewsSlug.value ? await cmsApi.updateNews(editingNewsSlug.value, newsForm) : await cmsApi.createNews(newsForm)
+    const onUploadProgress = (event: { loaded: number; total?: number }) => {
+      if (!event.total) return
+      newsUploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+    }
+    const saved = editingNewsSlug.value
+      ? await cmsApi.updateNews(editingNewsSlug.value, newsForm, onUploadProgress)
+      : await cmsApi.createNews(newsForm, onUploadProgress)
+    newsUploadProgress.value = 100
     await loadAll()
     editNews(saved)
     ElMessage.success('新闻已保存')
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '保存失败，请检查权限和表单内容')
+    ElMessage.error(uploadErrorMessage(error, '保存失败，请检查权限和表单内容。'))
   } finally {
     saving.value = false
+    setTimeout(() => {
+      if (!saving.value) newsUploadProgress.value = 0
+    }, 800)
   }
 }
 
@@ -918,6 +955,7 @@ async function deleteNews() {
 function setNewsImageFile(event: Event) {
   const input = event.target as HTMLInputElement
   newsImageForm.file = input.files?.[0]
+  newsImageUploadProgress.value = 0
 }
 
 function resetNewsImageForm() {
@@ -936,22 +974,30 @@ async function uploadNewsImage() {
     return
   }
   uploadingNewsImage.value = true
+  newsImageUploadProgress.value = 0
   try {
     await cmsApi.createNewsImage({
       article_id: editingNewsId.value,
       image: newsImageForm.file,
       caption: newsImageForm.caption,
       sort_order: newsImageForm.sort_order,
+    }, (event) => {
+      if (!event.total) return
+      newsImageUploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
+    newsImageUploadProgress.value = 100
     resetNewsImageForm()
     await loadAll()
     const updated = newsItems.value.find((item) => item.id === editingNewsId.value)
     if (updated) editNews(updated)
     ElMessage.success('活动图片已添加')
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '图片上传失败')
+    ElMessage.error(uploadErrorMessage(error, '图片上传失败'))
   } finally {
     uploadingNewsImage.value = false
+    setTimeout(() => {
+      if (!uploadingNewsImage.value) newsImageUploadProgress.value = 0
+    }, 800)
   }
 }
 
@@ -1840,6 +1886,21 @@ onMounted(loadAll)
   border-radius: var(--radius-sm);
   padding: 10px 11px;
   background: #fff;
+}
+
+.upload-progress {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--color-soft-gray);
+}
+
+.upload-progress span {
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 .form-actions {

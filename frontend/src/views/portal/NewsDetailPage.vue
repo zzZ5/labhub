@@ -187,6 +187,17 @@ onMounted(async () => {
   white-space: pre-wrap;
 }
 
+.word-body :deep(figure) {
+  margin: 24px 0;
+}
+
+.word-body :deep(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
 .image-gallery {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

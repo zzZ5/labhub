@@ -11,6 +11,7 @@ from apps.members.models import Member
 from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
 from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer
+from apps.system.uploads import validate_upload_size
 from apps.portal.models import ContactInfo, ResearchDirection, SiteSetting
 from apps.portal.serializers import ContactInfoSerializer, ResearchDirectionSerializer, SiteSettingSerializer
 from apps.publications.models import Award, Patent, Project, Publication
@@ -135,6 +136,7 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         word_file = validated_data.get("word_file")
         if not word_file:
             return
+        validate_upload_size(word_file)
         filename = getattr(word_file, "name", "")
         if not filename.lower().endswith(".docx"):
             raise serializers.ValidationError({"word_file": "请上传 .docx 格式的 Word 文档。"})
@@ -154,6 +156,9 @@ class CmsNewsImageSerializer(serializers.ModelSerializer):
         model = NewsImage
         fields = ["id", "article", "article_id", "image", "caption", "sort_order"]
         read_only_fields = ["id", "article"]
+
+    def validate_image(self, image):
+        return validate_upload_size(image)
 
 
 class CmsNewsImageViewSet(CmsParserMixin, viewsets.ModelViewSet):
