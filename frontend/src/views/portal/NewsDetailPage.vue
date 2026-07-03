@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="news-detail-head">
       <div class="container detail-head-grid">
-        <RouterLink class="back-link" to="/news">返回新闻活动</RouterLink>
+        <RouterLink class="back-link portal-back-link" to="/news">返回新闻活动</RouterLink>
         <div>
           <p class="section-kicker">{{ article?.category?.name || '新闻活动' }}</p>
           <h1>{{ article?.title || '新闻活动' }}</h1>

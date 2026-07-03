@@ -4,7 +4,7 @@
       <div class="container">
         <p class="section-kicker">团队成员</p>
         <h1>团队成员</h1>
-        <p>课题组由导师、博士研究生、硕士研究生、毕业学生与合作成员共同构成，围绕农业资源环境问题开展团队协作研究。</p>
+        <p>课题组由不同阶段的师生和合作成员共同组成，展示成员信息、研究兴趣与团队协作网络。</p>
       </div>
     </section>
     <section class="page-section">

@@ -2,6 +2,7 @@
   <PortalLayout>
     <section class="member-head">
       <div class="container member-head-inner">
+        <RouterLink class="back-link portal-back-link" to="/team">返回团队成员</RouterLink>
         <img :src="member?.avatar || '/favicon.svg'" :alt="member?.name || '团队成员'" />
         <div>
           <p class="section-kicker">团队成员</p>
@@ -65,7 +66,6 @@
               <dd>{{ member.destination }}</dd>
             </div>
           </dl>
-          <RouterLink to="/team">返回团队成员</RouterLink>
         </aside>
       </div>
     </section>
@@ -115,6 +115,32 @@ onMounted(async () => {
   grid-template-columns: 118px minmax(0, 1fr);
   align-items: center;
   gap: 24px;
+}
+
+.back-link {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-sm);
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link::before {
+  margin-right: 7px;
+  content: "←";
+}
+
+.back-link:hover {
+  border-color: var(--color-cau-green);
+  background: var(--color-eco-green);
 }
 
 .member-head img {
@@ -225,11 +251,6 @@ onMounted(async () => {
 .side-card dd {
   margin: 4px 0 0;
   color: var(--color-text);
-}
-
-.side-card a {
-  color: var(--color-cau-green);
-  font-weight: 700;
 }
 
 @media (max-width: 860px) {

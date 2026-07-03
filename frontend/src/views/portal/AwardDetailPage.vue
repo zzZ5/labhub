@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="detail-head">
       <div class="container">
-        <RouterLink class="back-link" to="/publications">返回科研成果</RouterLink>
+        <RouterLink class="back-link portal-back-link" to="/publications">返回科研成果</RouterLink>
         <p class="section-kicker">获奖成果</p>
         <h1>{{ award?.title || '获奖成果' }}</h1>
       </div>

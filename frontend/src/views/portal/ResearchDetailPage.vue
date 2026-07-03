@@ -2,6 +2,7 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
+        <RouterLink class="back-link portal-back-link" to="/research">返回研究方向</RouterLink>
         <p class="section-kicker">研究方向</p>
         <h1>{{ direction?.title || '研究方向' }}</h1>
         <p>{{ direction?.summary || '研究方向简介待补充。' }}</p>
@@ -22,7 +23,6 @@
           <span>Research</span>
           <strong>{{ direction?.title || '研究方向' }}</strong>
           <p>{{ direction?.summary || '围绕农业资源环境问题开展机制解析与应用研究。' }}</p>
-          <RouterLink to="/research">返回研究方向</RouterLink>
         </aside>
       </div>
     </section>
@@ -74,6 +74,31 @@ onMounted(async () => {
   margin: 0;
   color: var(--color-muted);
   line-height: 1.75;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link::before {
+  margin-right: 7px;
+  content: "←";
+}
+
+.back-link:hover {
+  border-color: var(--color-cau-green);
+  background: var(--color-eco-green);
 }
 
 .page-section {
@@ -146,11 +171,6 @@ onMounted(async () => {
 .side-card p {
   color: var(--color-muted);
   line-height: 1.7;
-}
-
-.side-card a {
-  color: var(--color-cau-green);
-  font-weight: 700;
 }
 
 @media (max-width: 860px) {

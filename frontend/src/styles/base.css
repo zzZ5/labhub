@@ -37,6 +37,35 @@ a {
   text-decoration: none;
 }
 
+.portal-back-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 36px;
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-sm);
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.portal-back-link::before {
+  margin-right: 7px;
+  content: "←";
+}
+
+.portal-back-link:hover {
+  border-color: var(--color-cau-green);
+  background: var(--color-eco-green);
+}
+
 button,
 input,
 textarea,

@@ -74,7 +74,7 @@
 
     <section class="page-section team-section">
       <div class="container">
-        <SectionHeader kicker="团队成员" title="团队成员" description="团队围绕农业有机废弃物资源化、堆肥微生物过程与生态环境效应开展研究，长期欢迎具有生态学、环境科学、农学和微生物学背景的同学加入交流。" />
+        <SectionHeader kicker="团队成员" title="团队成员" description="课题组由不同阶段的师生和合作成员共同组成，在日常科研训练、学术交流和项目实践中推进团队协作。" />
         <div class="member-grid">
           <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
             <img :src="member.avatar" :alt="member.name" />
@@ -92,7 +92,7 @@
 
     <section class="page-section news-section">
       <div class="container">
-        <SectionHeader kicker="新闻活动" title="新闻活动" description="记录田间采样、学术交流、实验培训与组内科研动态。" />
+        <SectionHeader kicker="新闻活动" title="新闻活动" description="发布组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
         <div class="news-grid">
           <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
             <img v-if="item.image" :src="item.image" :alt="item.title" />
