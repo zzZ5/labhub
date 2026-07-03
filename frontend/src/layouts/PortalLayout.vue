@@ -3,11 +3,11 @@
     <header class="portal-nav">
       <RouterLink class="portal-brand" to="/" @click="closeMenu">
         <span class="brand-emblem">
-          <img src="/site-icon.png" alt="中农雨磷" />
+          <img :src="brandLogo" :alt="footerName" />
         </span>
         <span class="brand-text">
-          <strong>中农雨磷</strong>
-          <small>中国农业大学资源与环境学院</small>
+          <strong>{{ footerName }}</strong>
+          <small>{{ siteSetting.site_subtitle || '中国农业大学资源与环境学院' }}</small>
         </span>
       </RouterLink>
 
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { fetchSiteSetting, type ExternalLink, type SiteSetting } from '../api/publicPortal'
 
 const menuOpen = ref(false)
@@ -66,10 +66,26 @@ const footerUnit = computed(() => siteSetting.value.site_subtitle ? `${siteSetti
 const footerAddress = computed(() => siteSetting.value.address || '北京市海淀区圆明园西路2号 中国农业大学西校区')
 const footerName = computed(() => siteSetting.value.site_name || '中农雨磷')
 const footerDescription = computed(() => siteSetting.value.footer_text || siteSetting.value.description || '面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。')
+const assetVersion = computed(() => encodeURIComponent(siteSetting.value.updated_at || 'default'))
+const brandLogo = computed(() => withAssetVersion(siteSetting.value.logo || '/site-icon.png'))
 const footerLinks = computed(() => {
   const links = siteSetting.value.external_links?.filter((link) => link.label && link.url) || []
   return links.length ? links : defaultLinks
 })
+
+function withAssetVersion(url: string) {
+  if (!url || url.startsWith('data:')) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}v=${assetVersion.value}`
+}
+
+function updateFavicon(url?: string) {
+  if (!url) return
+  const href = withAssetVersion(url)
+  document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((link) => {
+    link.href = href
+  })
+}
 
 function closeMenu() {
   menuOpen.value = false
@@ -82,6 +98,12 @@ onMounted(async () => {
     siteSetting.value = {}
   }
 })
+
+watch(
+  () => siteSetting.value.favicon,
+  (favicon) => updateFavicon(favicon),
+  { immediate: true },
+)
 </script>
 
 <style scoped>

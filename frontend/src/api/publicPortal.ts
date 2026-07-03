@@ -26,6 +26,7 @@ export interface SiteSetting {
   address: string
   map_embed: string
   external_links?: ExternalLink[]
+  updated_at?: string
 }
 
 export interface ExternalLink {

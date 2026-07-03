@@ -39,15 +39,15 @@
                 <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
                 <el-form-item label="Logo">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
-                  <small v-if="editingSiteLogo">当前 Logo：{{ editingSiteLogo }}</small>
+                  <small v-if="editingSiteLogo">当前 Logo：{{ displayFileName(editingSiteLogo) }}</small>
                 </el-form-item>
                 <el-form-item label="网站图标">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
-                  <small v-if="editingSiteFavicon">当前图标：{{ editingSiteFavicon }}</small>
+                  <small v-if="editingSiteFavicon">当前图标：{{ displayFileName(editingSiteFavicon) }}</small>
                 </el-form-item>
                 <el-form-item label="首页横幅图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
-                  <small v-if="editingSiteHeroImage">当前横幅：{{ editingSiteHeroImage }}</small>
+                  <small v-if="editingSiteHeroImage">当前横幅：{{ displayFileName(editingSiteHeroImage) }}</small>
                 </el-form-item>
               </el-form>
               <FormActions :saving="saving" @save="saveSiteSetting" />
@@ -102,7 +102,7 @@
                 <el-form-item label="详细内容"><el-input v-model="researchForm.content" type="textarea" :rows="5" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, researchForm, 'cover_image')" />
-                  <small v-if="editingResearchCover">当前图片：{{ editingResearchCover }}</small>
+                  <small v-if="editingResearchCover">当前图片：{{ displayFileName(editingResearchCover) }}</small>
                 </el-form-item>
                 <el-form-item label="排序"><el-input-number v-model="researchForm.sort_order" :min="0" /></el-form-item>
               </el-form>
@@ -132,7 +132,7 @@
                 <el-form-item label="研究方向"><el-input v-model="memberForm.research_direction" /></el-form-item>
                 <el-form-item label="头像">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, memberForm, 'avatar')" />
-                  <small v-if="editingMemberAvatar">当前头像：{{ editingMemberAvatar }}</small>
+                  <small v-if="editingMemberAvatar">当前头像：{{ displayFileName(editingMemberAvatar) }}</small>
                 </el-form-item>
                 <el-form-item label="简介"><el-input v-model="memberForm.profile" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="展示排序">
@@ -183,7 +183,7 @@
                 <el-form-item label="正文"><el-input v-model="newsForm.content" type="textarea" :rows="8" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
-                  <small v-if="editingNewsCover">当前封面：{{ editingNewsCover }}</small>
+                  <small v-if="editingNewsCover">当前封面：{{ displayFileName(editingNewsCover) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="可见范围">
@@ -236,7 +236,7 @@
                 <el-form-item label="摘要"><el-input v-model="publicationForm.abstract" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="PDF 附件">
                   <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, publicationForm, 'pdf_file')" />
-                  <small v-if="editingPublicationPdf">当前 PDF：{{ editingPublicationPdf }}</small>
+                  <small v-if="editingPublicationPdf">当前 PDF：{{ displayFileName(editingPublicationPdf) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="排序"><el-input-number v-model="publicationForm.sort_order" :min="0" /></el-form-item>
@@ -315,7 +315,7 @@
                 <el-form-item label="发明人"><el-input v-model="patentForm.inventors" type="textarea" :rows="2" /></el-form-item>
                 <el-form-item label="PDF 附件">
                   <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, patentForm, 'pdf_file')" />
-                  <small v-if="editingPatentPdf">当前 PDF：{{ editingPatentPdf }}</small>
+                  <small v-if="editingPatentPdf">当前 PDF：{{ displayFileName(editingPatentPdf) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="申请日期"><el-date-picker v-model="patentForm.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
@@ -360,11 +360,11 @@
                 <div class="form-two-col">
                   <el-form-item label="获奖图片">
                     <input class="file-input" type="file" accept="image/*" @change="setFile($event, awardForm, 'image')" />
-                    <small v-if="editingAwardImage">当前图片：{{ editingAwardImage }}</small>
+                    <small v-if="editingAwardImage">当前图片：{{ displayFileName(editingAwardImage) }}</small>
                   </el-form-item>
                   <el-form-item label="附件 PDF">
                     <input class="file-input" type="file" accept="application/pdf,image/*" @change="setFile($event, awardForm, 'attachment')" />
-                    <small v-if="editingAwardAttachment">当前附件：{{ editingAwardAttachment }}</small>
+                    <small v-if="editingAwardAttachment">当前附件：{{ displayFileName(editingAwardAttachment) }}</small>
                   </el-form-item>
                 </div>
                 <el-form-item label="可见范围">
@@ -388,7 +388,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
@@ -426,6 +426,9 @@ const ContentList = defineComponent({
     const setPage = (nextPage: number) => {
       page.value = Math.min(totalPages.value, Math.max(1, nextPage))
     }
+    watch([filteredItems, totalPages], () => {
+      setPage(page.value)
+    }, { flush: 'sync' })
     return () =>
       h('article', { class: 'card list-panel' }, [
         h('div', { class: 'list-toolbar' }, [
@@ -773,6 +776,18 @@ async function saveContactSection() {
 function setFile(event: Event, form: CmsForm, field: FileField) {
   const input = event.target as HTMLInputElement
   form[field] = input.files?.[0]
+}
+
+function displayFileName(value: string) {
+  const withoutQuery = value.split('?')[0]
+  const filename = withoutQuery.split('/').filter(Boolean).pop() || value
+  let decoded = filename
+  try {
+    decoded = decodeURIComponent(filename)
+  } catch {
+    decoded = filename
+  }
+  return decoded.length > 42 ? `${decoded.slice(0, 18)}...${decoded.slice(-18)}` : decoded
 }
 
 function resetResearch() {
