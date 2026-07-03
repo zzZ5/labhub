@@ -179,7 +179,12 @@
         </el-form-item>
         <el-form-item label="文件">
           <input class="file-input" type="file" @change="handleFileChange" />
+          <small v-if="uploadForm.file" class="upload-file-note">{{ uploadForm.file.name }}（{{ formatFileSize(uploadForm.file.size) }}）</small>
         </el-form-item>
+        <div v-if="uploading || uploadProgress > 0" class="upload-progress">
+          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
+          <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
+        </div>
       </el-form>
       <template #footer>
         <el-button @click="uploadVisible = false">取消</el-button>
@@ -214,6 +219,7 @@ const keyword = ref('')
 const activeCategory = ref('')
 const uploadVisible = ref(false)
 const uploading = ref(false)
+const uploadProgress = ref(0)
 const previewDocument = ref<LabDocument | null>(null)
 
 const uploadForm = reactive({
@@ -268,6 +274,22 @@ async function loadDocuments() {
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   uploadForm.file = input.files?.[0]
+  uploadProgress.value = 0
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
+}
+
+function uploadErrorMessage(error: any) {
+  const data = error?.response?.data
+  if (data?.detail) return data.detail
+  if (data?.file?.length) return data.file[0]
+  if (error?.code === 'ECONNABORTED') return '上传超时，请检查网络或稍后重试。'
+  if (!error?.response) return '上传连接失败，请检查网络或服务器上传大小限制。'
+  return '保存失败，请确认账号权限和表单内容。'
 }
 
 async function submitDocument() {
@@ -276,13 +298,18 @@ async function submitDocument() {
     return
   }
   uploading.value = true
+  uploadProgress.value = 0
   try {
     await createDocument({
       ...uploadForm,
       title: uploadForm.title.trim(),
       status: 'active',
       allow_download: true,
+    }, (event) => {
+      if (!event.total) return
+      uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
+    uploadProgress.value = 100
     ElMessage.success('资料已保存到内部资料库。')
     uploadVisible.value = false
     uploadForm.title = ''
@@ -292,9 +319,12 @@ async function submitDocument() {
     uploadForm.file = undefined
     await loadDocuments()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '保存失败，请确认账号权限和表单内容。')
+    ElMessage.error(uploadErrorMessage(error))
   } finally {
     uploading.value = false
+    setTimeout(() => {
+      if (!uploading.value) uploadProgress.value = 0
+    }, 800)
   }
 }
 
@@ -899,6 +929,29 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   padding: 10px 11px;
   background: #fff;
+}
+
+.upload-file-note {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.upload-progress {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--color-soft-gray);
+}
+
+.upload-progress span {
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 @media (max-width: 1280px) {

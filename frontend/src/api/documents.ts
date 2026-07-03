@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios'
 import { http } from './http'
 
 export interface DocumentCategory {
@@ -63,7 +64,7 @@ export async function createDocument(payload: {
   version: string
   change_log?: string
   file?: File
-}) {
+}, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
   formData.append('title', payload.title)
   formData.append('visibility', payload.visibility)
@@ -77,6 +78,8 @@ export async function createDocument(payload: {
 
   const response = await http.post<LabDocument>('/documents/documents/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 5400000,
+    onUploadProgress,
   })
   return response.data
 }

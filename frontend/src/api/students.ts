@@ -1,4 +1,5 @@
-﻿import { http } from './http'
+import type { AxiosProgressEvent } from 'axios'
+import { http } from './http'
 
 export interface StudentArchiveFile {
   id: number
@@ -95,13 +96,16 @@ export async function uploadStudentArchiveFile(payload: {
   version: string
   visibility: string
   description?: string
-}) {
+}, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
   Object.entries(payload).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return
     formData.append(key, value instanceof File ? value : String(value))
   })
-  const response = await http.post<StudentArchiveFile>('/students/archive-files/', formData)
+  const response = await http.post<StudentArchiveFile>('/students/archive-files/', formData, {
+    timeout: 5400000,
+    onUploadProgress,
+  })
   return response.data
 }
 

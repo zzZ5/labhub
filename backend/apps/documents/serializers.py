@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.students.preview import refresh_file_preview_pdf
+from apps.system.uploads import validate_upload_size
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentTag, DocumentVersion
 from .services import can_delete_document, can_download_document, can_edit_document, can_view_document
@@ -131,6 +132,9 @@ class DocumentWriteSerializer(serializers.ModelSerializer):
                 is_current=True,
             )
             refresh_file_preview_pdf(version_obj)
+
+    def validate_file(self, file_obj):
+        return validate_upload_size(file_obj)
 
     def create(self, validated_data):
         file_data = {

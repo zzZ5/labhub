@@ -2,6 +2,7 @@
 
 from apps.accounts.models import RoleCode
 from apps.accounts.services import user_has_role
+from apps.system.uploads import validate_upload_size
 
 from .models import StudentArchiveFile, StudentProfile
 from .services import can_delete_archive_file, can_delete_student_profile, can_edit_student_profile, can_view_archive_file
@@ -44,6 +45,9 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
     def get_can_delete(self, obj):
         request = self.context.get("request")
         return can_delete_archive_file(getattr(request, "user", None), obj)
+
+    def validate_file(self, file_obj):
+        return validate_upload_size(file_obj)
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
