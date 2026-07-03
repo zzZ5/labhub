@@ -9,6 +9,10 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, False),
     DJANGO_SECURE_COOKIES=(bool, False),
     POSTGRES_PORT=(int, 5432),
+    IMAGE_COMPRESSION_ENABLED=(bool, True),
+    IMAGE_COMPRESSION_MAX_EDGE=(int, 2000),
+    IMAGE_COMPRESSION_QUALITY=(int, 82),
+    IMAGE_COMPRESSION_MIN_BYTES=(int, 327680),
 )
 environ.Env.read_env(ROOT_DIR / ".env")
 
@@ -37,7 +41,7 @@ INSTALLED_APPS = [
     "apps.instruments",
     "apps.students",
     "apps.audit",
-    "apps.system",
+    "apps.system.apps.SystemConfig",
 ]
 
 MIDDLEWARE = [
@@ -98,6 +102,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = env("MEDIA_URL", default="/media/")
 MEDIA_ROOT = BASE_DIR / "media"
 PROTECTED_MEDIA_ROOT = env("PROTECTED_MEDIA_ROOT", default=str(BASE_DIR / "protected_media"))
+IMAGE_COMPRESSION_ENABLED = env("IMAGE_COMPRESSION_ENABLED")
+IMAGE_COMPRESSION_MAX_EDGE = env("IMAGE_COMPRESSION_MAX_EDGE")
+IMAGE_COMPRESSION_QUALITY = env("IMAGE_COMPRESSION_QUALITY")
+IMAGE_COMPRESSION_MIN_BYTES = env("IMAGE_COMPRESSION_MIN_BYTES")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
