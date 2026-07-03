@@ -1,7 +1,5 @@
 from html import escape
 from io import BytesIO
-import base64
-import mimetypes
 import posixpath
 from zipfile import BadZipFile, ZipFile
 from xml.etree import ElementTree
@@ -33,7 +31,6 @@ class NewsArticleSerializer(serializers.ModelSerializer):
     category = NewsCategorySerializer(read_only=True)
     tags = NewsTagSerializer(many=True, read_only=True)
     images = NewsImageSerializer(many=True, read_only=True)
-    word_html = serializers.SerializerMethodField()
 
     class Meta:
         model = NewsArticle
@@ -56,25 +53,18 @@ class NewsArticleSerializer(serializers.ModelSerializer):
             "updated_at",
     ]
 
-    def get_word_html(self, obj):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
         view = self.context.get("view")
         if getattr(view, "action", "") != "retrieve":
-            return ""
-        if not obj.word_file:
-            return ""
-        try:
-            with obj.word_file.open("rb") as file_obj:
-                return docx_to_html_fragment(file_obj)
-        except (BadZipFile, KeyError, ElementTree.ParseError, OSError):
-            return ""
+            data["word_html"] = ""
+        return data
 
-
-def docx_to_html_fragment(file_obj):
+def parse_docx_blocks(file_obj):
     data = file_obj.read()
     with ZipFile(BytesIO(data)) as archive:
         xml_content = archive.read("word/document.xml")
         relationships = _read_document_relationships(archive)
-
         namespace = {
             "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
             "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
@@ -86,15 +76,33 @@ def docx_to_html_fragment(file_obj):
             parts = [node.text or "" for node in paragraph.findall(".//w:t", namespace)]
             text = "".join(parts).strip()
             if text:
-                blocks.append(f"<p>{escape(text)}</p>")
+                blocks.append(("text", text))
 
             for blip in paragraph.findall(".//a:blip", namespace):
                 relation_id = blip.attrib.get(f"{{{namespace['r']}}}embed")
-                image_html = _image_html(archive, relationships, relation_id)
-                if image_html:
-                    blocks.append(image_html)
+                target = relationships.get(relation_id)
+                if not target:
+                    continue
+                image_path = target if target.startswith("word/") else posixpath.normpath(posixpath.join("word", target))
+                if not image_path.startswith("../"):
+                    blocks.append(("image", image_path))
 
-    return "\n".join(blocks)
+    return blocks
+
+
+def render_docx_blocks(blocks, image_urls=None):
+    image_urls = image_urls or {}
+    html_blocks = []
+    for kind, value in blocks:
+        if kind == "text":
+            html_blocks.append(f"<p>{escape(value)}</p>")
+        elif kind == "image" and value in image_urls:
+            html_blocks.append(f'<figure><img src="{escape(image_urls[value])}" alt="" /></figure>')
+    return "\n".join(html_blocks)
+
+
+def docx_to_html_fragment(file_obj):
+    return render_docx_blocks(parse_docx_blocks(file_obj))
 
 
 def _read_document_relationships(archive):
@@ -115,20 +123,19 @@ def _read_document_relationships(archive):
     return relationships
 
 
-def _image_html(archive, relationships, relation_id):
-    if not relation_id:
-        return ""
-    target = relationships.get(relation_id)
-    if not target:
-        return ""
-    image_path = target if target.startswith("word/") else posixpath.normpath(posixpath.join("word", target))
-    if image_path.startswith("../"):
-        return ""
-    try:
-        image_data = archive.read(image_path)
-    except KeyError:
-        return ""
-
-    content_type = mimetypes.guess_type(image_path)[0] or "image/png"
-    encoded = base64.b64encode(image_data).decode("ascii")
-    return f'<figure><img src="data:{content_type};base64,{encoded}" alt="" /></figure>'
+def extract_docx_images(file_obj):
+    data = file_obj.read()
+    images = []
+    with ZipFile(BytesIO(data)) as archive:
+        relationships = _read_document_relationships(archive)
+        seen_paths = set()
+        for target in relationships.values():
+            image_path = target if target.startswith("word/") else posixpath.normpath(posixpath.join("word", target))
+            if image_path.startswith("../") or image_path in seen_paths:
+                continue
+            seen_paths.add(image_path)
+            try:
+                images.append((image_path, posixpath.basename(image_path), archive.read(image_path)))
+            except KeyError:
+                continue
+    return images

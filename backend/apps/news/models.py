@@ -48,6 +48,7 @@ class NewsArticle(models.Model):
     content = models.TextField("内容")
     cover_image = models.ImageField("封面图", upload_to="news/covers/", blank=True)
     word_file = models.FileField("Word 新闻稿", upload_to="news/word/", blank=True)
+    word_html = models.TextField("Word HTML", blank=True)
     category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, related_name="articles", verbose_name="分类", null=True, blank=True)
     tags = models.ManyToManyField(NewsTag, related_name="articles", verbose_name="标签", blank=True)
     event_date = models.DateField("活动日期", null=True, blank=True)

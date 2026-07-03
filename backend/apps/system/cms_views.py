@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from django.core.files.base import ContentFile
 from django.utils.text import slugify
 from rest_framework import serializers, viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -10,7 +11,7 @@ from apps.instruments.serializers import InstrumentCategorySerializer
 from apps.members.models import Member
 from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
-from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer
+from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer, extract_docx_images, parse_docx_blocks, render_docx_blocks
 from apps.system.uploads import validate_upload_size
 from apps.portal.models import ContactInfo, ResearchDirection, SiteSetting
 from apps.portal.serializers import ContactInfoSerializer, ResearchDirectionSerializer, SiteSettingSerializer
@@ -125,12 +126,19 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         validated_data["slug"] = unique_slug(NewsArticle, validated_data.get("title"), prefix="news")
         self._validate_word_file(validated_data)
         validated_data.setdefault("content", "")
-        return super().create(validated_data)
+        article = super().create(validated_data)
+        if article.word_file:
+            self._sync_word_images(article)
+        return article
 
     def update(self, instance, validated_data):
         validated_data.pop("slug", None)
+        has_new_word_file = "word_file" in validated_data
         self._validate_word_file(validated_data)
-        return super().update(instance, validated_data)
+        article = super().update(instance, validated_data)
+        if has_new_word_file and article.word_file:
+            self._sync_word_images(article)
+        return article
 
     def _validate_word_file(self, validated_data):
         word_file = validated_data.get("word_file")
@@ -140,6 +148,61 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         filename = getattr(word_file, "name", "")
         if not filename.lower().endswith(".docx"):
             raise serializers.ValidationError({"word_file": "请上传 .docx 格式的 Word 文档。"})
+
+    def _sync_word_images(self, article):
+        NewsImage.objects.filter(article=article, caption__startswith="Word 图片").delete()
+        try:
+            with article.word_file.open("rb") as file_obj:
+                images = extract_docx_images(file_obj)
+        except Exception:
+            return
+
+        first_image_file = None
+        for index, (filename, image_data) in enumerate(images[:20], start=1):
+            image_file = ContentFile(image_data, name=filename)
+            NewsImage.objects.create(
+                article=article,
+                image=image_file,
+                caption=f"Word 图片 {index}",
+                sort_order=index,
+            )
+            if first_image_file is None:
+                first_image_file = ContentFile(image_data, name=filename)
+
+        if first_image_file and not article.cover_image:
+            article.cover_image.save(first_image_file.name, first_image_file, save=True)
+
+    def _sync_word_images(self, article):
+        NewsImage.objects.filter(article=article, caption__startswith="Word ").delete()
+        try:
+            with article.word_file.open("rb") as file_obj:
+                blocks = parse_docx_blocks(file_obj)
+            with article.word_file.open("rb") as file_obj:
+                images = extract_docx_images(file_obj)
+        except Exception:
+            article.word_html = ""
+            article.save(update_fields=["word_html", "updated_at"])
+            return
+
+        first_image_file = None
+        image_urls = {}
+        for index, (image_path, filename, image_data) in enumerate(images[:20], start=1):
+            image_file = ContentFile(image_data, name=filename)
+            news_image = NewsImage.objects.create(
+                article=article,
+                image=image_file,
+                caption=f"Word 图片 {index}",
+                sort_order=index,
+            )
+            image_urls[image_path] = news_image.image.url
+            if first_image_file is None:
+                first_image_file = ContentFile(image_data, name=filename)
+
+        article.word_html = render_docx_blocks(blocks, image_urls)
+        article.save(update_fields=["word_html", "updated_at"])
+
+        if first_image_file and not article.cover_image:
+            article.cover_image.save(first_image_file.name, first_image_file, save=True)
 
 
 class CmsNewsArticleViewSet(CmsParserMixin, viewsets.ModelViewSet):
