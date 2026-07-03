@@ -23,8 +23,8 @@
           <div v-else class="article-body">
             <p v-for="paragraph in paragraphs" :key="paragraph">{{ paragraph }}</p>
           </div>
-          <div v-if="article?.images?.length" class="image-gallery">
-            <figure v-for="image in article.images" :key="image.id">
+          <div v-if="detailGalleryImages.length" class="image-gallery">
+            <figure v-for="image in detailGalleryImages" :key="image.id">
               <img :src="image.image" :alt="image.caption || article.title" />
               <figcaption v-if="image.caption">{{ image.caption }}</figcaption>
             </figure>
@@ -70,6 +70,12 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
 const article = ref<NewsArticle | null>(null)
+
+const detailGalleryImages = computed(() => {
+  const images = article.value?.images || []
+  if (!article.value?.word_html) return images
+  return images.filter((image) => !image.caption?.startsWith('Word'))
+})
 
 const paragraphs = computed(() => {
   const content = article.value?.content || article.value?.summary || ''

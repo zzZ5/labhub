@@ -177,8 +177,9 @@
                 </div>
                 <el-form-item label="摘要"><el-input v-model="newsForm.summary" type="textarea" :rows="3" /></el-form-item>
                 <el-form-item label="Word 稿件">
-                  <input class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
+                  <input :key="newsFileInputKey" class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
                   <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
+                  <small v-else-if="editingNewsWordFile">当前 Word 稿件：{{ displayFileName(editingNewsWordFile) }}</small>
                   <small>上传 .docx 后保存，新闻详情页会优先展示 Word 转 HTML 的内容；下方正文可作为不用 Word 时的备用正文。</small>
                 </el-form-item>
                 <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress">
@@ -488,6 +489,7 @@ const saving = ref(false)
 const uploadingNewsImage = ref(false)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
+const newsFileInputKey = ref(0)
 
 const researchItems = ref<ResearchDirection[]>([])
 const siteSettings = ref<SiteSetting[]>([])
@@ -512,6 +514,7 @@ const editingMemberAvatar = ref('')
 const editingNewsSlug = ref('')
 const editingNewsId = ref<number | null>(null)
 const editingNewsCover = ref('')
+const editingNewsWordFile = ref('')
 const editingNewsImages = ref<CmsNewsImage[]>([])
 const editingPublicationId = ref<number | null>(null)
 const editingPublicationPdf = ref('')
@@ -886,7 +889,10 @@ function resetNews() {
   editingNewsSlug.value = ''
   editingNewsId.value = null
   editingNewsCover.value = ''
+  editingNewsWordFile.value = ''
   editingNewsImages.value = []
+  newsFileInputKey.value += 1
+  newsUploadProgress.value = 0
   Object.assign(newsForm, {
     title: '',
     summary: '',
@@ -907,7 +913,10 @@ function editNews(item: CmsNewsArticle) {
   editingNewsSlug.value = item.slug
   editingNewsId.value = item.id
   editingNewsCover.value = item.cover_image || ''
+  editingNewsWordFile.value = item.word_file || ''
   editingNewsImages.value = (item.images || []) as CmsNewsImage[]
+  newsFileInputKey.value += 1
+  newsUploadProgress.value = 0
   Object.assign(newsForm, {
     title: item.title,
     summary: item.summary || '',
@@ -935,6 +944,7 @@ async function saveNews() {
       ? await cmsApi.updateNews(editingNewsSlug.value, newsForm, onUploadProgress)
       : await cmsApi.createNews(newsForm, onUploadProgress)
     newsUploadProgress.value = 100
+    newsFileInputKey.value += 1
     await loadAll()
     editNews(saved)
     ElMessage.success('新闻已保存')
