@@ -27,7 +27,6 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
             "preview_status",
             "preview_error",
             "original_filename",
-            "version",
             "visibility",
             "visibility_label",
             "uploaded_by",

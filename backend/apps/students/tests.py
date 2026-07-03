@@ -146,7 +146,6 @@ def test_student_can_upload_own_archive_file(client, student_user, student_profi
             "file_type": StudentArchiveFile.FileType.PROPOSAL_REPORT,
             "title": "开题报告",
             "file": ContentFile(b"proposal", name="proposal.txt"),
-            "version": "v1.0",
             "visibility": StudentVisibility.SUPERVISOR,
         },
     )
@@ -184,7 +183,6 @@ def test_student_can_upload_own_thesis_file(client, student_user, student_profil
             "file_type": StudentArchiveFile.FileType.THESIS,
             "title": "毕业论文",
             "file": ContentFile(b"thesis", name="thesis.pdf"),
-            "version": "v1.0",
             "visibility": StudentVisibility.PRIVATE,
         },
     )

@@ -31,6 +31,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       POSTGRES_HOST: db
+      PROTECTED_MEDIA_ACCEL_PREFIX: /protected-media
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 5400
     volumes:
       - staticfiles:/app/staticfiles
@@ -89,6 +90,7 @@ services:
       - frontend_dist:/usr/share/nginx/html:ro
       - staticfiles:/app/staticfiles:ro
       - media:/app/media:ro
+      - protected_media:/app/protected_media:ro
     depends_on:
       - backend
       - frontend

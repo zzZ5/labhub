@@ -1,14 +1,14 @@
 ﻿import mimetypes
 from pathlib import Path
-from urllib.parse import quote
 
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.documents.responses import protected_file_response
 from apps.documents.views import docx_to_html, is_docx_file
 
 from .models import StudentArchiveFile, StudentProfile
@@ -93,8 +93,12 @@ class StudentArchiveFileViewSet(viewsets.ModelViewSet):
 
         filename = archive_file.original_filename or Path(archive_file.file.name).name
         if archive_file.preview_pdf:
-            response = FileResponse(archive_file.preview_pdf.open("rb"), as_attachment=False, content_type="application/pdf")
-            response["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(Path(filename).stem + '.pdf')}"
+            response = protected_file_response(
+                archive_file.preview_pdf,
+                Path(filename).stem + ".pdf",
+                as_attachment=False,
+                content_type="application/pdf",
+            )
             response["X-Frame-Options"] = "SAMEORIGIN"
             response["X-Content-Type-Options"] = "nosniff"
             return response
@@ -113,8 +117,7 @@ class StudentArchiveFileViewSet(viewsets.ModelViewSet):
                 return Response({"detail": "该 Word 文件暂不能在线预览，请下载查看。"}, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
             response = HttpResponse(html, content_type="text/html; charset=utf-8")
         else:
-            response = FileResponse(archive_file.file.open("rb"), as_attachment=False, content_type=content_type)
-        response["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(filename)}"
+            response = protected_file_response(archive_file.file, filename, as_attachment=False, content_type=content_type)
         response["X-Frame-Options"] = "SAMEORIGIN"
         response["X-Content-Type-Options"] = "nosniff"
         return response
@@ -128,9 +131,7 @@ class StudentArchiveFileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "当前材料没有可下载文件。"}, status=status.HTTP_404_NOT_FOUND)
 
         filename = archive_file.original_filename or Path(archive_file.file.name).name
-        response = FileResponse(archive_file.file.open("rb"), as_attachment=True)
-        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
-        return response
+        return protected_file_response(archive_file.file, filename, as_attachment=True)
 
     def destroy(self, request, *args, **kwargs):
         archive_file = self.get_object()

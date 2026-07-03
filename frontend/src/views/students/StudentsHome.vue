@@ -105,8 +105,7 @@
                   </div>
                   <div class="file-meta">
                     <span>{{ file.file_type_label }}</span>
-                    <span>{{ file.version }}</span>
-                    <span>{{ file.visibility_label }}</span>
+                    <span v-if="file.visibility_label">{{ file.visibility_label }}</span>
                   </div>
                   <p>{{ file.description || file.original_filename || '未记录原始文件名' }}</p>
                 </div>
@@ -227,6 +226,14 @@
           <el-form-item label="说明">
             <el-input v-model="uploadForm.description" type="textarea" :rows="3" />
           </el-form-item>
+          <el-form-item label="可见范围">
+            <el-select v-model="uploadForm.visibility">
+              <el-option label="组内成员可见" value="members" />
+              <el-option label="仅本人可见" value="private" />
+              <el-option label="本人和导师可见" value="supervisor" />
+              <el-option label="硕博导师和管理员可见" value="pi" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="文件">
             <input class="file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="handleFileChange" />
             <small v-if="uploadForm.file" class="upload-file-note">{{ uploadForm.file.name }}（{{ formatFileSize(uploadForm.file.size) }}）</small>
@@ -300,8 +307,7 @@ const profileForm = reactive<StudentProfilePayload>({
 const uploadForm = reactive({
   file_type: 'proposal_report',
   title: '',
-  version: 'v1.0',
-  visibility: 'supervisor',
+  visibility: 'members',
   description: '',
   file: undefined as File | undefined,
 })
@@ -501,7 +507,6 @@ async function submitArchiveFile() {
       file_type: uploadForm.file_type,
       title: uploadForm.title.trim(),
       file: uploadForm.file,
-      version: uploadForm.version || 'v1.0',
       visibility: uploadForm.visibility,
       description: uploadForm.description,
     }, (event) => {
@@ -512,7 +517,7 @@ async function submitArchiveFile() {
     ElMessage.success('学生资料已上传。')
     uploadVisible.value = false
     uploadForm.title = ''
-    uploadForm.version = 'v1.0'
+    uploadForm.visibility = 'members'
     uploadForm.description = ''
     uploadForm.file = undefined
     await loadStudents(selectedStudent.value.id)

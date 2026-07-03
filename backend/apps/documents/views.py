@@ -6,7 +6,7 @@ from urllib.parse import quote
 from zipfile import BadZipFile, ZipFile
 from xml.etree import ElementTree
 
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus, DocumentTag, DocumentVersion
+from .responses import protected_file_response
 from .serializers import DocumentCategorySerializer, DocumentDownloadLogSerializer, DocumentSerializer, DocumentTagSerializer, DocumentWriteSerializer
 from .services import (
     can_delete_document,
@@ -214,9 +215,7 @@ class DocumentViewSet(ModelViewSet):
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
         filename = version.original_filename or Path(version.file.name).name
-        response = FileResponse(version.file.open("rb"), as_attachment=True)
-        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
-        return response
+        return protected_file_response(version.file, filename, as_attachment=True)
 
     @action(detail=True, methods=["get"], url_path="preview")
     def preview(self, request, pk=None):
@@ -242,8 +241,12 @@ class DocumentViewSet(ModelViewSet):
 
         filename = version.original_filename or Path(version.file.name).name
         if version.preview_pdf:
-            response = FileResponse(version.preview_pdf.open("rb"), as_attachment=False, content_type="application/pdf")
-            response["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(Path(filename).stem + '.pdf')}"
+            response = protected_file_response(
+                version.preview_pdf,
+                Path(filename).stem + ".pdf",
+                as_attachment=False,
+                content_type="application/pdf",
+            )
             response["X-Frame-Options"] = "SAMEORIGIN"
             response["X-Content-Type-Options"] = "nosniff"
             return response
@@ -266,8 +269,7 @@ class DocumentViewSet(ModelViewSet):
             response["X-Content-Type-Options"] = "nosniff"
             return response
 
-        response = FileResponse(version.file.open("rb"), as_attachment=False, content_type=content_type)
-        response["Content-Disposition"] = f"inline; filename*=UTF-8''{quote(filename)}"
+        response = protected_file_response(version.file, filename, as_attachment=False, content_type=content_type)
         response["X-Frame-Options"] = "SAMEORIGIN"
         response["X-Content-Type-Options"] = "nosniff"
         return response

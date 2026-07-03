@@ -12,7 +12,6 @@ export interface StudentArchiveFile {
   preview_status: string
   preview_error: string
   original_filename: string
-  version: string
   visibility: string
   visibility_label: string
   uploaded_at: string
@@ -93,8 +92,7 @@ export async function uploadStudentArchiveFile(payload: {
   file_type: string
   title: string
   file: File
-  version: string
-  visibility: string
+  visibility?: string
   description?: string
 }, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
