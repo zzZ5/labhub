@@ -14,6 +14,7 @@ class SiteSetting(models.Model):
     contact_phone = models.CharField("联系电话", max_length=50, blank=True)
     address = models.CharField("地址", max_length=300, blank=True)
     map_embed = models.TextField("地图嵌入代码", blank=True)
+    external_links = models.JSONField("外部链接", default=list, blank=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 
     class Meta:

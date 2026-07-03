@@ -25,6 +25,11 @@ class Command(BaseCommand):
                 "footer_text": "面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源转化与高值产品开发研究。",
                 "contact_email": "weiyq2019@cau.edu.cn",
                 "address": "中国农业大学资源与环境学院生态系，北京市海淀区圆明园西路2号中国农业大学西校区",
+                "external_links": [
+                    {"label": "中国农业大学", "url": "https://www.cau.edu.cn/"},
+                    {"label": "资源与环境学院", "url": "https://zihuan.cau.edu.cn/"},
+                    {"label": "教师个人主页", "url": "https://faculty.cau.edu.cn/"},
+                ],
             },
         )
         ContactInfo.objects.update_or_create(
@@ -73,10 +78,6 @@ class Command(BaseCommand):
             ("组内动态", "lab-news", "课题组日常动态、组会记录、师生活动与通知。"),
             ("学术交流", "academic-exchange", "学术报告、来访交流、会议参会与合作访问。"),
             ("科研进展", "research-progress", "研究工作阶段性进展、论文发表、项目推进与成果报道。"),
-            ("项目相关", "projects", "科研项目立项、推进、结题和合作进展。"),
-            ("田间试验", "field-work", "田间采样、定位试验、农田观测和示范应用。"),
-            ("实验培训", "training", "实验安全、仪器操作、数据分析和新生培训。"),
-            ("学生动态", "student-development", "学生开题、中期、答辩、获奖和成长记录。"),
             ("成果荣誉", "awards", "奖励、专利、成果转化和团队荣誉信息。"),
             ("招生招聘", "recruitment", "招生信息、科研助理、博士后和访问学生招聘。"),
         ]

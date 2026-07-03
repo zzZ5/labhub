@@ -79,10 +79,8 @@
           <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
             <img :src="member.avatar" :alt="member.name" />
             <div class="member-info">
-              <div class="member-title-row">
-                <h3>{{ member.name }}</h3>
-                <span class="status-tag normal">{{ member.role }}</span>
-              </div>
+              <h3>{{ member.name }}</h3>
+              <span>{{ member.role }}</span>
               <p>{{ member.focus }}</p>
             </div>
           </RouterLink>
@@ -767,59 +765,69 @@ onMounted(async () => {
 
 .member-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
   border: 0;
 }
 
 .member-card {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  align-items: start;
-  gap: 16px;
-  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 214px;
+  border: 1px solid rgba(31, 61, 43, 0.1);
   border-radius: var(--radius-md);
-  background: #fff;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 247, 242, 0.72)),
+    #fff;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(31, 61, 43, 0.05);
 }
 
 .member-card img {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--color-line);
-  border-radius: 16px;
+  border-radius: 50%;
+  background: var(--color-eco-green);
   object-fit: cover;
 }
 
 .member-info {
+  display: grid;
+  gap: 7px;
   min-width: 0;
+  margin-top: 14px;
 }
 
-.member-title-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.member-title-row h3 {
+.member-info h3 {
   min-width: 0;
   margin: 0;
   overflow: hidden;
+  color: var(--color-deep-green);
+  font-size: 18px;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.member-title-row .status-tag {
-  min-height: 24px;
-  padding: 3px 9px;
-  font-size: 12px;
-  line-height: 1.35;
-  white-space: normal;
+.member-info span {
+  color: var(--color-cau-green);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
 }
 
 .member-card p {
-  margin-top: 8px;
-  font-size: 14px;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .news-card {
@@ -1008,12 +1016,6 @@ onMounted(async () => {
   .member-card img {
     width: 56px;
     height: 56px;
-  }
-
-  .member-title-row {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
   }
 
   .join-card {

@@ -69,8 +69,18 @@
                 </div>
                 <el-form-item label="地址"><el-input v-model="contactForm.address" /></el-form-item>
                 <el-form-item label="地图链接"><el-input v-model="contactForm.map_url" /></el-form-item>
+                <div class="external-link-editor">
+                  <div class="subsection-heading">
+                    <strong>页脚外链</strong>
+                    <span>用于公开网站底部跳转入口，可按需改成学校、学院或相关平台链接。</span>
+                  </div>
+                  <div v-for="(link, index) in externalLinks" :key="index" class="form-two-col">
+                    <el-form-item :label="`链接 ${index + 1} 名称`"><el-input v-model="link.label" placeholder="如：中国农业大学" /></el-form-item>
+                    <el-form-item :label="`链接 ${index + 1} 地址`"><el-input v-model="link.url" placeholder="https://..." /></el-form-item>
+                  </div>
+                </div>
               </el-form>
-              <FormActions :saving="saving" @save="saveContactInfo" />
+              <FormActions :saving="saving" @save="saveContactSection" />
             </article>
           </section>
         </el-tab-pane>
@@ -516,6 +526,11 @@ const siteForm = reactive<CmsForm>({
   favicon: undefined,
   hero_image: undefined,
 })
+const externalLinks = reactive([
+  { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
+  { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
+  { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
+])
 const contactForm = reactive<CmsForm>({
   title: '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
   content: '',
@@ -694,6 +709,7 @@ function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
     favicon: undefined,
     hero_image: undefined,
   })
+  fillExternalLinks(setting?.external_links)
   Object.assign(contactForm, {
     title: contact?.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
     content: contact?.content || '',
@@ -705,15 +721,53 @@ function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
 }
 
 async function saveSiteSetting() {
+  applyExternalLinksToSiteForm()
   await save(() =>
     editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm) : cmsApi.createSiteSetting(siteForm),
   )
+}
+
+function applyExternalLinksToSiteForm() {
+  siteForm.external_links = externalLinks
+    .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+    .filter((link) => link.label && link.url)
+}
+
+function fillExternalLinks(links?: SiteSetting['external_links']) {
+  const defaults = [
+    { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
+    { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
+    { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
+  ]
+  const nextLinks = links?.length ? links : defaults
+  externalLinks.splice(0, externalLinks.length, ...nextLinks.slice(0, 5).map((link) => ({
+    label: link.label || '',
+    url: link.url || '',
+  })))
+  while (externalLinks.length < 3) externalLinks.push({ label: '', url: '' })
 }
 
 async function saveContactInfo() {
   await save(() =>
     editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm) : cmsApi.createContactInfo(contactForm),
   )
+}
+
+async function saveContactSection() {
+  saving.value = true
+  try {
+    applyExternalLinksToSiteForm()
+    await Promise.all([
+      editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm) : cmsApi.createContactInfo(contactForm),
+      editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm) : cmsApi.createSiteSetting(siteForm),
+    ])
+    await loadAll()
+    ElMessage.success('内容已保存')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '保存失败，请检查权限和表单内容')
+  } finally {
+    saving.value = false
+  }
 }
 
 function setFile(event: Event, form: CmsForm, field: FileField) {
@@ -1736,6 +1790,33 @@ onMounted(loadAll)
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.external-link-editor {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  padding: 14px;
+  background: var(--color-soft-gray);
+}
+
+.subsection-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.subsection-heading strong {
+  color: var(--color-deep-green);
+  font-size: 15px;
+}
+
+.subsection-heading span {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .file-input {

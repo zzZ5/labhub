@@ -25,6 +25,12 @@ export interface SiteSetting {
   contact_phone: string
   address: string
   map_embed: string
+  external_links?: ExternalLink[]
+}
+
+export interface ExternalLink {
+  label: string
+  url: string
 }
 
 export interface ContactInfo {

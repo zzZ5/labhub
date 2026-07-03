@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-NEWS_CATEGORIES = [
+KEPT_CATEGORIES = [
     ("lab-news", "组内动态", "课题组日常动态、组会记录、师生活动与通知。"),
     ("academic-exchange", "学术交流", "学术报告、来访交流、会议参会与合作访问。"),
     ("research-progress", "科研进展", "论文发表、研究阶段进展与成果报道。"),
@@ -11,9 +11,9 @@ NEWS_CATEGORIES = [
 REMOVED_DEFAULT_SLUGS = ["projects", "field-work", "training", "student-development"]
 
 
-def seed_news_categories(apps, schema_editor):
+def prune_news_categories(apps, schema_editor):
     NewsCategory = apps.get_model("news", "NewsCategory")
-    for sort_order, (slug, name, description) in enumerate(NEWS_CATEGORIES, start=1):
+    for sort_order, (slug, name, description) in enumerate(KEPT_CATEGORIES, start=1):
         NewsCategory.objects.update_or_create(
             slug=slug,
             defaults={
@@ -27,9 +27,9 @@ def seed_news_categories(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("news", "0002_newsarticle_word_file"),
+        ("news", "0003_seed_news_categories"),
     ]
 
     operations = [
-        migrations.RunPython(seed_news_categories, migrations.RunPython.noop),
+        migrations.RunPython(prune_news_categories, migrations.RunPython.noop),
     ]

@@ -34,12 +34,15 @@
     <footer class="portal-footer">
       <div class="container footer-grid">
         <div>
-          <strong>中农雨磷</strong>
-          <p>面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。</p>
+          <strong>{{ footerName }}</strong>
+          <p>{{ footerDescription }}</p>
         </div>
         <div class="footer-address">
-          <span>中国农业大学资源与环境学院生态系</span>
-          <span>北京市海淀区圆明园西路2号 中国农业大学西校区</span>
+          <span>{{ footerUnit }}</span>
+          <span>{{ footerAddress }}</span>
+          <nav class="footer-links" aria-label="相关链接">
+            <a v-for="link in footerLinks" :key="`${link.label}-${link.url}`" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
+          </nav>
         </div>
       </div>
     </footer>
@@ -47,13 +50,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { fetchSiteSetting, type ExternalLink, type SiteSetting } from '../api/publicPortal'
 
 const menuOpen = ref(false)
+const siteSetting = ref<Partial<SiteSetting>>({})
+
+const defaultLinks: ExternalLink[] = [
+  { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
+  { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
+  { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
+]
+
+const footerUnit = computed(() => siteSetting.value.site_subtitle ? `${siteSetting.value.site_subtitle}生态系` : '中国农业大学资源与环境学院生态系')
+const footerAddress = computed(() => siteSetting.value.address || '北京市海淀区圆明园西路2号 中国农业大学西校区')
+const footerName = computed(() => siteSetting.value.site_name || '中农雨磷')
+const footerDescription = computed(() => siteSetting.value.footer_text || siteSetting.value.description || '面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。')
+const footerLinks = computed(() => {
+  const links = siteSetting.value.external_links?.filter((link) => link.label && link.url) || []
+  return links.length ? links : defaultLinks
+})
 
 function closeMenu() {
   menuOpen.value = false
 }
+
+onMounted(async () => {
+  try {
+    siteSetting.value = await fetchSiteSetting()
+  } catch {
+    siteSetting.value = {}
+  }
+})
 </script>
 
 <style scoped>
@@ -274,6 +302,26 @@ function closeMenu() {
   line-height: 1.6;
 }
 
+.footer-links {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 8px;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 @media (max-width: 980px) {
   .portal-nav {
     gap: 12px;
@@ -367,6 +415,10 @@ function closeMenu() {
 
   .footer-grid span {
     text-align: left;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
   }
 }
 </style>
