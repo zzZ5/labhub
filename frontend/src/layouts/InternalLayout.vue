@@ -3,9 +3,9 @@
     <aside class="internal-sidebar">
       <RouterLink class="internal-brand" to="/">
         <span class="internal-emblem">
-          <img src="/site-icon.png" alt="中农雨磷" />
+          <img :src="brand.logoUrl" :alt="brand.siteName" />
         </span>
-        <strong>中农雨磷</strong>
+        <strong>{{ brand.siteName }}</strong>
       </RouterLink>
       <nav class="internal-menu" aria-label="内部平台导航">
         <RouterLink v-for="item in menu" :key="item.path" :to="item.path">
@@ -52,6 +52,7 @@ import { useRouter } from 'vue-router'
 import { Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, UserFilled } from '@element-plus/icons-vue'
 
 import { useSessionStore } from '../stores/session'
+import { useSiteBrandStore } from '../stores/siteBrand'
 
 defineProps<{
   title: string
@@ -70,11 +71,13 @@ const menu = [
 
 const router = useRouter()
 const session = useSessionStore()
+const brand = useSiteBrandStore()
 
 onMounted(() => {
   if (!session.isAuthenticated) {
     void session.loadCurrentUser()
   }
+  void brand.load()
 })
 
 async function handleLogout() {
@@ -134,8 +137,11 @@ async function handleLogout() {
 }
 
 .internal-brand strong {
+  overflow: hidden;
   font-size: 20px;
   font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .internal-menu,
@@ -155,6 +161,7 @@ async function handleLogout() {
   padding: 0 12px;
   color: var(--color-muted);
   font-size: 14px;
+  text-decoration: none;
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -251,6 +258,7 @@ async function handleLogout() {
   background: #fff;
   color: var(--color-cau-green);
   font-weight: 600;
+  text-decoration: none;
 }
 
 .login-link {

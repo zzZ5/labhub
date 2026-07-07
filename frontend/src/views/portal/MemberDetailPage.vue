@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <PortalLayout>
     <section class="member-head">
       <div class="container member-head-inner">
         <RouterLink class="back-link portal-back-link" to="/team">返回团队成员</RouterLink>
-        <img :src="member?.avatar || '/favicon.svg'" :alt="member?.name || '团队成员'" />
+        <img :src="member?.avatar || '/site-icon.png'" :alt="member?.name || '团队成员'" />
         <div>
           <p class="section-kicker">团队成员</p>
           <h1>{{ member?.name || '团队成员' }}</h1>
@@ -19,7 +19,7 @@
           <section>
             <h2>个人简介</h2>
             <p v-for="paragraph in profileParagraphs" :key="paragraph">{{ paragraph }}</p>
-            <p v-if="!profileParagraphs.length" class="muted">个人简介可在内部平台“门户内容-团队成员”中维护。</p>
+            <p v-if="!profileParagraphs.length" class="muted">个人简介可在内部平台“门户内容 - 团队成员”中维护。</p>
           </section>
 
           <section v-if="member?.experiences?.length">

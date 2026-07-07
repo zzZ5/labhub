@@ -14,6 +14,11 @@
         </div>
       </div>
 
+      <div v-if="cmsUploadProgress > 0 && activeTab !== 'news'" class="upload-progress cms-upload-progress">
+        <el-progress :percentage="cmsUploadProgress" :status="cmsUploadProgress === 100 ? 'success' : undefined" />
+        <span>{{ cmsUploadProgress < 100 ? '正在上传附件，请不要关闭页面。' : '上传完成，正在保存内容。' }}</span>
+      </div>
+
       <el-tabs v-model="activeTab" class="cms-tabs">
         <el-tab-pane label="站点首页" name="site">
           <section class="editor-single">
@@ -400,6 +405,7 @@ import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
 import type { Award, ContactInfo, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import { useSiteBrandStore } from '../../stores/siteBrand'
 
 type FileField = 'cover_image' | 'avatar' | 'pdf_file' | 'image' | 'attachment' | 'word_file' | 'logo' | 'favicon' | 'hero_image'
 type CmsForm = Record<string, unknown>
@@ -487,6 +493,8 @@ const FormActions = defineComponent({
 const activeTab = ref('site')
 const saving = ref(false)
 const uploadingNewsImage = ref(false)
+const siteBrand = useSiteBrandStore()
+const cmsUploadProgress = ref(0)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
 const newsFileInputKey = ref(0)
@@ -736,9 +744,10 @@ function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
 
 async function saveSiteSetting() {
   applyExternalLinksToSiteForm()
-  await save(() =>
-    editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm) : cmsApi.createSiteSetting(siteForm),
+  await save((onUploadProgress) =>
+    editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm, onUploadProgress) : cmsApi.createSiteSetting(siteForm, onUploadProgress),
   )
+  await siteBrand.load(true)
 }
 
 function applyExternalLinksToSiteForm() {
@@ -762,25 +771,30 @@ function fillExternalLinks(links?: SiteSetting['external_links']) {
 }
 
 async function saveContactInfo() {
-  await save(() =>
-    editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm) : cmsApi.createContactInfo(contactForm),
+  await save((onUploadProgress) =>
+    editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm, onUploadProgress) : cmsApi.createContactInfo(contactForm, onUploadProgress),
   )
 }
 
 async function saveContactSection() {
   saving.value = true
+  cmsUploadProgress.value = 0
+  const onUploadProgress = createCmsUploadProgressHandler()
   try {
     applyExternalLinksToSiteForm()
     await Promise.all([
-      editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm) : cmsApi.createContactInfo(contactForm),
-      editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm) : cmsApi.createSiteSetting(siteForm),
+      editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm, onUploadProgress) : cmsApi.createContactInfo(contactForm, onUploadProgress),
+      editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm, onUploadProgress) : cmsApi.createSiteSetting(siteForm, onUploadProgress),
     ])
+    if (cmsUploadProgress.value > 0) cmsUploadProgress.value = 100
     await loadAll()
+    await siteBrand.load(true)
     ElMessage.success('内容已保存')
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.detail || '保存失败，请检查权限和表单内容')
   } finally {
     saving.value = false
+    resetCmsUploadProgressSoon()
   }
 }
 
@@ -806,6 +820,19 @@ function formatFileSize(size: number) {
   if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
   if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
   return `${size} B`
+}
+
+function createCmsUploadProgressHandler() {
+  return (event: { loaded: number; total?: number }) => {
+    if (!event.total) return
+    cmsUploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+  }
+}
+
+function resetCmsUploadProgressSoon() {
+  setTimeout(() => {
+    if (!saving.value) cmsUploadProgress.value = 0
+  }, 800)
 }
 
 function uploadErrorMessage(error: any, fallback: string) {
@@ -839,7 +866,7 @@ function editResearch(item: ResearchDirection) {
 }
 
 async function saveResearch() {
-  await save(() => (editingResearchSlug.value ? cmsApi.updateResearch(editingResearchSlug.value, researchForm) : cmsApi.createResearch(researchForm)))
+  await save((onUploadProgress) => (editingResearchSlug.value ? cmsApi.updateResearch(editingResearchSlug.value, researchForm, onUploadProgress) : cmsApi.createResearch(researchForm, onUploadProgress)))
   resetResearch()
 }
 
@@ -876,7 +903,7 @@ function editMember(item: Member) {
 }
 
 async function saveMember() {
-  await save(() => (editingMemberId.value ? cmsApi.updateMember(editingMemberId.value, memberForm) : cmsApi.createMember(memberForm)))
+  await save((onUploadProgress) => (editingMemberId.value ? cmsApi.updateMember(editingMemberId.value, memberForm, onUploadProgress) : cmsApi.createMember(memberForm, onUploadProgress)))
   resetMember()
 }
 
@@ -1056,8 +1083,8 @@ function editPublication(item: Publication) {
 }
 
 async function savePublication() {
-  await save(() =>
-    editingPublicationId.value ? cmsApi.updatePublication(editingPublicationId.value, publicationForm) : cmsApi.createPublication(publicationForm),
+  await save((onUploadProgress) =>
+    editingPublicationId.value ? cmsApi.updatePublication(editingPublicationId.value, publicationForm, onUploadProgress) : cmsApi.createPublication(publicationForm, onUploadProgress),
   )
   resetPublication()
 }
@@ -1100,7 +1127,7 @@ function editProject(item: Project) {
 }
 
 async function saveProject() {
-  await save(() => (editingProjectId.value ? cmsApi.updateProject(editingProjectId.value, projectForm) : cmsApi.createProject(projectForm)))
+  await save((onUploadProgress) => (editingProjectId.value ? cmsApi.updateProject(editingProjectId.value, projectForm, onUploadProgress) : cmsApi.createProject(projectForm, onUploadProgress)))
   resetProject()
 }
 
@@ -1142,7 +1169,7 @@ function editPatent(item: Patent) {
 }
 
 async function savePatent() {
-  await save(() => (editingPatentId.value ? cmsApi.updatePatent(editingPatentId.value, patentForm) : cmsApi.createPatent(patentForm)))
+  await save((onUploadProgress) => (editingPatentId.value ? cmsApi.updatePatent(editingPatentId.value, patentForm, onUploadProgress) : cmsApi.createPatent(patentForm, onUploadProgress)))
   resetPatent()
 }
 
@@ -1186,7 +1213,7 @@ function editAward(item: Award) {
 }
 
 async function saveAward() {
-  await save(() => (editingAwardId.value ? cmsApi.updateAward(editingAwardId.value, awardForm) : cmsApi.createAward(awardForm)))
+  await save((onUploadProgress) => (editingAwardId.value ? cmsApi.updateAward(editingAwardId.value, awardForm, onUploadProgress) : cmsApi.createAward(awardForm, onUploadProgress)))
   resetAward()
 }
 
@@ -1315,16 +1342,20 @@ function normalizeImportRow(row: Record<string, string>, kind: ResultImportKind)
   }
 }
 
-async function save(action: () => Promise<unknown>) {
+async function save(action: (onUploadProgress?: (event: { loaded: number; total?: number }) => void) => Promise<unknown>) {
   saving.value = true
+  cmsUploadProgress.value = 0
+  const onUploadProgress = createCmsUploadProgressHandler()
   try {
-    await action()
+    await action(onUploadProgress)
+    if (cmsUploadProgress.value > 0) cmsUploadProgress.value = 100
     await loadAll()
     ElMessage.success('内容已保存')
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.detail || '保存失败，请检查权限和表单内容')
   } finally {
     saving.value = false
+    resetCmsUploadProgressSoon()
   }
 }
 

@@ -87,7 +87,12 @@
           </div>
           <el-form-item label="设备图片">
             <input class="file-input" type="file" accept="image/*" @change="setInstrumentImage" />
+            <small v-if="instrumentForm.image" class="upload-file-note">{{ instrumentForm.image.name }}（{{ formatFileSize(instrumentForm.image.size) }}）</small>
           </el-form-item>
+          <div v-if="saving && uploadProgress > 0" class="upload-progress">
+            <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
+            <span>{{ uploadProgress < 100 ? '正在上传设备图片，请不要关闭窗口。' : '上传完成，正在保存设备信息。' }}</span>
+          </div>
           <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="4" /></el-form-item>
         </el-form>
         <template #footer>
@@ -115,6 +120,7 @@ const keyword = ref('')
 const statusFilter = ref('')
 const formVisible = ref(false)
 const saving = ref(false)
+const uploadProgress = ref(0)
 const instrumentForm = reactive({
   name: '',
   model: '',
@@ -167,6 +173,13 @@ function openCreate() {
 function setInstrumentImage(event: Event) {
   const input = event.target as HTMLInputElement
   instrumentForm.image = input.files?.[0]
+  uploadProgress.value = 0
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
 }
 
 async function saveInstrument() {
@@ -175,8 +188,13 @@ async function saveInstrument() {
     return
   }
   saving.value = true
+  uploadProgress.value = 0
   try {
-    await createInstrument({ ...instrumentForm, name: instrumentForm.name.trim() })
+    await createInstrument({ ...instrumentForm, name: instrumentForm.name.trim() }, (event) => {
+      if (!event.total) return
+      uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+    })
+    if (uploadProgress.value > 0) uploadProgress.value = 100
     ElMessage.success('设备已保存。')
     formVisible.value = false
     await loadInstruments()
@@ -184,6 +202,9 @@ async function saveInstrument() {
     ElMessage.error(error?.response?.data?.detail || '保存失败，请确认权限和表单内容。')
   } finally {
     saving.value = false
+    setTimeout(() => {
+      if (!saving.value) uploadProgress.value = 0
+    }, 800)
   }
 }
 
@@ -515,6 +536,30 @@ onMounted(async () => {
   border-radius: var(--radius-sm);
   padding: 10px 11px;
   background: #fff;
+}
+
+.upload-file-note {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.upload-progress {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--color-soft-gray);
+}
+
+.upload-progress span {
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 @media (max-width: 1080px) {

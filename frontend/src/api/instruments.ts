@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios'
 import { http } from './http'
 
 export interface Instrument {
@@ -33,13 +34,21 @@ function toInstrumentBody(payload: Record<string, unknown>) {
   return formData
 }
 
-export async function createInstrument(payload: Record<string, unknown>) {
-  const response = await http.post<Instrument>('/instruments/instruments/', toInstrumentBody(payload))
+export async function createInstrument(payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = toInstrumentBody(payload)
+  const response = await http.post<Instrument>('/instruments/instruments/', body, {
+    timeout: body instanceof FormData ? 5400000 : undefined,
+    onUploadProgress,
+  })
   return response.data
 }
 
-export async function updateInstrument(id: number, payload: Record<string, unknown>) {
-  const response = await http.patch<Instrument>(`/instruments/instruments/${id}/`, toInstrumentBody(payload))
+export async function updateInstrument(id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = toInstrumentBody(payload)
+  const response = await http.patch<Instrument>(`/instruments/instruments/${id}/`, body, {
+    timeout: body instanceof FormData ? 5400000 : undefined,
+    onUploadProgress,
+  })
   return response.data
 }
 

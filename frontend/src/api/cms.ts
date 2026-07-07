@@ -86,21 +86,21 @@ export interface CmsNewsImage {
 
 export const cmsApi = {
   listSiteSettings: () => list<SiteSetting>('site-settings'),
-  createSiteSetting: (payload: Record<string, unknown>) => create<SiteSetting>('site-settings', payload),
-  updateSiteSetting: (id: number, payload: Record<string, unknown>) => update<SiteSetting>('site-settings', id, payload),
+  createSiteSetting: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<SiteSetting>('site-settings', payload, onUploadProgress),
+  updateSiteSetting: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<SiteSetting>('site-settings', id, payload, onUploadProgress),
 
   listContactInfo: () => list<ContactInfo>('contact-info'),
-  createContactInfo: (payload: Record<string, unknown>) => create<ContactInfo>('contact-info', payload),
-  updateContactInfo: (id: number, payload: Record<string, unknown>) => update<ContactInfo>('contact-info', id, payload),
+  createContactInfo: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<ContactInfo>('contact-info', payload, onUploadProgress),
+  updateContactInfo: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<ContactInfo>('contact-info', id, payload, onUploadProgress),
 
   listResearch: () => list<ResearchDirection>('research-directions'),
-  createResearch: (payload: Record<string, unknown>) => create<ResearchDirection>('research-directions', payload),
-  updateResearch: (slug: string, payload: Record<string, unknown>) => update<ResearchDirection>('research-directions', slug, payload),
+  createResearch: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<ResearchDirection>('research-directions', payload, onUploadProgress),
+  updateResearch: (slug: string, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<ResearchDirection>('research-directions', slug, payload, onUploadProgress),
   deleteResearch: (slug: string) => remove('research-directions', slug),
 
   listMembers: () => list<Member>('members'),
-  createMember: (payload: Record<string, unknown>) => create<Member>('members', payload),
-  updateMember: (id: number, payload: Record<string, unknown>) => update<Member>('members', id, payload),
+  createMember: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Member>('members', payload, onUploadProgress),
+  updateMember: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Member>('members', id, payload, onUploadProgress),
   deleteMember: (id: number) => remove('members', id),
 
   listNewsCategories: () => list<NewsCategory>('news-categories'),
@@ -116,32 +116,32 @@ export const cmsApi = {
   deleteNewsImage: (id: number) => remove('news-images', id),
 
   listPublications: () => list<Publication>('publications'),
-  createPublication: (payload: Record<string, unknown>) => create<Publication>('publications', payload),
-  updatePublication: (id: number, payload: Record<string, unknown>) => update<Publication>('publications', id, payload),
+  createPublication: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Publication>('publications', payload, onUploadProgress),
+  updatePublication: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Publication>('publications', id, payload, onUploadProgress),
   deletePublication: (id: number) => remove('publications', id),
 
   listProjects: () => list<Project>('projects'),
-  createProject: (payload: Record<string, unknown>) => create<Project>('projects', payload),
-  updateProject: (id: number, payload: Record<string, unknown>) => update<Project>('projects', id, payload),
+  createProject: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Project>('projects', payload, onUploadProgress),
+  updateProject: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Project>('projects', id, payload, onUploadProgress),
   deleteProject: (id: number) => remove('projects', id),
 
   listPatents: () => list<Patent>('patents'),
-  createPatent: (payload: Record<string, unknown>) => create<Patent>('patents', payload),
-  updatePatent: (id: number, payload: Record<string, unknown>) => update<Patent>('patents', id, payload),
+  createPatent: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Patent>('patents', payload, onUploadProgress),
+  updatePatent: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Patent>('patents', id, payload, onUploadProgress),
   deletePatent: (id: number) => remove('patents', id),
 
   listAwards: () => list<Award>('awards'),
-  createAward: (payload: Record<string, unknown>) => create<Award>('awards', payload),
-  updateAward: (id: number, payload: Record<string, unknown>) => update<Award>('awards', id, payload),
+  createAward: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Award>('awards', payload, onUploadProgress),
+  updateAward: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Award>('awards', id, payload, onUploadProgress),
   deleteAward: (id: number) => remove('awards', id),
 
   listInstrumentCategories: () => list<InstrumentCategory>('instrument-categories'),
-  createInstrumentCategory: (payload: Record<string, unknown>) => create<InstrumentCategory>('instrument-categories', payload),
-  updateInstrumentCategory: (slug: string, payload: Record<string, unknown>) => update<InstrumentCategory>('instrument-categories', slug, payload),
+  createInstrumentCategory: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<InstrumentCategory>('instrument-categories', payload, onUploadProgress),
+  updateInstrumentCategory: (slug: string, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<InstrumentCategory>('instrument-categories', slug, payload, onUploadProgress),
   deleteInstrumentCategory: (slug: string) => remove('instrument-categories', slug),
 
   listInstruments: () => list<Instrument>('instruments'),
-  createInstrument: (payload: Record<string, unknown>) => create<Instrument>('instruments', payload),
-  updateInstrument: (id: number, payload: Record<string, unknown>) => update<Instrument>('instruments', id, payload),
+  createInstrument: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Instrument>('instruments', payload, onUploadProgress),
+  updateInstrument: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Instrument>('instruments', id, payload, onUploadProgress),
   deleteInstrument: (id: number) => remove('instruments', id),
 }

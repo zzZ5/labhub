@@ -50,60 +50,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { fetchSiteSetting, type ExternalLink, type SiteSetting } from '../api/publicPortal'
+import { computed, onMounted, ref } from 'vue'
+import { useSiteBrandStore } from '../stores/siteBrand'
 
 const menuOpen = ref(false)
-const siteSetting = ref<Partial<SiteSetting>>({})
+const brand = useSiteBrandStore()
 
-const defaultLinks: ExternalLink[] = [
-  { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
-  { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
-  { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
-]
-
-const footerUnit = computed(() => siteSetting.value.site_subtitle ? `${siteSetting.value.site_subtitle}生态系` : '中国农业大学资源与环境学院生态系')
-const footerAddress = computed(() => siteSetting.value.address || '北京市海淀区圆明园西路2号 中国农业大学西校区')
-const footerName = computed(() => siteSetting.value.site_name || '中农雨磷')
-const footerDescription = computed(() => siteSetting.value.footer_text || siteSetting.value.description || '面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。')
-const assetVersion = computed(() => encodeURIComponent(siteSetting.value.updated_at || 'default'))
-const brandLogo = computed(() => withAssetVersion(siteSetting.value.logo || '/site-icon.png'))
-const footerLinks = computed(() => {
-  const links = siteSetting.value.external_links?.filter((link) => link.label && link.url) || []
-  return links.length ? links : defaultLinks
-})
-
-function withAssetVersion(url: string) {
-  if (!url || url.startsWith('data:')) return url
-  const separator = url.includes('?') ? '&' : '?'
-  return `${url}${separator}v=${assetVersion.value}`
-}
-
-function updateFavicon(url?: string) {
-  if (!url) return
-  const href = withAssetVersion(url)
-  document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((link) => {
-    link.href = href
-  })
-}
+const siteSetting = computed(() => brand.setting)
+const footerUnit = computed(() => `${brand.siteSubtitle}生态系`)
+const footerAddress = computed(() => brand.address)
+const footerName = computed(() => brand.siteName)
+const footerDescription = computed(() => brand.footerDescription)
+const brandLogo = computed(() => brand.logoUrl)
+const footerLinks = computed(() => brand.externalLinks)
 
 function closeMenu() {
   menuOpen.value = false
 }
 
 onMounted(async () => {
-  try {
-    siteSetting.value = await fetchSiteSetting()
-  } catch {
-    siteSetting.value = {}
-  }
+  await brand.load()
 })
-
-watch(
-  () => siteSetting.value.favicon,
-  (favicon) => updateFavicon(favicon),
-  { immediate: true },
-)
 </script>
 
 <style scoped>
