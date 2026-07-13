@@ -20,56 +20,87 @@
             <article class="card form-panel site-form-panel">
               <div class="form-heading">
                 <div>
-                  <span>首页基础内容</span>
-                  <h2>{{ siteForm.site_name || '站点首页' }}</h2>
-                  <p>用于维护首页课题组简介和默认横幅文案；轮播图上的单张标题请到“首页横幅”中编辑。</p>
+                  <span>站点首页</span>
+                  <h2>{{ siteForm.site_name || '中农雨磷' }}</h2>
+                  <p>维护首页基础文案、课题组简介和加入我们；页脚与品牌图片请到“页脚设置”维护。</p>
                 </div>
               </div>
               <el-form label-position="top">
-                <div class="form-two-col">
-                  <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
-                  <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
+                <div class="form-section">
+                  <div class="subsection-heading">
+                    <strong>基础信息</strong>
+                    <span>用于导航栏、页脚和默认横幅文字。</span>
+                  </div>
+                  <div class="form-two-col">
+                    <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
+                    <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
+                  </div>
+                  <el-form-item label="副标题"><el-input v-model="siteForm.keywords" /></el-form-item>
                 </div>
-                <el-form-item label="副标题"><el-input v-model="siteForm.keywords" /></el-form-item>
-                <el-form-item label="课题组简介"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="联系邮箱"><el-input v-model="siteForm.contact_email" /></el-form-item>
-                  <el-form-item label="联系电话"><el-input v-model="siteForm.contact_phone" /></el-form-item>
-                </div>
-                <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
-                <el-form-item label="Logo">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
-                  <small v-if="editingSiteLogo">当前 Logo：{{ displayFileLabel(editingSiteLogo) }}</small>
-                </el-form-item>
-                <el-form-item label="网站图标">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
-                  <small v-if="editingSiteFavicon">当前图标：{{ displayFileLabel(editingSiteFavicon) }}</small>
-                </el-form-item>
-                <el-form-item label="默认横幅图">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
-                  <small v-if="editingSiteHeroImage">当前默认横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
-                  <small>没有单独配置“首页横幅”轮播图时，首页会使用这张图。</small>
-                </el-form-item>
-              </el-form>
-              <FormActions :saving="saving" @save="saveSiteSetting" />
-            </article>
 
+                <div class="form-section">
+                  <div class="subsection-heading">
+                    <strong>课题组简介</strong>
+                    <span>这里会直接显示在首页“课题组简介”模块中。</span>
+                  </div>
+                  <el-form-item label="简介正文"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
+                </div>
+
+                <div class="form-section">
+                  <div class="subsection-heading">
+                    <strong>加入我们</strong>
+                    <span>用于首页底部“加入我们”模块。</span>
+                  </div>
+                  <el-form-item label="说明"><el-input v-model="contactForm.content" type="textarea" :rows="3" /></el-form-item>
+                  <el-form-item label="联系邮箱"><el-input v-model="contactForm.email" /></el-form-item>
+                </div>
+              </el-form>
+              <FormActions :saving="saving" @save="saveHomeContent" />
+            </article>
+          </section>
+        </el-tab-pane>
+
+        <el-tab-pane label="页脚设置" name="footer">
+          <section class="editor-single">
             <article class="card form-panel site-form-panel">
               <div class="form-heading">
                 <div>
-                  <span>加入我们 / 联系方式</span>
-                  <h2>{{ contactForm.title || '联系我们' }}</h2>
+                  <span>页脚设置</span>
+                  <h2>品牌与外链</h2>
+                  <p>维护公开网站底部信息、Logo、网站图标和默认横幅图。</p>
                 </div>
               </div>
               <el-form label-position="top">
-                <el-form-item label="标题"><el-input v-model="contactForm.title" /></el-form-item>
-                <el-form-item label="说明"><el-input v-model="contactForm.content" type="textarea" :rows="4" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="邮箱"><el-input v-model="contactForm.email" /></el-form-item>
-                  <el-form-item label="电话"><el-input v-model="contactForm.phone" /></el-form-item>
+                <div class="form-section">
+                  <div class="subsection-heading">
+                    <strong>品牌图片</strong>
+                    <span>用于导航栏、浏览器图标和没有轮播图时的默认横幅。</span>
+                  </div>
+                  <div class="form-two-col">
+                    <el-form-item label="Logo">
+                      <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
+                      <small v-if="editingSiteLogo">当前 Logo：{{ displayFileLabel(editingSiteLogo) }}</small>
+                    </el-form-item>
+                    <el-form-item label="网站图标">
+                      <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
+                      <small v-if="editingSiteFavicon">当前图标：{{ displayFileLabel(editingSiteFavicon) }}</small>
+                    </el-form-item>
+                  </div>
+                  <el-form-item label="默认横幅图">
+                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
+                    <small v-if="editingSiteHeroImage">当前默认横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
+                    <small>没有单独配置“首页横幅”轮播图时，首页会使用这张图。</small>
+                  </el-form-item>
                 </div>
-                <el-form-item label="地址"><el-input v-model="contactForm.address" /></el-form-item>
-                <el-form-item label="地图链接"><el-input v-model="contactForm.map_url" /></el-form-item>
+
+                <div class="form-section">
+                  <div class="subsection-heading">
+                    <strong>页脚信息</strong>
+                    <span>用于公开网站底部展示。</span>
+                  </div>
+                  <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
+                </div>
+
                 <div class="external-link-editor">
                   <div class="subsection-heading">
                     <strong>页脚外链</strong>
@@ -81,7 +112,7 @@
                   </div>
                 </div>
               </el-form>
-              <FormActions :saving="saving" @save="saveContactSection" />
+              <FormActions :saving="saving" @save="saveFooterContent" />
             </article>
           </section>
         </el-tab-pane>
@@ -808,14 +839,6 @@ function fillSiteForms(setting?: SiteSetting, contact?: ContactInfo) {
   })
 }
 
-async function saveSiteSetting() {
-  applyExternalLinksToSiteForm()
-  await save((onUploadProgress) =>
-    editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm, onUploadProgress) : cmsApi.createSiteSetting(siteForm, onUploadProgress),
-  )
-  await siteBrand.load(true)
-}
-
 function applyExternalLinksToSiteForm() {
   siteForm.external_links = externalLinks
     .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
@@ -836,17 +859,16 @@ function fillExternalLinks(links?: SiteSetting['external_links']) {
   while (externalLinks.length < 3) externalLinks.push({ label: '', url: '' })
 }
 
-async function saveContactInfo() {
-  await save((onUploadProgress) =>
-    editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm, onUploadProgress) : cmsApi.createContactInfo(contactForm, onUploadProgress),
-  )
-}
-
-async function saveContactSection() {
+async function saveHomeContent() {
   saving.value = true
   cmsUploadProgress.value = 0
   const onUploadProgress = createCmsUploadProgressHandler()
   try {
+    siteForm.contact_email = contactForm.email || siteForm.contact_email || ''
+    contactForm.title = '加入我们'
+    contactForm.phone = ''
+    contactForm.address = siteForm.address || ''
+    contactForm.map_url = ''
     applyExternalLinksToSiteForm()
     await Promise.all([
       editingContactId.value ? cmsApi.updateContactInfo(editingContactId.value, contactForm, onUploadProgress) : cmsApi.createContactInfo(contactForm, onUploadProgress),
@@ -862,6 +884,14 @@ async function saveContactSection() {
     saving.value = false
     resetCmsUploadProgressSoon()
   }
+}
+
+async function saveFooterContent() {
+  applyExternalLinksToSiteForm()
+  await save((onUploadProgress) =>
+    editingSiteId.value ? cmsApi.updateSiteSetting(editingSiteId.value, siteForm, onUploadProgress) : cmsApi.createSiteSetting(siteForm, onUploadProgress),
+  )
+  await siteBrand.load(true)
 }
 
 function setFile(event: Event, form: CmsForm, field: FileField) {
@@ -1634,7 +1664,7 @@ onMounted(loadAll)
 
 .editor-single {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -1661,6 +1691,14 @@ onMounted(loadAll)
 
 .site-form-panel {
   min-height: 100%;
+}
+
+.form-section {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  padding: 14px;
+  background: rgba(251, 252, 251, 0.72);
 }
 
 .list-panel:hover,
@@ -2089,11 +2127,11 @@ onMounted(loadAll)
 .external-link-editor {
   display: grid;
   gap: 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   margin-bottom: 14px;
   padding: 14px;
-  background: var(--color-soft-gray);
+  background: rgba(245, 247, 246, 0.72);
 }
 
 .subsection-heading {

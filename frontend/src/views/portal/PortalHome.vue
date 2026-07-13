@@ -33,13 +33,12 @@
     <section class="page-section intro-section">
       <div class="container intro-grid">
         <div class="intro-main">
-          <SectionHeader
-            title="课题组简介"
-            :description="introDescription"
-          />
-          <div class="intro-meta">
-            <span>{{ siteSubtitle }}</span>
-            <span>{{ heroLead }}</span>
+          <div class="intro-heading">
+            <span>{{ siteName }}</span>
+            <h2>课题组简介</h2>
+          </div>
+          <div class="intro-body">
+            <p>{{ introDescription }}</p>
           </div>
           <div class="intro-actions">
             <RouterLink class="primary-action" to="/research">研究方向</RouterLink>
@@ -459,28 +458,28 @@ onUnmounted(() => {
 
 .hero-caption {
   position: absolute;
-  bottom: 42px;
-  left: clamp(22px, 4.4vw, 60px);
+  bottom: 30px;
+  left: clamp(16px, 3vw, 38px);
   z-index: 4;
-  max-width: min(640px, calc(100% - 80px));
+  max-width: min(360px, calc(100% - 56px));
   color: #fff;
-  text-shadow: 0 2px 12px rgba(18, 38, 26, 0.42);
+  text-shadow: 0 2px 10px rgba(18, 38, 26, 0.38);
 }
 
 .hero-caption h1 {
   margin: 0;
-  font-size: clamp(24px, 2.6vw, 36px);
+  font-size: clamp(15px, 1.35vw, 21px);
   font-weight: 650;
-  line-height: 1.15;
+  line-height: 1.22;
 }
 
 .hero-caption span {
   display: block;
-  max-width: 600px;
-  margin-top: 10px;
-  font-size: clamp(14px, 1.08vw, 16px);
+  max-width: 340px;
+  margin-top: 5px;
+  font-size: clamp(10px, 0.75vw, 12px);
   font-weight: 500;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .hero-controls {
@@ -545,44 +544,52 @@ onUnmounted(() => {
 }
 
 .intro-main {
-  min-width: 0;
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(200px, 0.32fr) minmax(0, 1fr);
+  gap: 42px;
+  min-width: 0;
   border-top: 1px solid rgba(31, 61, 43, 0.12);
   border-bottom: 1px solid rgba(31, 61, 43, 0.08);
   padding: 34px 0 32px;
 }
 
-.intro-main :deep(.section-header) {
-  max-width: 940px;
-  margin-bottom: 20px;
+.intro-heading span {
+  display: block;
+  width: fit-content;
+  border-top: 3px solid var(--color-cau-green);
+  padding-top: 12px;
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.intro-heading h2 {
+  margin: 16px 0 0;
+  color: var(--color-deep-green);
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 650;
+  line-height: 1.18;
+}
+
+.intro-body {
+  min-width: 0;
+}
+
+.intro-body p {
+  max-width: 820px;
+  margin: 0;
+  color: rgba(47, 52, 55, 0.82);
+  font-size: 17px;
+  line-height: 1.9;
 }
 
 .intro-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 24px;
-}
-
-.intro-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  max-width: 960px;
-  margin-top: 8px;
-}
-
-.intro-meta span {
-  position: relative;
-  color: var(--color-cau-green);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.intro-meta span + span::before {
-  margin-right: 18px;
-  color: rgba(31, 61, 43, 0.24);
-  content: "/";
+  grid-column: 2;
+  margin-top: -4px;
 }
 
 .intro-detail {
@@ -1056,6 +1063,16 @@ onUnmounted(() => {
     max-width: none;
   }
 
+  .intro-main {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .intro-actions {
+    grid-column: auto;
+    margin-top: 0;
+  }
+
   .research-grid,
   .news-grid,
   .member-grid {
@@ -1077,12 +1094,12 @@ onUnmounted(() => {
   }
 
   .hero-caption h1 {
-    font-size: 22px;
+    font-size: 15px;
   }
 
   .hero-caption span {
-    margin-top: 7px;
-    font-size: 12px;
+    margin-top: 5px;
+    font-size: 10px;
     line-height: 1.45;
   }
 
@@ -1101,15 +1118,6 @@ onUnmounted(() => {
 
   .intro-grid {
     width: min(var(--container), calc(100% - 28px));
-  }
-
-  .intro-meta {
-    display: grid;
-    gap: 7px;
-  }
-
-  .intro-meta span + span::before {
-    display: none;
   }
 
   .primary-action,
