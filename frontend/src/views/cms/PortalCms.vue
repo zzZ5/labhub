@@ -22,7 +22,7 @@
                 <div>
                   <span>站点首页</span>
                   <h2>{{ siteForm.site_name || '中农雨磷' }}</h2>
-                  <p>维护首页基础文案、课题组简介和加入我们；页脚与品牌图片请到“页脚设置”维护。</p>
+                  <p>维护首页基础文案、课题组简介和加入我们；网站标识与页脚内容请到“页脚设置”维护。</p>
                 </div>
               </div>
               <el-form label-position="top">
@@ -66,14 +66,14 @@
               <div class="form-heading">
                 <div>
                   <span>页脚设置</span>
-                  <h2>品牌与外链</h2>
-                  <p>维护公开网站底部信息、Logo、网站图标和默认横幅图。</p>
+                  <h2>网站标识与页脚内容</h2>
+                  <p>维护课题组网站的标识图片、底部地址和相关链接。</p>
                 </div>
               </div>
               <el-form label-position="top">
                 <div class="form-section">
                   <div class="subsection-heading">
-                    <strong>品牌图片</strong>
+                    <strong>网站标识</strong>
                     <span>用于导航栏、浏览器图标和没有轮播图时的默认横幅。</span>
                   </div>
                   <div class="form-two-col">
@@ -103,8 +103,8 @@
 
                 <div class="external-link-editor">
                   <div class="subsection-heading">
-                    <strong>页脚外链</strong>
-                    <span>用于公开网站底部跳转入口，可按需改成学校、学院或相关平台链接。</span>
+                    <strong>相关链接</strong>
+                    <span>用于网站底部跳转入口，可放学校、学院或相关平台链接。</span>
                   </div>
                   <div v-for="(link, index) in externalLinks" :key="index" class="form-two-col">
                     <el-form-item :label="`链接 ${index + 1} 名称`"><el-input v-model="link.label" placeholder="如：中国农业大学" /></el-form-item>
