@@ -8,6 +8,7 @@ export interface ResearchDirection {
   keywords?: string
   content?: string
   cover_image?: string
+  cover_image_size?: number
   sort_order?: number
 }
 
@@ -16,8 +17,11 @@ export interface SiteSetting {
   site_name: string
   site_subtitle: string
   logo?: string
+  logo_size?: number
   favicon?: string
+  favicon_size?: number
   hero_image?: string
+  hero_image_size?: number
   description: string
   keywords: string
   footer_text: string
@@ -53,6 +57,7 @@ export interface Member {
   grade: string
   research_direction: string
   avatar: string
+  avatar_size?: number
   email: string
   profile: string
   join_date?: string | null
@@ -70,13 +75,15 @@ export interface NewsArticle {
   summary: string
   content?: string
   cover_image: string
+  cover_image_size?: number
   word_file?: string
+  word_file_size?: number
   word_html?: string
   event_date: string | null
   location?: string
   category: { name: string } | null
   tags?: { id: number; name: string; slug: string }[]
-  images?: { id: number; image: string; caption: string; sort_order: number }[]
+  images?: { id: number; image: string; image_size?: number; caption: string; sort_order: number }[]
   created_at?: string
   updated_at?: string
 }
@@ -104,6 +111,7 @@ export interface Publication {
   cas_partition?: string
   abstract: string
   pdf_file: string
+  pdf_file_size?: number
   visibility: string
   is_representative: boolean
   sort_order?: number
@@ -148,6 +156,7 @@ export interface Patent {
   authorization_date: string | null
   status: string
   pdf_file?: string
+  pdf_file_size?: number
   visibility?: string
   sort_order?: number
 }
@@ -160,7 +169,9 @@ export interface Award {
   participants: string
   description: string
   image?: string
+  image_size?: number
   attachment?: string
+  attachment_size?: number
   visibility?: string
   sort_order?: number
 }

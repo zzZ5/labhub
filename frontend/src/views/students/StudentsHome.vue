@@ -105,6 +105,7 @@
                   </div>
                   <div class="file-meta">
                     <span>{{ file.file_type_label }}</span>
+                    <span>{{ archiveFileSizeLabel(file) }}</span>
                     <span v-if="file.visibility_label">{{ file.visibility_label }}</span>
                   </div>
                   <p>{{ file.description || file.original_filename || '未记录原始文件名' }}</p>
@@ -243,8 +244,12 @@
             <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
           </div>
         </el-form>
-        <template #footer>
-          <el-button @click="uploadVisible = false">取消</el-button>
+      <template #footer>
+        <div v-if="uploading || uploadProgress > 0" class="upload-progress dialog-upload-progress">
+          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
+          <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
+        </div>
+        <el-button @click="uploadVisible = false">取消</el-button>
           <el-button type="primary" :loading="uploading" @click="submitArchiveFile">保存资料</el-button>
         </template>
       </el-dialog>
@@ -373,6 +378,10 @@ function archiveTypeLabel(file: StudentArchiveFile) {
     file: '文件',
   }
   return labels[archiveKind(file)]
+}
+
+function archiveFileSizeLabel(file: StudentArchiveFile) {
+  return file.file_size ? formatFileSize(file.file_size) : '大小未知'
 }
 
 function archivePreviewLabel(file: StudentArchiveFile) {
@@ -1095,6 +1104,11 @@ watch(studentTotalPages, (total) => {
 .upload-progress span {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.dialog-upload-progress {
+  margin-bottom: 12px;
+  text-align: left;
 }
 
 @media (max-width: 1280px) {

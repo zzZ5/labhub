@@ -10,6 +10,7 @@ export interface Instrument {
   room: string
   location_detail: string
   image: string | null
+  image_size?: number
   status: string
   status_label: string
   need_training?: boolean

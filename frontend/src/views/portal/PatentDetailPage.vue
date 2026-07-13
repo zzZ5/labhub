@@ -32,6 +32,10 @@
               <dt>授权日期</dt>
               <dd>{{ patent.authorization_date }}</dd>
             </div>
+            <div v-if="patent?.pdf_file">
+              <dt>PDF 大小</dt>
+              <dd>{{ pdfSizeLabel }}</dd>
+            </div>
           </dl>
           <a v-if="patent?.pdf_file" class="primary-link" :href="patent.pdf_file" target="_blank" rel="noreferrer">查看 PDF</a>
           <a v-if="patent?.pdf_file" class="outline-link" :href="patent.pdf_file" download>下载 PDF</a>
@@ -42,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchPatent, type Patent } from '../../api/publicPortal'
@@ -50,6 +54,15 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
 const patent = ref<Patent | null>(null)
+
+const pdfSizeLabel = computed(() => formatFileSize(patent.value?.pdf_file_size || 0))
+
+function formatFileSize(size: number) {
+  if (!size) return '大小未知'
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
+}
 
 onMounted(async () => {
   patent.value = await fetchPatent(String(route.params.id || ''))

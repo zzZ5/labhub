@@ -49,6 +49,10 @@
               <dt>影响因子</dt>
               <dd>{{ paper.impact_factor }}</dd>
             </div>
+            <div v-if="paper?.pdf_file">
+              <dt>PDF 大小</dt>
+              <dd>{{ pdfSizeLabel }}</dd>
+            </div>
           </dl>
           <a v-if="paper?.doi" class="outline-link" :href="doiUrl" target="_blank" rel="noreferrer">打开 DOI</a>
           <a v-if="paper?.pdf_file" class="primary-link" :href="paper.pdf_file" target="_blank" rel="noreferrer">查看 PDF</a>
@@ -78,6 +82,15 @@ const volumeIssuePages = computed(() => {
   if (!paper.value) return ''
   return [paper.value.volume, paper.value.issue, paper.value.pages].filter(Boolean).join(', ')
 })
+
+const pdfSizeLabel = computed(() => formatFileSize(paper.value?.pdf_file_size || 0))
+
+function formatFileSize(size: number) {
+  if (!size) return '大小未知'
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
+}
 
 onMounted(async () => {
   paper.value = await fetchPublication(String(route.params.id || ''))

@@ -44,15 +44,15 @@
                 <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
                 <el-form-item label="Logo">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
-                  <small v-if="editingSiteLogo">当前 Logo：{{ displayFileName(editingSiteLogo) }}</small>
+                  <small v-if="editingSiteLogo">当前 Logo：{{ displayFileLabel(editingSiteLogo) }}</small>
                 </el-form-item>
                 <el-form-item label="网站图标">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
-                  <small v-if="editingSiteFavicon">当前图标：{{ displayFileName(editingSiteFavicon) }}</small>
+                  <small v-if="editingSiteFavicon">当前图标：{{ displayFileLabel(editingSiteFavicon) }}</small>
                 </el-form-item>
                 <el-form-item label="首页横幅图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
-                  <small v-if="editingSiteHeroImage">当前横幅：{{ displayFileName(editingSiteHeroImage) }}</small>
+                  <small v-if="editingSiteHeroImage">当前横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
                 </el-form-item>
               </el-form>
               <FormActions :saving="saving" @save="saveSiteSetting" />
@@ -107,7 +107,7 @@
                 <el-form-item label="详细内容"><el-input v-model="researchForm.content" type="textarea" :rows="5" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, researchForm, 'cover_image')" />
-                  <small v-if="editingResearchCover">当前图片：{{ displayFileName(editingResearchCover) }}</small>
+                  <small v-if="editingResearchCover">当前图片：{{ displayFileLabel(editingResearchCover) }}</small>
                 </el-form-item>
                 <el-form-item label="排序"><el-input-number v-model="researchForm.sort_order" :min="0" /></el-form-item>
               </el-form>
@@ -137,7 +137,7 @@
                 <el-form-item label="研究方向"><el-input v-model="memberForm.research_direction" /></el-form-item>
                 <el-form-item label="头像">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, memberForm, 'avatar')" />
-                  <small v-if="editingMemberAvatar">当前头像：{{ displayFileName(editingMemberAvatar) }}</small>
+                  <small v-if="editingMemberAvatar">当前头像：{{ displayFileLabel(editingMemberAvatar) }}</small>
                 </el-form-item>
                 <el-form-item label="简介"><el-input v-model="memberForm.profile" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="展示排序">
@@ -184,7 +184,7 @@
                 <el-form-item label="Word 稿件">
                   <input :key="newsFileInputKey" class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
                   <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
-                  <small v-else-if="editingNewsWordFile">当前 Word 稿件：{{ displayFileName(editingNewsWordFile) }}</small>
+                  <small v-else-if="editingNewsWordFile">当前 Word 稿件：{{ displayFileLabel(editingNewsWordFile) }}</small>
                   <small>上传 .docx 后保存，新闻详情页会优先展示 Word 转 HTML 的内容；下方正文可作为不用 Word 时的备用正文。</small>
                 </el-form-item>
                 <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress">
@@ -194,7 +194,7 @@
                 <el-form-item label="正文"><el-input v-model="newsForm.content" type="textarea" :rows="8" /></el-form-item>
                 <el-form-item label="封面图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
-                  <small v-if="editingNewsCover">当前封面：{{ displayFileName(editingNewsCover) }}</small>
+                  <small v-if="editingNewsCover">当前封面：{{ displayFileLabel(editingNewsCover) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="可见范围">
@@ -247,7 +247,7 @@
                 <el-form-item label="摘要"><el-input v-model="publicationForm.abstract" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="PDF 附件">
                   <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, publicationForm, 'pdf_file')" />
-                  <small v-if="editingPublicationPdf">当前 PDF：{{ displayFileName(editingPublicationPdf) }}</small>
+                  <small v-if="editingPublicationPdf">当前 PDF：{{ displayFileLabel(editingPublicationPdf) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="排序"><el-input-number v-model="publicationForm.sort_order" :min="0" /></el-form-item>
@@ -326,7 +326,7 @@
                 <el-form-item label="发明人"><el-input v-model="patentForm.inventors" type="textarea" :rows="2" /></el-form-item>
                 <el-form-item label="PDF 附件">
                   <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, patentForm, 'pdf_file')" />
-                  <small v-if="editingPatentPdf">当前 PDF：{{ displayFileName(editingPatentPdf) }}</small>
+                  <small v-if="editingPatentPdf">当前 PDF：{{ displayFileLabel(editingPatentPdf) }}</small>
                 </el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="申请日期"><el-date-picker v-model="patentForm.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
@@ -371,11 +371,11 @@
                 <div class="form-two-col">
                   <el-form-item label="获奖图片">
                     <input class="file-input" type="file" accept="image/*" @change="setFile($event, awardForm, 'image')" />
-                    <small v-if="editingAwardImage">当前图片：{{ displayFileName(editingAwardImage) }}</small>
+                    <small v-if="editingAwardImage">当前图片：{{ displayFileLabel(editingAwardImage) }}</small>
                   </el-form-item>
                   <el-form-item label="附件 PDF">
                     <input class="file-input" type="file" accept="application/pdf,image/*" @change="setFile($event, awardForm, 'attachment')" />
-                    <small v-if="editingAwardAttachment">当前附件：{{ displayFileName(editingAwardAttachment) }}</small>
+                    <small v-if="editingAwardAttachment">当前附件：{{ displayFileLabel(editingAwardAttachment) }}</small>
                   </el-form-item>
                 </div>
                 <el-form-item label="可见范围">
@@ -400,7 +400,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
+import { ElButton, ElMessage, ElMessageBox, ElProgress } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
 import type { Award, ContactInfo, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
@@ -484,6 +484,12 @@ const FormActions = defineComponent({
   setup(props, { emit }) {
     return () =>
       h('div', { class: 'form-actions' }, [
+        cmsUploadProgress.value > 0 && activeTab.value !== 'news'
+          ? h('div', { class: 'upload-progress inline-upload-progress' }, [
+              h(ElProgress, { percentage: cmsUploadProgress.value, status: cmsUploadProgress.value === 100 ? 'success' : undefined }),
+              h('span', cmsUploadProgress.value < 100 ? '正在上传附件，请不要关闭页面。' : '上传完成，正在保存内容。'),
+            ])
+          : null,
         h(ElButton, { type: 'primary', loading: props.saving, onClick: () => emit('save') }, () => '保存'),
         props.deletable ? h(ElButton, { plain: true, onClick: () => emit('delete') }, () => '删除') : null,
       ])
@@ -814,6 +820,40 @@ function displayFileName(value: string) {
     decoded = filename
   }
   return decoded.length > 42 ? `${decoded.slice(0, 18)}...${decoded.slice(-18)}` : decoded
+}
+
+function displayFileLabel(value: string) {
+  const size = findUploadedFileSize(value)
+  return size ? `${displayFileName(value)}（${formatFileSize(size)}）` : displayFileName(value)
+}
+
+function findUploadedFileSize(value: string) {
+  const match = (url?: string) => Boolean(url && value && (url === value || url.split('?')[0] === value.split('?')[0]))
+  const site = siteSettings.value.find((item) => match(item.logo) || match(item.favicon) || match(item.hero_image))
+  if (site) {
+    if (match(site.logo)) return site.logo_size || 0
+    if (match(site.favicon)) return site.favicon_size || 0
+    if (match(site.hero_image)) return site.hero_image_size || 0
+  }
+  const research = researchItems.value.find((item) => match(item.cover_image))
+  if (research) return research.cover_image_size || 0
+  const member = memberItems.value.find((item) => match(item.avatar))
+  if (member) return member.avatar_size || 0
+  const news = newsItems.value.find((item) => match(item.cover_image) || match(item.word_file))
+  if (news) {
+    if (match(news.cover_image)) return news.cover_image_size || 0
+    if (match(news.word_file)) return news.word_file_size || 0
+  }
+  const publication = publicationItems.value.find((item) => match(item.pdf_file))
+  if (publication) return publication.pdf_file_size || 0
+  const patent = patentItems.value.find((item) => match(item.pdf_file))
+  if (patent) return patent.pdf_file_size || 0
+  const award = awardItems.value.find((item) => match(item.image) || match(item.attachment))
+  if (award) {
+    if (match(award.image)) return award.image_size || 0
+    if (match(award.attachment)) return award.attachment_size || 0
+  }
+  return 0
 }
 
 function formatFileSize(size: number) {
@@ -1948,12 +1988,18 @@ onMounted(loadAll)
   position: sticky;
   bottom: 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   border-top: 1px solid var(--color-line);
   margin: 18px -20px -18px;
   padding: 12px 20px;
   background: rgba(251, 252, 251, 0.96);
   backdrop-filter: blur(8px);
+}
+
+.inline-upload-progress {
+  width: 100%;
+  margin-bottom: 2px;
 }
 
 @media (max-width: 980px) {

@@ -96,6 +96,10 @@
           <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="4" /></el-form-item>
         </el-form>
         <template #footer>
+          <div v-if="saving && uploadProgress > 0" class="upload-progress dialog-upload-progress">
+            <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
+            <span>{{ uploadProgress < 100 ? '正在上传设备图片，请不要关闭窗口。' : '上传完成，正在保存设备信息。' }}</span>
+          </div>
           <el-button @click="formVisible = false">取消</el-button>
           <el-button type="primary" :loading="saving" @click="saveInstrument">保存设备</el-button>
         </template>
@@ -560,6 +564,11 @@ onMounted(async () => {
 .upload-progress span {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.dialog-upload-progress {
+  margin-bottom: 12px;
+  text-align: left;
 }
 
 @media (max-width: 1080px) {

@@ -8,6 +8,7 @@ export interface StudentArchiveFile {
   file_type_label: string
   title: string
   file: string
+  file_size?: number
   preview_pdf: string
   preview_status: string
   preview_error: string

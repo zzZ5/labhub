@@ -94,7 +94,7 @@
           </header>
           <dl class="reader-meta">
             <div><dt>分类</dt><dd>{{ previewDocument.category?.name || '未分类' }}</dd></div>
-            <div><dt>文件</dt><dd>{{ currentFilename(previewDocument) }}</dd></div>
+            <div><dt>文件</dt><dd>{{ currentFileLabel(previewDocument) }}</dd></div>
             <div><dt>权限</dt><dd>{{ previewDocument.visibility_label }}</dd></div>
             <div><dt>更新</dt><dd>{{ formatDate(previewDocument.updated_at) }}</dd></div>
           </dl>
@@ -134,6 +134,7 @@
             <dl>
               <div><dt>分类</dt><dd>{{ doc.category?.name || '未分类' }}</dd></div>
               <div><dt>版本</dt><dd>{{ doc.current_version || latestVersion(doc) }}</dd></div>
+              <div><dt>大小</dt><dd>{{ currentFileSizeLabel(doc) }}</dd></div>
               <div><dt>更新</dt><dd>{{ formatDate(doc.updated_at) }}</dd></div>
             </dl>
             <footer>
@@ -187,6 +188,10 @@
         </div>
       </el-form>
       <template #footer>
+        <div v-if="uploading || uploadProgress > 0" class="upload-progress dialog-upload-progress">
+          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
+          <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
+        </div>
         <el-button @click="uploadVisible = false">取消</el-button>
         <el-button type="primary" :loading="uploading" @click="submitDocument">保存资料</el-button>
       </template>
@@ -394,6 +399,16 @@ function currentVersion(doc: LabDocument) {
 
 function currentFilename(doc: LabDocument) {
   return currentVersion(doc)?.original_filename || doc.title
+}
+
+function currentFileSizeLabel(doc: LabDocument) {
+  const size = currentVersion(doc)?.file_size || 0
+  return size ? formatFileSize(size) : '-'
+}
+
+function currentFileLabel(doc: LabDocument) {
+  const size = currentVersion(doc)?.file_size || 0
+  return size ? `${currentFilename(doc)}（${formatFileSize(size)}）` : currentFilename(doc)
 }
 
 function isDocxDocument(doc: LabDocument) {
@@ -952,6 +967,11 @@ onMounted(() => {
 .upload-progress span {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.dialog-upload-progress {
+  margin-bottom: 12px;
+  text-align: left;
 }
 
 @media (max-width: 1280px) {

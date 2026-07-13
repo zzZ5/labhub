@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.system.serializer_fields import file_field_size
+
 from .models import Member, MemberEducation, MemberExperience
 
 
@@ -19,6 +21,7 @@ class MemberSerializer(serializers.ModelSerializer):
     educations = MemberEducationSerializer(many=True, read_only=True)
     experiences = MemberExperienceSerializer(many=True, read_only=True)
     role_label = serializers.SerializerMethodField()
+    avatar_size = serializers.SerializerMethodField()
 
     def get_role_label(self, obj):
         legacy_labels = {
@@ -33,6 +36,9 @@ class MemberSerializer(serializers.ModelSerializer):
         }
         return legacy_labels.get(obj.role_type, obj.role_type or "团队成员")
 
+    def get_avatar_size(self, obj):
+        return file_field_size(obj.avatar)
+
     class Meta:
         model = Member
         fields = [
@@ -40,6 +46,7 @@ class MemberSerializer(serializers.ModelSerializer):
             "name",
             "name_en",
             "avatar",
+            "avatar_size",
             "role_type",
             "role_label",
             "grade",

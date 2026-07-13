@@ -6,6 +6,8 @@ from xml.etree import ElementTree
 
 from rest_framework import serializers
 
+from apps.system.serializer_fields import file_field_size
+
 from .models import NewsArticle, NewsCategory, NewsImage, NewsTag
 
 
@@ -22,15 +24,22 @@ class NewsTagSerializer(serializers.ModelSerializer):
 
 
 class NewsImageSerializer(serializers.ModelSerializer):
+    image_size = serializers.SerializerMethodField()
+
     class Meta:
         model = NewsImage
-        fields = ["id", "image", "caption", "sort_order"]
+        fields = ["id", "image", "image_size", "caption", "sort_order"]
+
+    def get_image_size(self, obj):
+        return file_field_size(obj.image)
 
 
 class NewsArticleSerializer(serializers.ModelSerializer):
     category = NewsCategorySerializer(read_only=True)
     tags = NewsTagSerializer(many=True, read_only=True)
     images = NewsImageSerializer(many=True, read_only=True)
+    cover_image_size = serializers.SerializerMethodField()
+    word_file_size = serializers.SerializerMethodField()
 
     class Meta:
         model = NewsArticle
@@ -41,7 +50,9 @@ class NewsArticleSerializer(serializers.ModelSerializer):
             "summary",
             "content",
             "cover_image",
+            "cover_image_size",
             "word_file",
+            "word_file_size",
             "word_html",
             "category",
             "tags",
@@ -59,6 +70,12 @@ class NewsArticleSerializer(serializers.ModelSerializer):
         if getattr(view, "action", "") != "retrieve":
             data["word_html"] = ""
         return data
+
+    def get_cover_image_size(self, obj):
+        return file_field_size(obj.cover_image)
+
+    def get_word_file_size(self, obj):
+        return file_field_size(obj.word_file)
 
 def parse_docx_blocks(file_obj):
     data = file_obj.read()

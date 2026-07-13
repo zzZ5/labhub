@@ -29,6 +29,14 @@
               <dt>获奖日期</dt>
               <dd>{{ award?.award_date || '-' }}</dd>
             </div>
+            <div v-if="award?.image">
+              <dt>图片大小</dt>
+              <dd>{{ imageSizeLabel }}</dd>
+            </div>
+            <div v-if="award?.attachment">
+              <dt>附件大小</dt>
+              <dd>{{ attachmentSizeLabel }}</dd>
+            </div>
           </dl>
           <a v-if="award?.attachment" class="primary-link" :href="award.attachment" target="_blank" rel="noreferrer">查看附件</a>
           <a v-if="award?.attachment" class="outline-link" :href="award.attachment" download>下载附件</a>
@@ -39,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchAward, type Award } from '../../api/publicPortal'
@@ -47,6 +55,16 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
 const award = ref<Award | null>(null)
+
+const imageSizeLabel = computed(() => formatFileSize(award.value?.image_size || 0))
+const attachmentSizeLabel = computed(() => formatFileSize(award.value?.attachment_size || 0))
+
+function formatFileSize(size: number) {
+  if (!size) return '大小未知'
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
+  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${size} B`
+}
 
 onMounted(async () => {
   award.value = await fetchAward(String(route.params.id || ''))

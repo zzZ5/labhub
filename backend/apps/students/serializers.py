@@ -2,6 +2,7 @@
 
 from apps.accounts.models import RoleCode
 from apps.accounts.services import user_has_role
+from apps.system.serializer_fields import file_field_size
 from apps.system.uploads import validate_upload_size
 
 from .models import StudentArchiveFile, StudentProfile
@@ -11,6 +12,7 @@ from .services import can_delete_archive_file, can_delete_student_profile, can_e
 class StudentArchiveFileSerializer(serializers.ModelSerializer):
     file_type_label = serializers.CharField(source="get_file_type_display", read_only=True)
     visibility_label = serializers.CharField(source="get_visibility_display", read_only=True)
+    file_size = serializers.SerializerMethodField()
     can_view = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
 
@@ -23,6 +25,7 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
             "file_type_label",
             "title",
             "file",
+            "file_size",
             "preview_pdf",
             "preview_status",
             "preview_error",
@@ -40,6 +43,9 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
     def get_can_view(self, obj):
         request = self.context.get("request")
         return can_view_archive_file(getattr(request, "user", None), obj)
+
+    def get_file_size(self, obj):
+        return file_field_size(obj.file)
 
     def get_can_delete(self, obj):
         request = self.context.get("request")
