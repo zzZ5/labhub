@@ -13,7 +13,7 @@ FROM base AS build
 COPY . .
 RUN npm run build
 
-FROM alpine:3.20 AS prod
+FROM node:22-alpine AS prod
 WORKDIR /app
 COPY --from=build /app/dist /app/dist
 CMD ["tail", "-f", "/dev/null"]
