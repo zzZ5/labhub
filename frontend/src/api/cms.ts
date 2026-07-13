@@ -1,7 +1,7 @@
 import type { AxiosProgressEvent } from 'axios'
 import { http } from './http'
 import type { Instrument } from './instruments'
-import type { Award, ContactInfo, Member, NewsArticle, NewsCategory, PaginatedResult, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
+import type { Award, ContactInfo, HomeBanner, Member, NewsArticle, NewsCategory, PaginatedResult, Patent, Project, Publication, ResearchDirection, SiteSetting } from './publicPortal'
 
 export interface InstrumentCategory {
   id: number
@@ -14,6 +14,7 @@ export interface InstrumentCategory {
 export type CmsResource =
   | 'site-settings'
   | 'contact-info'
+  | 'home-banners'
   | 'research-directions'
   | 'members'
   | 'news-categories'
@@ -92,6 +93,11 @@ export const cmsApi = {
   listContactInfo: () => list<ContactInfo>('contact-info'),
   createContactInfo: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<ContactInfo>('contact-info', payload, onUploadProgress),
   updateContactInfo: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<ContactInfo>('contact-info', id, payload, onUploadProgress),
+
+  listHomeBanners: () => list<HomeBanner>('home-banners'),
+  createHomeBanner: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<HomeBanner>('home-banners', payload, onUploadProgress),
+  updateHomeBanner: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<HomeBanner>('home-banners', id, payload, onUploadProgress),
+  deleteHomeBanner: (id: number) => remove('home-banners', id),
 
   listResearch: () => list<ResearchDirection>('research-directions'),
   createResearch: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<ResearchDirection>('research-directions', payload, onUploadProgress),

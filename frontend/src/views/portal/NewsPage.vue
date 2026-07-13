@@ -2,7 +2,6 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">新闻活动</p>
         <h1>新闻活动</h1>
         <p>汇集组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。</p>
       </div>

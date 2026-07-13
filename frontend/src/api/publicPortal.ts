@@ -33,6 +33,17 @@ export interface SiteSetting {
   updated_at?: string
 }
 
+export interface HomeBanner {
+  id: number
+  title: string
+  subtitle: string
+  image?: string | null
+  image_size?: number
+  link: string
+  sort_order: number
+  is_active?: boolean
+}
+
 export interface ExternalLink {
   label: string
   url: string
@@ -197,6 +208,11 @@ export async function fetchSiteSetting() {
 
 export async function fetchContactInfo() {
   const response = await http.get<Partial<ContactInfo>>('/portal/contact/')
+  return response.data
+}
+
+export async function fetchHomeBanners() {
+  const response = await http.get<HomeBanner[]>('/portal/banners/')
   return response.data
 }
 

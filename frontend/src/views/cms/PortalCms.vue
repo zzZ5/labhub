@@ -22,6 +22,7 @@
                 <div>
                   <span>首页基础内容</span>
                   <h2>{{ siteForm.site_name || '站点首页' }}</h2>
+                  <p>用于维护首页课题组简介和默认横幅文案；轮播图上的单张标题请到“首页横幅”中编辑。</p>
                 </div>
               </div>
               <el-form label-position="top">
@@ -29,9 +30,8 @@
                   <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
                   <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
                 </div>
-                <el-form-item label="首页主标题下方短句"><el-input v-model="siteForm.keywords" /></el-form-item>
-                <el-form-item label="首页简介"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
-                <el-form-item label="课题组简介模块文字"><el-input v-model="siteForm.footer_text" type="textarea" :rows="4" /></el-form-item>
+                <el-form-item label="副标题"><el-input v-model="siteForm.keywords" /></el-form-item>
+                <el-form-item label="课题组简介"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
                 <div class="form-two-col">
                   <el-form-item label="联系邮箱"><el-input v-model="siteForm.contact_email" /></el-form-item>
                   <el-form-item label="联系电话"><el-input v-model="siteForm.contact_phone" /></el-form-item>
@@ -45,9 +45,10 @@
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
                   <small v-if="editingSiteFavicon">当前图标：{{ displayFileLabel(editingSiteFavicon) }}</small>
                 </el-form-item>
-                <el-form-item label="首页横幅图">
+                <el-form-item label="默认横幅图">
                   <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
-                  <small v-if="editingSiteHeroImage">当前横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
+                  <small v-if="editingSiteHeroImage">当前默认横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
+                  <small>没有单独配置“首页横幅”轮播图时，首页会使用这张图。</small>
                 </el-form-item>
               </el-form>
               <FormActions :saving="saving" @save="saveSiteSetting" />
@@ -81,6 +82,48 @@
                 </div>
               </el-form>
               <FormActions :saving="saving" @save="saveContactSection" />
+            </article>
+          </section>
+        </el-tab-pane>
+
+        <el-tab-pane label="首页横幅" name="banners">
+          <section class="editor-grid">
+            <ContentList title="首页横幅" action-label="新增横幅" :items="bannerRows" :active-key="editingBannerId || ''" @create="resetBanner" @edit="editBanner" />
+            <article class="card form-panel">
+              <div class="form-heading">
+                <div>
+                  <span>{{ editingBannerId ? '正在编辑' : '新增内容' }}</span>
+                  <h2>{{ bannerForm.title || '首页横幅' }}</h2>
+                  <p>这里的标题、副标题会直接显示在对应横幅图片上；留空时首页会使用站点名称和副标题。</p>
+                </div>
+              </div>
+              <div v-if="editingSiteHeroImage" class="legacy-banner-note">
+                <img :src="editingSiteHeroImage" alt="默认横幅预览" />
+                <div>
+                  <strong>默认横幅</strong>
+                  <span>{{ siteForm.site_name || '中农雨磷' }}</span>
+                  <small v-if="siteForm.keywords">{{ siteForm.keywords }}</small>
+                  <small>{{ displayFileLabel(editingSiteHeroImage) }}</small>
+                  <small>没有新增轮播横幅时，首页会显示这张默认横幅；新增横幅后会优先显示下方列表中的横幅。</small>
+                </div>
+              </div>
+              <el-form label-position="top">
+                <el-form-item label="标题"><el-input v-model="bannerForm.title" /></el-form-item>
+                <el-form-item label="副标题"><el-input v-model="bannerForm.subtitle" type="textarea" :rows="2" /></el-form-item>
+                <el-form-item label="横幅图片">
+                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, bannerForm, 'image')" />
+                  <small v-if="editingBannerImage">当前图片：{{ displayFileLabel(editingBannerImage) }}</small>
+                  <small>建议上传横向照片，常见 16:9 或 16:8 均可；主体尽量放在画面中间。</small>
+                </el-form-item>
+                <el-form-item label="跳转链接">
+                  <el-input v-model="bannerForm.link" placeholder="可选，https://..." />
+                </el-form-item>
+                <div class="form-two-col">
+                  <el-form-item label="排序"><el-input-number v-model="bannerForm.sort_order" :min="0" /></el-form-item>
+                  <el-form-item label="启用"><el-switch v-model="bannerForm.is_active" /></el-form-item>
+                </div>
+              </el-form>
+              <FormActions :saving="saving" :deletable="Boolean(editingBannerId)" @save="saveBanner" @delete="deleteBanner" />
             </article>
           </section>
         </el-tab-pane>
@@ -398,7 +441,7 @@ import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'v
 import { ElButton, ElMessage, ElMessageBox, ElProgress } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
-import type { Award, ContactInfo, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
+import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
 
@@ -503,6 +546,7 @@ const newsFileInputKey = ref(0)
 const researchItems = ref<ResearchDirection[]>([])
 const siteSettings = ref<SiteSetting[]>([])
 const contactInfoItems = ref<ContactInfo[]>([])
+const bannerItems = ref<HomeBanner[]>([])
 const memberItems = ref<Member[]>([])
 const newsItems = ref<CmsNewsArticle[]>([])
 const newsCategories = ref<NewsCategory[]>([])
@@ -517,6 +561,8 @@ const editingContactId = ref<number | null>(null)
 const editingSiteLogo = ref('')
 const editingSiteFavicon = ref('')
 const editingSiteHeroImage = ref('')
+const editingBannerId = ref<number | null>(null)
+const editingBannerImage = ref('')
 const editingResearchCover = ref('')
 const editingMemberId = ref<number | null>(null)
 const editingMemberAvatar = ref('')
@@ -560,6 +606,14 @@ const contactForm = reactive<CmsForm>({
   phone: '',
   address: '',
   map_url: '',
+})
+const bannerForm = reactive<CmsForm>({
+  title: '',
+  subtitle: '',
+  image: undefined,
+  link: '',
+  sort_order: 0,
+  is_active: true,
 })
 const memberForm = reactive<CmsForm>({
   name: '',
@@ -637,6 +691,14 @@ const awardForm = reactive<CmsForm>({
 const researchRows = computed<Row<ResearchDirection>[]>(() =>
   researchItems.value.map((item) => ({ key: item.slug, title: item.title, meta: item.keywords || item.summary || item.slug, source: item })),
 )
+const bannerRows = computed<Row<HomeBanner>[]>(() =>
+  bannerItems.value.map((item) => ({
+    key: item.id,
+    title: item.title || '未命名横幅',
+    meta: `${item.is_active === false ? '停用' : '启用'} · 排序 ${item.sort_order || 0} · ${displayFileLabel(item.image) || '未上传图片'}`,
+    source: item,
+  })),
+)
 const memberRows = computed<Row<Member>[]>(() =>
   memberItems.value.map((item) => ({
     key: item.id,
@@ -668,6 +730,7 @@ const awardRows = computed<Row<Award>[]>(() =>
 )
 const cmsOverview = computed(() => [
   { label: '首页设置', value: siteSettings.value.length ? 1 : 0, note: '基础文案与联系信息' },
+  { label: '首页横幅', value: bannerItems.value.length, note: '轮播图片' },
   { label: '研究方向', value: researchItems.value.length, note: '公开门户展示' },
   { label: '团队成员', value: memberItems.value.length, note: '师生与校友信息' },
   { label: '新闻活动', value: newsItems.value.length, note: '组内动态与活动' },
@@ -678,9 +741,10 @@ const cmsOverview = computed(() => [
 ])
 
 async function loadAll() {
-  const [settings, contacts, research, members, categories, news, publications, projects, patents, awards] = await Promise.allSettled([
+  const [settings, contacts, banners, research, members, categories, news, publications, projects, patents, awards] = await Promise.allSettled([
     cmsApi.listSiteSettings(),
     cmsApi.listContactInfo(),
+    cmsApi.listHomeBanners(),
     cmsApi.listResearch(),
     cmsApi.listMembers(),
     cmsApi.listNewsCategories(),
@@ -695,6 +759,7 @@ async function loadAll() {
   siteSettings.value = settingsValue
   contactInfoItems.value = contactsValue
   fillSiteForms(settingsValue[0], contactsValue[0])
+  bannerItems.value = resultValue(banners, bannerItems.value)
   researchItems.value = resultValue(research, researchItems.value)
   memberItems.value = resultValue(members, memberItems.value)
   newsCategories.value = resultValue(categories, newsCategories.value)
@@ -704,7 +769,7 @@ async function loadAll() {
   patentItems.value = resultValue(patents, patentItems.value)
   awardItems.value = resultValue(awards, awardItems.value)
 
-  if ([settings, contacts, research, members, categories, news, publications, projects, patents, awards].some((item) => item.status === 'rejected')) {
+  if ([settings, contacts, banners, research, members, categories, news, publications, projects, patents, awards].some((item) => item.status === 'rejected')) {
     ElMessage.warning('部分门户内容加载失败，请刷新或检查当前账号是否有门户编辑权限。')
   }
 }
@@ -805,7 +870,8 @@ function setFile(event: Event, form: CmsForm, field: FileField) {
   if (form === newsForm && (field === 'word_file' || field === 'cover_image')) newsUploadProgress.value = 0
 }
 
-function displayFileName(value: string) {
+function displayFileName(value?: string | null) {
+  if (!value) return ''
   const withoutQuery = value.split('?')[0]
   const filename = withoutQuery.split('/').filter(Boolean).pop() || value
   let decoded = filename
@@ -817,19 +883,22 @@ function displayFileName(value: string) {
   return decoded.length > 42 ? `${decoded.slice(0, 18)}...${decoded.slice(-18)}` : decoded
 }
 
-function displayFileLabel(value: string) {
+function displayFileLabel(value?: string | null) {
+  if (!value) return ''
   const size = findUploadedFileSize(value)
   return size ? `${displayFileName(value)}（${formatFileSize(size)}）` : displayFileName(value)
 }
 
 function findUploadedFileSize(value: string) {
-  const match = (url?: string) => Boolean(url && value && (url === value || url.split('?')[0] === value.split('?')[0]))
+  const match = (url?: string | null) => Boolean(url && value && (url === value || url.split('?')[0] === value.split('?')[0]))
   const site = siteSettings.value.find((item) => match(item.logo) || match(item.favicon) || match(item.hero_image))
   if (site) {
     if (match(site.logo)) return site.logo_size || 0
     if (match(site.favicon)) return site.favicon_size || 0
     if (match(site.hero_image)) return site.hero_image_size || 0
   }
+  const banner = bannerItems.value.find((item) => match(item.image))
+  if (banner) return banner.image_size || 0
   const research = researchItems.value.find((item) => match(item.cover_image))
   if (research) return research.cover_image_size || 0
   const member = memberItems.value.find((item) => match(item.avatar))
@@ -879,6 +948,44 @@ function uploadErrorMessage(error: any, fallback: string) {
   if (error?.code === 'ECONNABORTED') return '上传超时，请检查网络后重试。'
   if (!error?.response) return '上传连接失败，请检查网络或服务器上传限制。'
   return fallback
+}
+
+function resetBanner() {
+  editingBannerId.value = null
+  editingBannerImage.value = ''
+  Object.assign(bannerForm, {
+    title: '',
+    subtitle: '',
+    image: undefined,
+    link: '',
+    sort_order: 0,
+    is_active: true,
+  })
+}
+
+function editBanner(item: HomeBanner) {
+  editingBannerId.value = item.id
+  editingBannerImage.value = item.image || ''
+  Object.assign(bannerForm, {
+    title: item.title || '',
+    subtitle: item.subtitle || '',
+    image: undefined,
+    link: item.link || '',
+    sort_order: item.sort_order || 0,
+    is_active: item.is_active !== false,
+  })
+}
+
+async function saveBanner() {
+  await save((onUploadProgress) =>
+    editingBannerId.value ? cmsApi.updateHomeBanner(editingBannerId.value, bannerForm, onUploadProgress) : cmsApi.createHomeBanner(bannerForm, onUploadProgress),
+  )
+  resetBanner()
+}
+
+async function deleteBanner() {
+  if (!editingBannerId.value) return
+  await removeAfterConfirm('确定删除这张首页横幅吗？', () => cmsApi.deleteHomeBanner(editingBannerId.value as number), resetBanner)
 }
 
 function resetResearch() {
@@ -1913,6 +2020,56 @@ onMounted(loadAll)
   font-size: 20px;
   font-weight: 650;
   line-height: 1.3;
+}
+
+.form-heading p {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.legacy-banner-note {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid rgba(0, 135, 60, 0.16);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(234, 245, 238, 0.62);
+}
+
+.legacy-banner-note img {
+  width: 132px;
+  height: 78px;
+  border-radius: 8px;
+  background: var(--color-line);
+  object-fit: cover;
+}
+
+.legacy-banner-note div {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.legacy-banner-note strong {
+  color: var(--color-deep-green);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.legacy-banner-note span,
+.legacy-banner-note small {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .form-panel :deep(.el-form-item) {

@@ -13,8 +13,8 @@ from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
 from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer, extract_docx_images, parse_docx_blocks, render_docx_blocks
 from apps.system.uploads import validate_upload_size
-from apps.portal.models import ContactInfo, ResearchDirection, SiteSetting
-from apps.portal.serializers import ContactInfoSerializer, ResearchDirectionSerializer, SiteSettingSerializer
+from apps.portal.models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
+from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer, ResearchDirectionSerializer, SiteSettingSerializer
 from apps.publications.models import Award, Patent, Project, Publication
 from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
 
@@ -68,6 +68,12 @@ class CmsSiteSettingViewSet(CmsParserMixin, viewsets.ModelViewSet):
 class CmsContactInfoViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = ContactInfo.objects.all().order_by("-updated_at")
     serializer_class = ContactInfoSerializer
+    permission_classes = [CanManagePortalContent]
+
+
+class CmsHomeBannerViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = HomeBanner.objects.all()
+    serializer_class = HomeBannerSerializer
     permission_classes = [CanManagePortalContent]
 
 

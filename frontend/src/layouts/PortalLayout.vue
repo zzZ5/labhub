@@ -78,7 +78,7 @@ onMounted(async () => {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.36), rgba(248, 247, 242, 0) 360px),
+    linear-gradient(180deg, rgba(234, 245, 238, 0.22), rgba(248, 247, 242, 0) 320px),
     var(--color-rice);
 }
 
@@ -92,11 +92,23 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   height: var(--nav-height);
-  gap: 24px;
-  border-bottom: 1px solid var(--color-border);
+  gap: 20px;
+  border-top: 2px solid var(--color-cau-green);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   padding: 0 max(20px, calc((100vw - var(--container)) / 2));
-  background: #fff;
-  box-shadow: 0 1px 0 rgba(31, 61, 43, 0.04);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 4px 18px rgba(31, 61, 43, 0.04);
+}
+
+.portal-nav::after {
+  position: absolute;
+  right: max(20px, calc((100vw - var(--container)) / 2));
+  bottom: 0;
+  left: max(20px, calc((100vw - var(--container)) / 2));
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, rgba(0, 135, 60, 0.28), rgba(166, 120, 78, 0.18), transparent);
 }
 
 .portal-main {
@@ -106,22 +118,23 @@ onMounted(async () => {
 .portal-brand {
   display: inline-flex;
   align-items: center;
-  min-width: 278px;
+  min-width: 260px;
   height: 100%;
-  gap: 12px;
+  gap: 13px;
   color: inherit;
   text-decoration: none;
 }
 
 .brand-emblem {
   display: inline-flex;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   overflow: hidden;
-  border: 1px solid rgba(0, 135, 60, 0.18);
+  border: 1px solid rgba(0, 135, 60, 0.2);
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 4px 12px rgba(31, 61, 43, 0.08);
 }
 
 .brand-emblem img {
@@ -172,6 +185,7 @@ onMounted(async () => {
   align-items: center;
   height: 100%;
   min-height: 0;
+  padding: 0;
   color: var(--color-text);
   font-weight: 600;
   text-decoration: none;
@@ -184,10 +198,10 @@ onMounted(async () => {
 .portal-links a::after {
   position: absolute;
   right: 0;
-  bottom: -1px;
+  bottom: 15px;
   left: 0;
   height: 2px;
-  border-radius: 999px 999px 0 0;
+  border-radius: 999px;
   background: transparent;
   content: "";
 }
@@ -195,6 +209,7 @@ onMounted(async () => {
 .portal-links a:hover,
 .portal-links a.router-link-active {
   color: var(--color-cau-green);
+  background: transparent;
 }
 
 .portal-links a:hover::after,
@@ -203,12 +218,14 @@ onMounted(async () => {
 }
 
 .portal-links .internal-entry {
-  height: 36px;
+  height: 34px;
   min-height: 0;
-  border: 1px solid rgba(0, 135, 60, 0.24);
-  border-radius: var(--radius-sm);
-  padding: 0 14px;
+  border: 1px solid rgba(0, 135, 60, 0.28);
+  border-radius: 2px;
+  margin-left: 2px;
+  padding: 0 13px;
   color: var(--color-cau-green);
+  background: transparent;
 }
 
 .portal-links .internal-entry::after {
@@ -218,7 +235,7 @@ onMounted(async () => {
 .portal-links .internal-entry:hover,
 .portal-links .internal-entry.router-link-active {
   border-color: var(--color-cau-green);
-  background: var(--color-eco-green);
+  background: rgba(234, 245, 238, 0.7);
 }
 
 .nav-toggle {
@@ -253,10 +270,10 @@ onMounted(async () => {
 
 .portal-footer {
   background:
-    linear-gradient(90deg, rgba(0, 135, 60, 0.22), transparent 46%),
+    linear-gradient(90deg, rgba(0, 135, 60, 0.18), transparent 48%),
     var(--color-deep-green);
   color: rgba(255, 255, 255, 0.86);
-  padding: 46px 0;
+  padding: 42px 0;
 }
 
 .footer-grid {

@@ -14,12 +14,14 @@ from .cms_views import (
     CmsProjectViewSet,
     CmsResearchDirectionViewSet,
     CmsContactInfoViewSet,
+    CmsHomeBannerViewSet,
     CmsSiteSettingViewSet,
 )
 
 router = DefaultRouter()
 router.register("site-settings", CmsSiteSettingViewSet, basename="cms-site-setting")
 router.register("contact-info", CmsContactInfoViewSet, basename="cms-contact-info")
+router.register("home-banners", CmsHomeBannerViewSet, basename="cms-home-banner")
 router.register("research-directions", CmsResearchDirectionViewSet, basename="cms-research-direction")
 router.register("members", CmsMemberViewSet, basename="cms-member")
 router.register("news-categories", CmsNewsCategoryViewSet, basename="cms-news-category")

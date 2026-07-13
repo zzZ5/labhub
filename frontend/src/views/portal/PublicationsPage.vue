@@ -2,7 +2,6 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">科研成果</p>
         <h1>成果汇总</h1>
         <p>系统展示团队发表论文、承担项目和授权专利，支持按关键词检索和分页浏览。</p>
       </div>

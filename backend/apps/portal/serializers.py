@@ -40,7 +40,7 @@ class HomeBannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HomeBanner
-        fields = ["id", "title", "subtitle", "image", "image_size", "link", "sort_order"]
+        fields = ["id", "title", "subtitle", "image", "image_size", "link", "sort_order", "is_active"]
 
     def get_image_size(self, obj):
         return file_field_size(obj.image)

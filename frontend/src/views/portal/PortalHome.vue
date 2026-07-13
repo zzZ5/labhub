@@ -1,34 +1,57 @@
 ﻿<template>
   <PortalLayout>
-    <section class="hero" :style="heroBackgroundStyle">
-      <div class="container hero-inner">
-        <div class="hero-copy">
-          <p class="section-kicker">{{ siteSubtitle }}</p>
-          <h1>{{ siteName }}</h1>
-          <p class="hero-lead">{{ heroLead }}</p>
-          <p class="hero-text">
-            {{ siteDescription }}
-          </p>
-          <div class="hero-actions">
+    <section class="hero">
+      <div class="hero-carousel">
+        <div
+          v-for="(banner, index) in heroBanners"
+          :key="`${banner.image}-${index}`"
+          class="hero-slide"
+          :class="{ active: index === activeBannerIndex }"
+          :style="{
+            backgroundImage: `url('${banner.image}')`,
+            transform: `translateX(${(index - activeBannerIndex) * 100}%)`,
+          }"
+        ></div>
+        <div class="hero-caption">
+          <h1>{{ activeHeroTitle }}</h1>
+          <span v-if="activeHeroSubtitle">{{ activeHeroSubtitle }}</span>
+        </div>
+        <div v-if="heroBanners.length > 1" class="hero-controls" aria-label="首页横幅切换">
+          <div class="hero-dots">
+            <button
+              v-for="(_, index) in heroBanners"
+              :key="index"
+              type="button"
+              :aria-label="`切换到第 ${index + 1} 张横幅`"
+              :class="{ active: index === activeBannerIndex }"
+              @click="activeBannerIndex = index"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="page-section intro-section">
+      <div class="container intro-grid">
+        <div class="intro-main">
+          <SectionHeader
+            title="课题组简介"
+            :description="introDescription"
+          />
+          <div class="intro-meta">
+            <span>{{ siteSubtitle }}</span>
+            <span>{{ heroLead }}</span>
+          </div>
+          <div class="intro-actions">
             <RouterLink class="primary-action" to="/research">研究方向</RouterLink>
             <RouterLink class="secondary-action" to="/dashboard">进入内部平台</RouterLink>
           </div>
         </div>
       </div>
     </section>
-    <section class="page-section intro-section">
-      <div class="container intro-grid intro-single">
-        <SectionHeader
-          kicker="课题组简介"
-          :title="introTitle"
-          :description="introDescription"
-        />
-      </div>
-    </section>
 
     <section class="page-section research-section">
       <div class="container">
-        <SectionHeader kicker="研究方向" :title="researchSectionTitle" :description="researchSectionDescription" />
+        <SectionHeader :title="researchSectionTitle" :description="researchSectionDescription" />
         <div v-if="displayResearchDirections.length" class="research-grid">
           <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="item.to">
             <component :is="item.icon" />
@@ -43,7 +66,7 @@
     <section class="page-section publication-section">
       <div class="container publication-grid">
         <div>
-          <SectionHeader kicker="科研成果" title="科研进展" description="展示课题组近期公开发表和授权、立项、获奖等成果动态；完整论文、项目、专利与获奖信息可进入科研成果页查看。" />
+          <SectionHeader title="科研成果" description="展示课题组近期公开发表和授权、立项、获奖等成果动态；完整论文、项目、专利与获奖信息可进入科研成果页查看。" />
           <div class="stats-row compact-stats">
             <div v-for="item in displayStats" :key="item.label">
               <strong>{{ item.value }}</strong>
@@ -68,7 +91,7 @@
 
     <section class="page-section team-section">
       <div class="container">
-        <SectionHeader kicker="团队成员" title="团队成员" description="课题组由不同阶段的师生和合作成员共同组成，在日常科研训练、学术交流和项目实践中推进团队协作。" />
+        <SectionHeader title="团队成员" description="课题组由不同阶段的师生和合作成员共同组成，在日常科研训练、学术交流和项目实践中推进团队协作。" />
         <div class="member-grid">
           <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
             <img :src="member.avatar" :alt="member.name" />
@@ -86,7 +109,7 @@
 
     <section class="page-section news-section">
       <div class="container">
-        <SectionHeader kicker="新闻活动" title="新闻活动" description="发布组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
+        <SectionHeader title="新闻活动" description="发布组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
         <div class="news-grid">
           <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
             <img v-if="item.image" :src="item.image" :alt="item.title" />
@@ -106,8 +129,7 @@
     <section class="join-section">
       <div class="container join-card">
         <div>
-          <p class="section-kicker">加入我们</p>
-          <h2>{{ contactTitle }}</h2>
+          <h2>加入我们</h2>
           <p>{{ contactDescription }}</p>
         </div>
         <a :href="`mailto:${contactEmail}`">联系实验室</a>
@@ -117,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Cpu, DataAnalysis, MostlyCloudy, Orange, SetUp, WindPower } from '@element-plus/icons-vue'
 
 import SectionHeader from '../../components/SectionHeader.vue'
@@ -125,6 +147,7 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 import {
   fetchMembers,
   fetchContactInfo,
+  fetchHomeBanners,
   fetchNews,
   fetchAwards,
   fetchPatents,
@@ -135,6 +158,7 @@ import {
   fetchSiteSetting,
   type Award,
   type ContactInfo,
+  type HomeBanner,
   type Member,
   type NewsArticle,
   type Patent,
@@ -148,6 +172,7 @@ import {
 const apiResearchDirections = ref<ResearchDirection[]>([])
 const apiMembers = ref<Member[]>([])
 const apiNews = ref<NewsArticle[]>([])
+const apiBanners = ref<HomeBanner[]>([])
 const apiPapers = ref<Publication[]>([])
 const apiProjects = ref<Project[]>([])
 const apiPatents = ref<Patent[]>([])
@@ -156,6 +181,8 @@ const apiStats = ref<PublicationStats | null>(null)
 const siteSetting = ref<Partial<SiteSetting>>({})
 const contactInfo = ref<Partial<ContactInfo>>({})
 const achievementsReady = ref(false)
+const activeBannerIndex = ref(0)
+let bannerTimer: number | undefined
 
 type HomeAchievement = {
   id: number
@@ -172,9 +199,7 @@ const siteName = computed(() => siteSetting.value.site_name || '中农雨磷')
 const siteSubtitle = computed(() => siteSetting.value.site_subtitle || '中国农业大学资源与环境学院')
 const heroLead = computed(() => siteSetting.value.keywords || '聚焦微生物生态、有机废弃物资源转化与高值产品开发')
 const siteDescription = computed(() => siteSetting.value.description || '课题组面向农业绿色发展与资源环境治理需求，围绕有机废弃物资源化、养分循环和土壤生态过程开展基础研究、技术研发与应用评价。')
-const introTitle = computed(() => siteSetting.value.footer_text ? '面向农业绿色发展与资源环境治理' : '把农业废弃物转化为可持续生态资源')
-const introDescription = computed(() => siteSetting.value.footer_text || '中农雨磷以团队协作为基础，连接微生物生态机制、有机废弃物转化、产品开发和田间应用评价，推动农业废弃物从环境负担转化为生态资源。')
-const contactTitle = computed(() => contactInfo.value.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入')
+const introDescription = computed(() => siteDescription.value)
 const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
 const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
 const researchSectionTitle = computed(() => (apiResearchDirections.value.length ? '研究方向' : '研究方向待维护'))
@@ -183,16 +208,41 @@ const researchSectionDescription = computed(() =>
     ? '展示课题组当前公开维护的研究方向，详细内容可进入对应页面查看。'
     : '研究方向内容可在内部平台“门户内容”中维护，首页会实时同步公开展示。',
 )
-const heroBackgroundStyle = computed(() => {
-  const layers = [
-    'linear-gradient(90deg, #f8f7f2 0%, #f8f7f2 38%, rgba(248, 247, 242, 0.86) 50%, rgba(248, 247, 242, 0.24) 72%, rgba(248, 247, 242, 0.02) 100%)',
-    'linear-gradient(180deg, rgba(234, 245, 238, 0.34), rgba(255, 255, 255, 0.08))',
-  ]
-  layers.push(`url("${siteSetting.value.hero_image || '/default-hero.svg'}")`)
-  return {
-    backgroundImage: layers.join(', '),
-  }
+const heroBanners = computed(() => {
+  const banners = apiBanners.value
+    .filter((item) => item.image)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+  if (banners.length) return banners
+  return [{
+    id: 0,
+    title: siteName.value,
+    subtitle: heroLead.value,
+    image: siteSetting.value.hero_image || '/default-hero.svg',
+    link: '',
+    sort_order: 0,
+  }]
 })
+const activeHeroBanner = computed(() => heroBanners.value[activeBannerIndex.value] || heroBanners.value[0] || {
+  title: siteName.value,
+  subtitle: heroLead.value,
+  image: '',
+})
+const activeHeroTitle = computed(() => activeHeroBanner.value.title || siteName.value)
+const activeHeroSubtitle = computed(() => activeHeroBanner.value.subtitle || heroLead.value)
+
+function startBannerTimer() {
+  if (bannerTimer) window.clearInterval(bannerTimer)
+  if (heroBanners.value.length <= 1) return
+  bannerTimer = window.setInterval(() => {
+    showNextBanner()
+  }, 5200)
+}
+
+function showNextBanner() {
+  const length = heroBanners.value.length
+  if (length <= 1) return
+  activeBannerIndex.value = (activeBannerIndex.value + 1) % length
+}
 
 const displayStats = computed(() => {
   if (!apiStats.value) {
@@ -324,9 +374,10 @@ const displayNews = computed(() => {
 })
 
 onMounted(async () => {
-  const [setting, contact, research, members, news, papers, projects, patents, awards, stats] = await Promise.allSettled([
+  const [setting, contact, banners, research, members, news, papers, projects, patents, awards, stats] = await Promise.allSettled([
     fetchSiteSetting(),
     fetchContactInfo(),
+    fetchHomeBanners(),
     fetchResearchDirections(),
     fetchMembers(),
     fetchNews(),
@@ -338,6 +389,7 @@ onMounted(async () => {
   ])
   if (setting.status === 'fulfilled') siteSetting.value = setting.value
   if (contact.status === 'fulfilled') contactInfo.value = contact.value
+  if (banners.status === 'fulfilled') apiBanners.value = banners.value
   if (research.status === 'fulfilled') apiResearchDirections.value = research.value
   if (members.status === 'fulfilled') apiMembers.value = members.value
   if (news.status === 'fulfilled') apiNews.value = news.value
@@ -347,6 +399,19 @@ onMounted(async () => {
   if (awards.status === 'fulfilled') apiAwards.value = awards.value
   achievementsReady.value = true
   if (stats.status === 'fulfilled') apiStats.value = stats.value
+  startBannerTimer()
+})
+
+watch(
+  () => heroBanners.value.length,
+  () => {
+    activeBannerIndex.value = 0
+    startBannerTimer()
+  },
+)
+
+onUnmounted(() => {
+  if (bannerTimer) window.clearInterval(bannerTimer)
 })
 </script>
 
@@ -354,124 +419,178 @@ onMounted(async () => {
 .hero {
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid rgba(31, 61, 43, 0.08);
-  color: var(--color-text);
-  background-color: var(--color-rice);
-  background-position: center right;
-  background-size: cover;
-  background-repeat: no-repeat;
+  padding: 12px 0 22px;
+  background: var(--color-rice);
 }
 
-.hero::before {
+.hero-carousel {
+  position: relative;
+  width: min(var(--container), calc(100% - 40px));
+  height: clamp(380px, 39vw, 540px);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eef2ee;
+}
+
+.hero-slide {
   position: absolute;
   top: 0;
-  bottom: 0;
-  left: max(20px, calc((100vw - var(--container)) / 2));
-  width: min(720px, calc(100vw - 40px));
-  content: "";
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0)),
-    repeating-linear-gradient(135deg, rgba(0, 135, 60, 0.045) 0 1px, transparent 1px 18px);
-  opacity: 0.72;
-  mask-image: linear-gradient(90deg, #000, transparent 78%);
-}
-
-.hero::after {
-  position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  height: 5px;
+  opacity: 1;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transition: transform 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-slide::after {
+  position: absolute;
+  inset: 0;
   content: "";
-  background: linear-gradient(90deg, var(--color-cau-green), rgba(0, 135, 60, 0.42), rgba(166, 120, 78, 0.28), transparent);
+  background: linear-gradient(180deg, transparent 62%, rgba(31, 61, 43, 0.16));
 }
 
-.hero-inner {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 720px);
-  align-items: center;
-  gap: 70px;
-  min-height: 438px;
-  padding: 68px 0 58px;
+.hero-slide.active {
+  z-index: 1;
 }
 
-.hero-copy {
-  position: relative;
-  z-index: 2;
-  max-width: 680px;
-  border-left: 0;
-  padding-left: 0;
+.hero-caption {
+  position: absolute;
+  bottom: 42px;
+  left: clamp(22px, 4.4vw, 60px);
+  z-index: 4;
+  max-width: min(640px, calc(100% - 80px));
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(18, 38, 26, 0.42);
 }
 
-.hero-copy::before {
-  display: block;
-  width: 54px;
-  height: 3px;
-  margin-bottom: 22px;
-  border-radius: 999px;
-  background: var(--color-cau-green);
-  content: "";
-}
-
-.hero-copy h1 {
+.hero-caption h1 {
   margin: 0;
-  color: var(--color-deep-green);
-  font-size: clamp(42px, 4.6vw, 56px);
+  font-size: clamp(24px, 2.6vw, 36px);
   font-weight: 650;
-  line-height: 1.06;
-  letter-spacing: 0;
+  line-height: 1.15;
 }
 
-.hero-lead {
-  max-width: 650px;
-  margin: 20px 0 0;
-  color: var(--color-deep-green);
-  font-size: clamp(20px, 2vw, 25px);
-  font-weight: 600;
-  line-height: 1.42;
+.hero-caption span {
+  display: block;
+  max-width: 600px;
+  margin-top: 10px;
+  font-size: clamp(14px, 1.08vw, 16px);
+  font-weight: 500;
+  line-height: 1.6;
 }
 
-.hero-text {
-  max-width: 620px;
-  margin: 15px 0 0;
-  color: rgba(47, 52, 55, 0.72);
-  font-size: 17px;
-  line-height: 1.85;
-}
-
-.hero-actions {
+.hero-controls {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 4;
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 28px;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(-50%);
+}
+
+.hero-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.hero-dots button {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  cursor: pointer;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.hero-dots button.active {
+  width: 18px;
+  background: #fff;
 }
 
 .primary-action,
 .secondary-action {
-  padding: 11px 22px;
+  min-height: 42px;
+  padding: 10px 20px;
 }
 
-.hero .section-kicker {
-  color: var(--color-cau-green);
+.intro-actions .primary-action {
+  box-shadow: none;
+}
+
+.intro-actions .secondary-action {
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .intro-grid,
 .publication-grid {
   display: grid;
-  grid-template-columns: minmax(240px, 0.38fr) minmax(0, 1fr);
-  gap: 34px;
+  grid-template-columns: minmax(260px, 0.34fr) minmax(0, 1fr);
+  gap: 42px;
   align-items: start;
 }
 
 .intro-grid {
-  grid-template-columns: minmax(0, 820px);
-  gap: 0;
+  position: relative;
+  display: block;
+  width: min(var(--container), calc(100% - 40px));
 }
 
-.intro-single {
-  justify-content: start;
+.intro-main {
+  min-width: 0;
+  position: relative;
+  border-top: 1px solid rgba(31, 61, 43, 0.12);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.08);
+  padding: 34px 0 32px;
+}
+
+.intro-main :deep(.section-header) {
+  max-width: 940px;
+  margin-bottom: 20px;
+}
+
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.intro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  max-width: 960px;
+  margin-top: 8px;
+}
+
+.intro-meta span {
+  position: relative;
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.intro-meta span + span::before {
+  margin-right: 18px;
+  color: rgba(31, 61, 43, 0.24);
+  content: "/";
+}
+
+.intro-detail {
+  max-width: 980px;
+  margin: 12px 0 0;
+  color: rgba(47, 52, 55, 0.78);
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 .publication-section,
@@ -480,6 +599,7 @@ onMounted(async () => {
 }
 
 .page-section {
+  position: relative;
   border-top: 1px solid rgba(31, 61, 43, 0.08);
 }
 
@@ -487,18 +607,14 @@ onMounted(async () => {
   position: relative;
   margin-top: -1px;
   padding-top: 54px;
-  padding-bottom: 54px;
-  background: var(--color-white);
+  padding-bottom: 58px;
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(248, 247, 242, 0.72) 100%),
+    var(--color-rice);
 }
 
 .intro-section::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 1px;
-  content: "";
-  background: var(--color-border);
+  display: none;
 }
 
 .intro-section :deep(.section-header h2) {
@@ -507,10 +623,6 @@ onMounted(async () => {
 
 .intro-section :deep(.section-header p:last-child) {
   color: var(--color-muted);
-}
-
-.intro-section .section-kicker {
-  color: var(--color-cau-green);
 }
 
 .stats-row {
@@ -569,28 +681,56 @@ onMounted(async () => {
 }
 
 .research-section {
-  padding-top: 64px;
+  position: relative;
+  overflow: hidden;
+  padding-top: 78px;
+  padding-bottom: 82px;
+  background:
+    linear-gradient(180deg, rgba(248, 247, 242, 0.82), rgba(245, 247, 246, 0.98)),
+    var(--color-soft-gray);
+}
+
+.research-section::before {
+  position: absolute;
+  top: 44px;
+  right: max(20px, calc((100vw - var(--container)) / 2));
+  width: 172px;
+  height: 118px;
+  pointer-events: none;
+  content: "";
+  opacity: 0.34;
+  background:
+    radial-gradient(circle at 42px 76px, rgba(0, 135, 60, 0.12) 0 8px, transparent 9px),
+    radial-gradient(circle at 72px 54px, rgba(0, 135, 60, 0.1) 0 7px, transparent 8px),
+    radial-gradient(circle at 106px 36px, rgba(166, 120, 78, 0.12) 0 7px, transparent 8px),
+    radial-gradient(circle at 128px 66px, rgba(0, 135, 60, 0.09) 0 6px, transparent 7px),
+    linear-gradient(150deg, transparent 0 31%, rgba(31, 61, 43, 0.36) 32% 33%, transparent 34%),
+    linear-gradient(112deg, transparent 0 43%, rgba(31, 61, 43, 0.28) 44% 45%, transparent 46%);
 }
 
 .publication-section {
-  background: var(--color-white);
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(248, 247, 242, 0.5) 100%),
+    #fff;
 }
 
 .team-section {
   background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.72), rgba(245, 247, 246, 0.96)),
-    var(--color-eco-green);
+    linear-gradient(180deg, rgba(245, 247, 246, 0.98), rgba(234, 245, 238, 0.78)),
+    var(--color-soft-gray);
 }
 
 .news-section {
-  background: var(--color-rice);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(234, 245, 238, 0.86), transparent 260px),
+    var(--color-rice);
 }
 
 .research-grid,
 .news-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   border: 0;
   background: transparent;
 }
@@ -604,7 +744,7 @@ onMounted(async () => {
 .member-card {
   border: 0;
   border-radius: 0;
-  padding: 22px;
+  padding: 20px;
   color: inherit;
   text-decoration: none;
   box-shadow: none;
@@ -619,22 +759,31 @@ onMounted(async () => {
 }
 
 .research-card {
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(31, 61, 43, 0.1);
   border-radius: var(--radius-md);
-  min-height: 172px;
-  background: #fff;
+  min-height: 154px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92)),
+    #fff;
+  box-shadow: var(--shadow-soft);
 }
 
 .research-card:hover,
-.latest-paper-panel:hover,
-.member-card:hover,
 .news-card:hover {
+  transform: translateY(-2px);
+}
+
+.member-card:hover {
+  transform: translateY(-2px);
+}
+
+.latest-paper-panel:hover {
   transform: none;
 }
 
 .research-card svg {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   border: 0;
   border-radius: 0;
   padding: 0;
@@ -645,9 +794,9 @@ onMounted(async () => {
 .research-card h3,
 .member-card h3,
 .news-card h3 {
-  margin: 12px 0 7px;
+  margin: 11px 0 7px;
   color: var(--color-deep-green);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 650;
 }
 
@@ -661,9 +810,9 @@ onMounted(async () => {
 
 .paper-compact {
   display: grid;
-  grid-template-columns: 58px 1fr;
+  grid-template-columns: 52px 1fr;
   gap: 14px;
-  padding: 12px 0;
+  padding: 13px 0;
   border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   color: inherit;
   cursor: pointer;
@@ -688,7 +837,7 @@ onMounted(async () => {
   margin: 0 0 6px;
   overflow: hidden;
   color: var(--color-deep-green);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.48;
   -webkit-box-orient: vertical;
@@ -702,31 +851,40 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
+.paper-compact span {
+  display: inline-flex;
+  margin-top: 6px;
+  color: var(--color-cau-green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .member-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
   border: 0;
 }
 
 .member-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 214px;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  align-items: center;
+  min-height: 128px;
   border: 1px solid rgba(31, 61, 43, 0.1);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 15px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 247, 242, 0.72)),
     #fff;
   color: inherit;
   text-decoration: none;
-  box-shadow: 0 8px 20px rgba(31, 61, 43, 0.05);
+  box-shadow: var(--shadow-soft);
 }
 
 .member-card img {
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   border: 1px solid var(--color-line);
   border-radius: 50%;
   background: var(--color-eco-green);
@@ -735,9 +893,9 @@ onMounted(async () => {
 
 .member-info {
   display: grid;
-  gap: 7px;
+  gap: 5px;
   min-width: 0;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .member-info h3 {
@@ -745,7 +903,7 @@ onMounted(async () => {
   margin: 0;
   overflow: hidden;
   color: var(--color-deep-green);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -766,7 +924,7 @@ onMounted(async () => {
   font-size: 13px;
   line-height: 1.65;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .news-card {
@@ -775,7 +933,7 @@ onMounted(async () => {
   overflow: hidden;
   background: #fff;
   color: inherit;
-  box-shadow: none;
+  box-shadow: var(--shadow-soft);
 }
 
 .news-card img {
@@ -796,7 +954,7 @@ onMounted(async () => {
 }
 
 .news-card div {
-  padding: 15px 16px 17px;
+  padding: 14px 15px 16px;
 }
 
 .news-card span {
@@ -810,9 +968,17 @@ onMounted(async () => {
 
 .section-link {
   display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-bottom: 1px solid rgba(0, 135, 60, 0.32);
   margin-top: 22px;
   color: var(--color-cau-green);
   font-weight: 700;
+}
+
+.section-link:hover {
+  border-bottom-color: var(--color-cau-green);
+  color: #0a7638;
 }
 
 .section-link.compact {
@@ -829,7 +995,7 @@ onMounted(async () => {
 }
 
 .join-section {
-  padding: 0 0 72px;
+  padding: 8px 0 72px;
   border-top: 1px solid rgba(31, 61, 43, 0.08);
   background: var(--color-rice);
 }
@@ -839,12 +1005,12 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 32px;
-  border: 1px solid rgba(0, 135, 60, 0.16);
+  border: 1px solid rgba(0, 135, 60, 0.18);
   border-radius: var(--radius-lg);
-  padding: 40px;
+  padding: 34px 38px;
   background:
-    linear-gradient(90deg, var(--color-cau-green), #0a7638),
-    var(--color-cau-green);
+    linear-gradient(90deg, var(--color-deep-green), #0a7638),
+    var(--color-deep-green);
   box-shadow: none;
 }
 
@@ -870,30 +1036,24 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.join-card .section-kicker {
-  color: rgba(255, 255, 255, 0.74);
-}
-
 @media (max-width: 980px) {
   .hero {
-    background-position: center;
+    padding: 10px 0 16px;
   }
 
-  .hero::before {
-    left: 20px;
-    width: calc(100vw - 40px);
-    opacity: 0.36;
+  .hero-carousel {
+    width: min(var(--container), calc(100% - 28px));
+    height: clamp(300px, 50vw, 430px);
+    border-radius: 8px;
   }
 
-  .hero-inner,
   .intro-grid,
   .publication-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-inner {
-    min-height: auto;
-    padding: 58px 0 48px;
+  .intro-grid {
+    max-width: none;
   }
 
   .research-grid,
@@ -904,34 +1064,52 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
-  .hero {
-    background-position: 58% center;
+  .hero-carousel {
+    width: calc(100% - 20px);
+    height: 240px;
+    border-radius: 7px;
   }
 
-  .hero::before {
-    left: 14px;
-    width: calc(100vw - 28px);
+  .hero-caption {
+    bottom: 34px;
+    left: 18px;
+    max-width: calc(100% - 36px);
   }
 
-  .hero-inner {
-    padding: 46px 0 40px;
+  .hero-caption h1 {
+    font-size: 22px;
   }
 
-  .hero-copy h1 {
-    font-size: 38px;
+  .hero-caption span {
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 1.45;
   }
 
-  .hero-lead {
-    font-size: 18px;
+  .hero-controls {
+    bottom: 12px;
   }
 
-  .hero-text {
-    font-size: 15px;
-    line-height: 1.72;
+  .hero-dots button {
+    width: 6px;
+    height: 6px;
   }
 
-  .hero-actions {
-    gap: 10px;
+  .hero-dots button.active {
+    width: 20px;
+  }
+
+  .intro-grid {
+    width: min(var(--container), calc(100% - 28px));
+  }
+
+  .intro-meta {
+    display: grid;
+    gap: 7px;
+  }
+
+  .intro-meta span + span::before {
+    display: none;
   }
 
   .primary-action,
@@ -950,6 +1128,7 @@ onMounted(async () => {
 
   .member-card {
     grid-template-columns: 56px minmax(0, 1fr);
+    min-height: 112px;
   }
 
   .member-card img {

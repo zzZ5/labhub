@@ -2,7 +2,6 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">团队成员</p>
         <h1>团队成员</h1>
         <p>课题组由不同阶段的师生和合作成员共同组成，展示成员信息、研究兴趣与团队协作网络。</p>
       </div>

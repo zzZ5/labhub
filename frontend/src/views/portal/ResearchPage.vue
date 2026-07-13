@@ -2,7 +2,6 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <p class="section-kicker">研究方向</p>
         <h1>研究方向</h1>
         <p>{{ pageDescription }}</p>
       </div>
