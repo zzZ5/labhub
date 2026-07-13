@@ -89,10 +89,6 @@
             <input class="file-input" type="file" accept="image/*" @change="setInstrumentImage" />
             <small v-if="instrumentForm.image" class="upload-file-note">{{ instrumentForm.image.name }}（{{ formatFileSize(instrumentForm.image.size) }}）</small>
           </el-form-item>
-          <div v-if="saving && uploadProgress > 0" class="upload-progress">
-            <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
-            <span>{{ uploadProgress < 100 ? '正在上传设备图片，请不要关闭窗口。' : '上传完成，正在保存设备信息。' }}</span>
-          </div>
           <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="4" /></el-form-item>
         </el-form>
         <template #footer>

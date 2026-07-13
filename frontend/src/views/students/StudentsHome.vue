@@ -239,10 +239,6 @@
             <input class="file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="handleFileChange" />
             <small v-if="uploadForm.file" class="upload-file-note">{{ uploadForm.file.name }}（{{ formatFileSize(uploadForm.file.size) }}）</small>
           </el-form-item>
-          <div v-if="uploading || uploadProgress > 0" class="upload-progress">
-            <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
-            <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
-          </div>
         </el-form>
       <template #footer>
         <div v-if="uploading || uploadProgress > 0" class="upload-progress dialog-upload-progress">

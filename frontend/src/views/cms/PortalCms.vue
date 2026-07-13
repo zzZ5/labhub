@@ -14,11 +14,6 @@
         </div>
       </div>
 
-      <div v-if="cmsUploadProgress > 0 && activeTab !== 'news'" class="upload-progress cms-upload-progress">
-        <el-progress :percentage="cmsUploadProgress" :status="cmsUploadProgress === 100 ? 'success' : undefined" />
-        <span>{{ cmsUploadProgress < 100 ? '正在上传附件，请不要关闭页面。' : '上传完成，正在保存内容。' }}</span>
-      </div>
-
       <el-tabs v-model="activeTab" class="cms-tabs">
         <el-tab-pane label="站点首页" name="site">
           <section class="editor-single">
