@@ -9,6 +9,7 @@ class SiteSetting(models.Model):
     hero_image = models.ImageField("首页横幅图", upload_to="portal/hero/", blank=True)
     description = models.TextField("站点描述", blank=True)
     keywords = models.CharField("关键词", max_length=300, blank=True)
+    banner_interval_seconds = models.PositiveSmallIntegerField("横幅切换间隔（秒）", default=6)
     footer_text = models.TextField("页脚文字", blank=True)
     contact_email = models.EmailField("联系邮箱", blank=True)
     contact_phone = models.CharField("联系电话", max_length=50, blank=True)

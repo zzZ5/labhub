@@ -29,7 +29,7 @@ class ResearchDirectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ResearchDirection
-        fields = ["id", "title", "slug", "summary", "keywords", "content", "cover_image", "cover_image_size", "sort_order", "updated_at"]
+        fields = ["id", "title", "slug", "summary", "content", "cover_image", "cover_image_size", "sort_order", "updated_at"]
 
     def get_cover_image_size(self, obj):
         return file_field_size(obj.cover_image)

@@ -82,7 +82,11 @@
             </div>
             <div class="permission-chips compact-permissions"><span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span><span v-if="!systemRoles(user).length" class="status-tag archived">普通权限</span></div>
             <div class="student-link-cell"><RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
-            <div class="account-actions"><el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button><el-button size="small" plain @click="openPasswordDialog(user)">重置密码</el-button><el-button v-if="user.id !== session.user?.id && !user.is_superuser" size="small" plain type="danger" @click="confirmDeleteAccount(user)">删除</el-button></div>
+            <div class="account-actions">
+              <el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button>
+              <el-button size="small" plain @click="openPasswordDialog(user)">重置密码</el-button>
+              <el-button v-if="user.id !== session.user?.id && !user.is_superuser" size="small" plain type="danger" @click="confirmDeleteAccount(user)">删除</el-button>
+            </div>
           </article>
         </div>
         <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
@@ -95,6 +99,7 @@
           <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
           <el-form-item v-if="!editingUserId" label="初始密码"><el-input v-model="accountForm.password" type="password" autocomplete="new-password" show-password /></el-form-item>
           <el-form-item label="学校身份"><el-select v-model="accountForm.role_type"><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
+          <el-alert v-if="accountForm.role_type === 'alumni'" class="form-hint" type="info" :closable="false" title="已毕业或离组成员会保留账号、学生档案和归档资料；如不需要继续登录内部平台，请保持登录状态为停用。" />
           <el-form-item label="系统权限"><el-checkbox-group v-model="accountForm.system_roles"><el-checkbox v-for="role in systemPermissionOptions" :key="role.value" :label="role.value">{{ role.label }}</el-checkbox></el-checkbox-group></el-form-item>
           <el-form-item label="账号状态"><el-switch v-model="accountForm.is_approved" active-text="已审核" inactive-text="待审核" /></el-form-item>
           <el-form-item v-if="editingUserId" label="登录状态"><el-switch v-model="accountForm.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
@@ -111,7 +116,7 @@
   </InternalLayout>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import {
@@ -142,6 +147,7 @@ const savingId = ref<number | null>(null)
 const accountDrawerVisible = ref(false)
 const accountSaving = ref(false)
 const editingUserId = ref<number | null>(null)
+const syncingAccountForm = ref(false)
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
 const passwordTarget = ref<CurrentUser | null>(null)
@@ -172,6 +178,7 @@ const schoolIdentityOptions = [
   { value: 'undergraduate', label: '本科生' },
   { value: 'master', label: '硕士生' },
   { value: 'phd', label: '博士生' },
+  { value: 'alumni', label: '已毕业学生' },
   { value: 'postdoc', label: '博士后' },
   { value: 'pi', label: '硕博导师' },
   { value: 'other', label: '其他' },
@@ -245,6 +252,7 @@ function roleDescription(code: string) {
     undergraduate: '本科生身份，可维护本人学生档案和归档资料。',
     master: '硕士生身份，可维护本人学生档案和归档资料。',
     phd: '博士生身份，可维护本人学生档案和归档资料。',
+    alumni: '已毕业或离组学生，默认不再登录内部平台。',
     postdoc: '博士后身份，可访问成员内部资料和科研管理信息。',
     pi: '硕博导师，可查看和管理学生档案。',
     other: '其他学校身份，用于人员分类。',
@@ -295,6 +303,7 @@ function syncForms() {
 }
 
 function resetAccountForm() {
+  syncingAccountForm.value = true
   editingUserId.value = null
   accountForm.real_name = ''
   accountForm.email = ''
@@ -305,6 +314,9 @@ function resetAccountForm() {
   accountForm.is_active = true
   accountForm.system_roles = []
   accountForm.phone = ''
+  requestAnimationFrame(() => {
+    syncingAccountForm.value = false
+  })
 }
 
 function openCreateDrawer() {
@@ -313,6 +325,7 @@ function openCreateDrawer() {
 }
 
 function openEditDrawer(user: CurrentUser) {
+  syncingAccountForm.value = true
   editingUserId.value = user.id
   accountForm.real_name = displayUser(user)
   accountForm.email = user.email || ''
@@ -324,6 +337,9 @@ function openEditDrawer(user: CurrentUser) {
   accountForm.system_roles = systemRoles(user)
   accountForm.phone = user.profile?.phone || ''
   accountDrawerVisible.value = true
+  requestAnimationFrame(() => {
+    syncingAccountForm.value = false
+  })
 }
 
 function openPasswordDialog(user: CurrentUser) {
@@ -363,6 +379,9 @@ async function submitAccountForm() {
       const nextSystemRoles = new Set(accountForm.system_roles)
       await Promise.all(previousSystemRoles.filter((role) => !nextSystemRoles.has(role)).map((role) => removeUserRole(editingUserId.value!, role)))
       await Promise.all(accountForm.system_roles.filter((role) => !previousSystemRoles.includes(role)).map((role) => assignUserRole(editingUserId.value!, role)))
+      if (currentUser && accountForm.role_type === 'alumni' && studentByUserId.value[currentUser.id]) {
+        ElMessage.info('该成员的学生档案和归档资料已保留，可在学生档案中继续查看。')
+      }
       ElMessage.success('成员账号已保存。')
     } else {
       await createUser({
@@ -575,6 +594,15 @@ async function handleRemoveRole(user: CurrentUser, role: string) {
 }
 
 onMounted(reload)
+
+watch(
+  () => accountForm.role_type,
+  (roleType) => {
+    if (!syncingAccountForm.value && editingUserId.value && roleType === 'alumni') {
+      accountForm.is_active = false
+    }
+  },
+)
 </script>
 
 <style scoped>
@@ -867,6 +895,11 @@ onMounted(reload)
 
 .password-alert {
   margin-bottom: 16px;
+}
+
+.form-hint {
+  margin: 0 0 18px;
+  border-radius: var(--radius-sm);
 }
 
 @media (max-width: 1180px) {

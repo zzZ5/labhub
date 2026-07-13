@@ -5,7 +5,6 @@ export interface ResearchDirection {
   title: string
   slug: string
   summary: string
-  keywords?: string
   content?: string
   cover_image?: string
   cover_image_size?: number
@@ -24,6 +23,7 @@ export interface SiteSetting {
   hero_image_size?: number
   description: string
   keywords: string
+  banner_interval_seconds?: number
   footer_text: string
   contact_email: string
   contact_phone: string

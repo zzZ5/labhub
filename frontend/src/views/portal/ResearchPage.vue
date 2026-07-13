@@ -12,9 +12,6 @@
           <span>{{ item.index }}</span>
           <h2>{{ item.title }}</h2>
           <p>{{ item.summary }}</p>
-          <div class="tag-row">
-            <em v-for="tag in item.tags" :key="tag">{{ tag }}</em>
-          </div>
         </RouterLink>
       </div>
       <div v-if="!displayDirections.length" class="container">
@@ -38,7 +35,6 @@ const displayDirections = computed(() =>
     title: item.title,
     summary: item.summary || '研究方向简介待补充。',
     to: `/research/${item.slug}`,
-    tags: splitKeywords(item.keywords),
   })),
 )
 
@@ -46,13 +42,6 @@ const pageDescription = computed(() => {
   const firstSummary = directions.value.find((item) => item.summary)?.summary
   return firstSummary || '研究方向内容可在内部平台“门户内容”中维护，保存后会同步展示到公开网站。'
 })
-
-function splitKeywords(value?: string) {
-  return (value || '')
-    .split(/[，,、\s/]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
 
 onMounted(async () => {
   try {
@@ -148,22 +137,6 @@ onMounted(async () => {
 .research-card p {
   margin: 0;
   color: var(--color-muted);
-}
-
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.tag-row em {
-  border-radius: 999px;
-  padding: 4px 10px;
-  background: var(--color-eco-green);
-  color: var(--color-deep-green);
-  font-size: 13px;
-  font-style: normal;
 }
 
 @media (max-width: 980px) {

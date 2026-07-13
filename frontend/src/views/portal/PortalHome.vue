@@ -16,6 +16,12 @@
           <h1>{{ activeHeroTitle }}</h1>
           <span v-if="activeHeroSubtitle">{{ activeHeroSubtitle }}</span>
         </div>
+        <button v-if="heroBanners.length > 1" class="hero-arrow hero-arrow-left" type="button" aria-label="上一张横幅" @click="showPrevBanner">
+          ‹
+        </button>
+        <button v-if="heroBanners.length > 1" class="hero-arrow hero-arrow-right" type="button" aria-label="下一张横幅" @click="showNextBannerManually">
+          ›
+        </button>
         <div v-if="heroBanners.length > 1" class="hero-controls" aria-label="首页横幅切换">
           <div class="hero-dots">
             <button
@@ -24,7 +30,7 @@
               type="button"
               :aria-label="`切换到第 ${index + 1} 张横幅`"
               :class="{ active: index === activeBannerIndex }"
-              @click="activeBannerIndex = index"
+              @click="setActiveBanner(index)"
             ></button>
           </div>
         </div>
@@ -38,6 +44,7 @@
             <h2>课题组简介</h2>
           </div>
           <div class="intro-body">
+            <strong v-if="heroLead" class="intro-lead">{{ heroLead }}</strong>
             <p>{{ introDescription }}</p>
           </div>
           <div class="intro-actions">
@@ -201,6 +208,10 @@ const siteDescription = computed(() => siteSetting.value.description || '课题�
 const introDescription = computed(() => siteDescription.value)
 const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
 const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
+const bannerIntervalMs = computed(() => {
+  const seconds = Number(siteSetting.value.banner_interval_seconds || 6)
+  return Math.min(30, Math.max(3, Number.isFinite(seconds) ? seconds : 6)) * 1000
+})
 const researchSectionTitle = computed(() => (apiResearchDirections.value.length ? '研究方向' : '研究方向待维护'))
 const researchSectionDescription = computed(() =>
   apiResearchDirections.value.length
@@ -234,13 +245,30 @@ function startBannerTimer() {
   if (heroBanners.value.length <= 1) return
   bannerTimer = window.setInterval(() => {
     showNextBanner()
-  }, 5200)
+  }, bannerIntervalMs.value)
+}
+
+function showPrevBanner() {
+  const length = heroBanners.value.length
+  if (length <= 1) return
+  activeBannerIndex.value = (activeBannerIndex.value - 1 + length) % length
+  startBannerTimer()
 }
 
 function showNextBanner() {
   const length = heroBanners.value.length
   if (length <= 1) return
   activeBannerIndex.value = (activeBannerIndex.value + 1) % length
+}
+
+function showNextBannerManually() {
+  showNextBanner()
+  startBannerTimer()
+}
+
+function setActiveBanner(index: number) {
+  activeBannerIndex.value = index
+  startBannerTimer()
 }
 
 const displayStats = computed(() => {
@@ -402,7 +430,7 @@ onMounted(async () => {
 })
 
 watch(
-  () => heroBanners.value.length,
+  () => [heroBanners.value.length, bannerIntervalMs.value],
   () => {
     activeBannerIndex.value = 0
     startBannerTimer()
@@ -491,6 +519,47 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transform: translateX(-50%);
+}
+
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: grid;
+  width: 34px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.68);
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1;
+  transform: translateY(-50%);
+  text-shadow: 0 2px 10px rgba(18, 38, 26, 0.34);
+  transition: color 0.18s ease, opacity 0.18s ease, transform 0.22s ease;
+}
+
+.hero-arrow:hover {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.hero-arrow-left {
+  left: 12px;
+}
+
+.hero-arrow-left:hover {
+  transform: translate(-3px, -50%) scale(1.08);
+}
+
+.hero-arrow-right {
+  right: 12px;
+}
+
+.hero-arrow-right:hover {
+  transform: translate(3px, -50%) scale(1.08);
 }
 
 .hero-dots {
@@ -582,6 +651,16 @@ onUnmounted(() => {
   color: rgba(47, 52, 55, 0.82);
   font-size: 17px;
   line-height: 1.9;
+}
+
+.intro-lead {
+  display: block;
+  max-width: 820px;
+  margin-bottom: 12px;
+  color: var(--color-deep-green);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.6;
 }
 
 .intro-actions {
@@ -1105,6 +1184,20 @@ onUnmounted(() => {
 
   .hero-controls {
     bottom: 12px;
+  }
+
+  .hero-arrow {
+    width: 28px;
+    height: 40px;
+    font-size: 34px;
+  }
+
+  .hero-arrow-left {
+    left: 8px;
+  }
+
+  .hero-arrow-right {
+    right: 8px;
   }
 
   .hero-dots button {

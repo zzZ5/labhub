@@ -84,7 +84,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
         return username
 
     def validate_role_type(self, value):
-        allowed = {"member", "master", "phd", "undergraduate", "postdoc", "pi", "other"}
+        allowed = {"member", "master", "phd", "undergraduate", "alumni", "postdoc", "pi", "other"}
         if value not in allowed:
             raise serializers.ValidationError("学校身份不正确。")
         return value
@@ -149,7 +149,7 @@ class AdminUserUpdateSerializer(serializers.Serializer):
         return username
 
     def validate_role_type(self, value):
-        allowed = {"member", "master", "phd", "undergraduate", "postdoc", "pi", "other"}
+        allowed = {"member", "master", "phd", "undergraduate", "alumni", "postdoc", "pi", "other"}
         if value not in allowed:
             raise serializers.ValidationError("学校身份不正确。")
         return value
