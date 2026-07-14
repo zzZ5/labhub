@@ -2,8 +2,7 @@
   <InternalLayout title="内部工作台">
     <section class="dashboard-hero">
       <div>
-        <span>中农雨磷内部平台</span>
-        <h1>科研管理概览</h1>
+        <h1>工作台</h1>
         <p>集中查看课题组资料、仪器设备状态、学生信息与近期归档材料。</p>
       </div>
       <RouterLink class="outline-action" to="/">返回门户首页</RouterLink>
@@ -27,7 +26,7 @@
           <div v-for="item in dashboard.instrument_status" :key="item.id" class="list-row">
             <div>
               <strong>{{ item.name }}</strong>
-              <span>{{ item.room || '未填写房间' }} {{ item.location_detail }}</span>
+              <span>{{ item.location_detail || item.room || '未填写位置' }}</span>
             </div>
             <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
           </div>
@@ -188,14 +187,8 @@ function degreeText(degree: string) {
   box-shadow: var(--shadow-flat);
 }
 
-.dashboard-hero span {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .dashboard-hero h1 {
-  margin: 5px 0 6px;
+  margin: 0 0 6px;
   color: var(--color-deep-green);
   font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;

@@ -22,3 +22,12 @@ backups/
 *.log
 .DS_Store
 Thumbs.db
+
+# Local spreadsheets and generated import outputs
+*.xlsx
+*.xlsm
+*.xls
+~$*
+outputs/
+!frontend/public/templates/
+!frontend/public/templates/*.xlsx

@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from apps.accounts.models import RoleCode
 from apps.accounts.services import user_has_role
 
+from .importers import import_instruments_from_excel
 from .models import Instrument, InstrumentCategory, InstrumentFaultReport, InstrumentMaintenanceRecord, InstrumentTrainingRecord
 from .serializers import (
     InstrumentCategorySerializer,
@@ -58,6 +60,21 @@ class InstrumentViewSet(viewsets.ModelViewSet):
         if not can_manage_instruments(request.user):
             return Response({"detail": "无权维护仪器台账。"}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=["post"], url_path="import-excel")
+    def import_excel(self, request):
+        if not can_manage_instruments(request.user):
+            return Response({"detail": "无权维护仪器台账。"}, status=status.HTTP_403_FORBIDDEN)
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response({"detail": "请上传 Excel 文件。"}, status=status.HTTP_400_BAD_REQUEST)
+        if not upload.name.lower().endswith(".xlsx"):
+            return Response({"detail": "仅支持 .xlsx 文件。"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            result = import_instruments_from_excel(upload, uploaded_by=request.user)
+        except Exception:
+            return Response({"detail": "Excel 解析失败，请确认包含“仪器名称、状态、详细位置、设备图片、使用说明”等列。"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
 
 
 class InstrumentTrainingRecordViewSet(viewsets.ModelViewSet):

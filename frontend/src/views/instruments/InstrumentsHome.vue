@@ -3,13 +3,11 @@
     <section class="instrument-page">
       <div class="page-heading">
         <div>
-          <span>Instrument Platform</span>
-          <h1>仪器设备台账</h1>
+          <h1>仪器平台</h1>
           <p>
             查看课题组仪器设备状态、位置、图片和使用说明，便于组内成员快速了解设备情况。
           </p>
         </div>
-        <span class="heading-note">内部平台</span>
       </div>
 
       <section class="status-grid">
@@ -22,18 +20,28 @@
 
       <section class="content-grid">
         <div class="instrument-toolbar card">
-          <input v-model="keyword" type="search" placeholder="搜索仪器名称、型号、房间或说明" />
+          <input v-model="keyword" type="search" placeholder="搜索仪器名称、型号、位置或说明" />
           <select v-model="statusFilter">
             <option value="">全部状态</option>
             <option value="normal">正常</option>
             <option value="maintenance">维护中</option>
             <option value="disabled">停用</option>
           </select>
+          <input ref="excelInputRef" class="hidden-file-input" type="file" accept=".xlsx" @change="handleExcelImport" />
+          <a v-if="canManageInstruments" class="toolbar-link" href="/templates/instruments-import-template.xlsx" download>下载模板</a>
+          <button v-if="canManageInstruments" type="button" class="secondary-action" @click="chooseExcelFile">导入 Excel</button>
           <button v-if="canManageInstruments" type="button" @click="openCreate">新建设备</button>
+        </div>
+        <p v-if="canManageInstruments" class="import-tip">
+          模板只需填写：仪器名称、型号、状态、详细位置、设备图片、使用说明；图片插入对应行即可批量导入。
+        </p>
+        <div v-if="importing" class="upload-progress import-progress">
+          <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+          <span>{{ importProgress < 100 ? '正在上传设备表，请不要关闭页面。' : '上传完成，正在解析仪器和图片。' }}</span>
         </div>
         <div class="instrument-grid">
           <article
-            v-for="instrument in filteredInstruments"
+            v-for="instrument in pagedInstruments"
             :key="instrument.id"
             class="card instrument-card"
             @click="goDetail(instrument.id)"
@@ -51,24 +59,29 @@
               <dl>
                 <div>
                   <dt>位置</dt>
-                  <dd>{{ instrument.room || '未填写房间' }} {{ instrument.location_detail }}</dd>
+                  <dd>{{ instrument.location_detail || instrument.room || '未填写位置' }}</dd>
                 </div>
                 <div>
                   <dt>说明</dt>
-                  <dd>{{ instrument.notes || '暂无详细说明，可补充使用方法、注意事项和安全要求。' }}</dd>
+                  <dd class="instrument-note-preview">{{ shortNote(instrument.notes) }}</dd>
                 </div>
               </dl>
               <div class="instrument-actions">
                 <span class="detail-link">查看设备详情</span>
-                <button v-if="canManageInstruments && instrument.id > 0" type="button" class="delete-action" @click.stop="confirmDelete(instrument)">删除</button>
+                <button v-if="canManageInstruments && instrument.id > 0" type="button" class="edit-action" @click.stop="openEdit(instrument)">编辑</button>
               </div>
             </div>
           </article>
         </div>
         <div v-if="!filteredInstruments.length" class="card empty-panel">没有找到匹配的仪器设备。</div>
+        <div v-if="instrumentTotalPages > 1" class="list-pager">
+          <button type="button" :disabled="instrumentPage === 1" @click="instrumentPage -= 1">上一页</button>
+          <span>{{ instrumentPage }} / {{ instrumentTotalPages }} 页，共 {{ filteredInstruments.length }} 台</span>
+          <button type="button" :disabled="instrumentPage === instrumentTotalPages" @click="instrumentPage += 1">下一页</button>
+        </div>
       </section>
 
-      <el-dialog v-model="formVisible" title="新建设备" width="620px">
+      <el-dialog v-model="formVisible" :title="editingInstrumentId ? '编辑设备' : '新建设备'" width="620px">
         <el-form label-position="top" class="instrument-form">
           <el-form-item label="仪器名称"><el-input v-model="instrumentForm.name" /></el-form-item>
           <div class="form-two-col">
@@ -81,15 +94,13 @@
               </el-select>
             </el-form-item>
           </div>
-          <div class="form-two-col">
-            <el-form-item label="房间"><el-input v-model="instrumentForm.room" /></el-form-item>
-            <el-form-item label="详细位置"><el-input v-model="instrumentForm.location_detail" /></el-form-item>
-          </div>
+          <el-form-item label="详细位置"><el-input v-model="instrumentForm.location_detail" placeholder="如 沃土实验室一楼" /></el-form-item>
           <el-form-item label="设备图片">
             <input class="file-input" type="file" accept="image/*" @change="setInstrumentImage" />
+            <small v-if="editingImageUrl && !instrumentForm.image" class="upload-file-note">当前已有图片；如需更换，请重新选择图片。</small>
             <small v-if="instrumentForm.image" class="upload-file-note">{{ instrumentForm.image.name }}（{{ formatFileSize(instrumentForm.image.size) }}）</small>
           </el-form-item>
-          <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="4" /></el-form-item>
+          <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="8" placeholder="可填写操作步骤、注意事项、联系人或维护要求。" /></el-form-item>
         </el-form>
         <template #footer>
           <div v-if="saving && uploadProgress > 0" class="upload-progress dialog-upload-progress">
@@ -97,7 +108,7 @@
             <span>{{ uploadProgress < 100 ? '正在上传设备图片，请不要关闭窗口。' : '上传完成，正在保存设备信息。' }}</span>
           </div>
           <el-button @click="formVisible = false">取消</el-button>
-          <el-button type="primary" :loading="saving" @click="saveInstrument">保存设备</el-button>
+          <el-button type="primary" :loading="saving" @click="saveInstrument">{{ editingInstrumentId ? '保存修改' : '保存设备' }}</el-button>
         </template>
       </el-dialog>
     </section>
@@ -105,26 +116,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import { createInstrument, deleteInstrument, fetchInstruments, type Instrument } from '../../api/instruments'
+import { createInstrument, fetchInstruments, importInstrumentsExcel, updateInstrument, type Instrument } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()
+const route = useRoute()
 const router = useRouter()
 const instruments = ref<Instrument[]>([])
 const keyword = ref('')
 const statusFilter = ref('')
+const instrumentPage = ref(1)
+const instrumentPageSize = 12
 const formVisible = ref(false)
 const saving = ref(false)
+const editingInstrumentId = ref<number | null>(null)
+const editingImageUrl = ref('')
 const uploadProgress = ref(0)
+const importing = ref(false)
+const importProgress = ref(0)
+const excelInputRef = ref<HTMLInputElement | null>(null)
 const instrumentForm = reactive({
   name: '',
   model: '',
-  room: '',
   location_detail: '',
   status: 'normal',
   notes: '',
@@ -139,6 +157,11 @@ const filteredInstruments = computed(() => {
     const haystack = `${item.name} ${item.model || ''} ${item.room || ''} ${item.location_detail || ''} ${item.notes || ''}`.toLowerCase()
     return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
   })
+})
+const instrumentTotalPages = computed(() => Math.max(1, Math.ceil(filteredInstruments.value.length / instrumentPageSize)))
+const pagedInstruments = computed(() => {
+  const start = (instrumentPage.value - 1) * instrumentPageSize
+  return filteredInstruments.value.slice(start, start + instrumentPageSize)
 })
 const statusSummary = computed(() => {
   const items = displayInstruments.value
@@ -158,15 +181,31 @@ async function loadInstruments() {
 }
 
 function openCreate() {
+  editingInstrumentId.value = null
+  editingImageUrl.value = ''
   Object.assign(instrumentForm, {
     name: '',
     model: '',
-    room: '',
     location_detail: '',
     status: 'normal',
     notes: '',
     image: undefined,
   })
+  formVisible.value = true
+}
+
+function openEdit(instrument: Instrument) {
+  editingInstrumentId.value = instrument.id
+  editingImageUrl.value = instrument.image || ''
+  Object.assign(instrumentForm, {
+    name: instrument.name || '',
+    model: instrument.model || '',
+    location_detail: instrument.location_detail || instrument.room || '',
+    status: instrument.status || 'normal',
+    notes: instrument.notes || '',
+    image: undefined,
+  })
+  uploadProgress.value = 0
   formVisible.value = true
 }
 
@@ -176,10 +215,66 @@ function setInstrumentImage(event: Event) {
   uploadProgress.value = 0
 }
 
+function chooseExcelFile() {
+  excelInputRef.value?.click()
+}
+
+function clampInstrumentPage() {
+  if (instrumentPage.value > instrumentTotalPages.value) instrumentPage.value = instrumentTotalPages.value
+  if (instrumentPage.value < 1) instrumentPage.value = 1
+}
+
 function formatFileSize(size: number) {
   if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
   if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
   return `${size} B`
+}
+
+function shortNote(note: string) {
+  const text = (note || '').replace(/\s+/g, ' ').trim()
+  if (!text) return '暂无详细说明，可补充使用方法、注意事项和安全要求。'
+  return text.length > 58 ? `${text.slice(0, 58)}...` : text
+}
+
+function openEditFromQuery() {
+  if (!canManageInstruments.value) return
+  const editId = Number(route.query.edit)
+  if (!editId) return
+  const target = instruments.value.find((item) => item.id === editId)
+  if (target) {
+    openEdit(target)
+    void router.replace({ name: 'instruments-home' })
+  }
+}
+
+async function handleExcelImport(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    ElMessage.warning('请上传 .xlsx 文件。')
+    return
+  }
+  importing.value = true
+  importProgress.value = 0
+  try {
+    const result = await importInstrumentsExcel(file, (progressEvent) => {
+      if (!progressEvent.total) return
+      importProgress.value = Math.min(99, Math.round((progressEvent.loaded / progressEvent.total) * 100))
+    })
+    importProgress.value = 100
+    ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，匹配图片 ${result.images} 张。`)
+    await loadInstruments()
+    clampInstrumentPage()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '导入失败，请确认模板列和设备图片位置。')
+  } finally {
+    importing.value = false
+    setTimeout(() => {
+      if (!importing.value) importProgress.value = 0
+    }, 900)
+  }
 }
 
 async function saveInstrument() {
@@ -190,14 +285,20 @@ async function saveInstrument() {
   saving.value = true
   uploadProgress.value = 0
   try {
-    await createInstrument({ ...instrumentForm, name: instrumentForm.name.trim() }, (event) => {
+    const payload = { ...instrumentForm, name: instrumentForm.name.trim() }
+    const progressHandler = (event: any) => {
       if (!event.total) return
       uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
-    })
+    }
+    if (editingInstrumentId.value) await updateInstrument(editingInstrumentId.value, payload, progressHandler)
+    else await createInstrument(payload, progressHandler)
     if (uploadProgress.value > 0) uploadProgress.value = 100
-    ElMessage.success('设备已保存。')
+    ElMessage.success(editingInstrumentId.value ? '设备信息已更新。' : '设备已保存。')
     formVisible.value = false
+    editingInstrumentId.value = null
+    editingImageUrl.value = ''
     await loadInstruments()
+    clampInstrumentPage()
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.detail || '保存失败，请确认权限和表单内容。')
   } finally {
@@ -210,23 +311,6 @@ async function saveInstrument() {
 
 function goDetail(id: number) {
   void router.push({ name: 'instrument-detail', params: { id } })
-}
-
-async function confirmDelete(instrument: Instrument) {
-  try {
-    await ElMessageBox.confirm(`确定删除“${instrument.name}”吗？删除后不可恢复。`, '删除设备', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      confirmButtonClass: 'el-button--danger',
-    })
-    await deleteInstrument(instrument.id)
-    ElMessage.success('设备已删除。')
-    await loadInstruments()
-  } catch (error: any) {
-    if (error === 'cancel' || error === 'close') return
-    ElMessage.error(error?.response?.data?.detail || '删除失败，请确认权限后重试。')
-  }
 }
 
 function statusClass(status: string) {
@@ -248,7 +332,14 @@ function statusText(status: string) {
 onMounted(async () => {
   if (!session.initialized) await session.loadCurrentUser()
   await loadInstruments()
+  openEditFromQuery()
 })
+
+watch([keyword, statusFilter], () => {
+  instrumentPage.value = 1
+})
+
+watch(instrumentTotalPages, clampInstrumentPage)
 </script>
 
 <style scoped>
@@ -271,14 +362,8 @@ onMounted(async () => {
   box-shadow: var(--shadow-flat);
 }
 
-.page-heading span {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .page-heading h1 {
-  margin: 5px 0 6px;
+  margin: 0 0 6px;
   color: var(--color-deep-green);
   font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
@@ -367,7 +452,7 @@ onMounted(async () => {
 
 .instrument-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px auto;
+  grid-template-columns: minmax(0, 1fr) 150px auto auto auto;
   gap: 10px;
   align-items: center;
   padding: 12px;
@@ -404,6 +489,48 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.toolbar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 135, 60, 0.22);
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  padding: 0 14px;
+  background: #fff;
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toolbar-link:hover {
+  background: var(--color-eco-green);
+}
+
+.instrument-toolbar .secondary-action {
+  background: #fff;
+  color: var(--color-cau-green);
+}
+
+.instrument-toolbar .secondary-action:hover {
+  background: var(--color-eco-green);
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.import-progress {
+  margin: -4px 0 0;
+}
+
+.import-tip {
+  margin: -6px 4px 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .instrument-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -422,17 +549,19 @@ onMounted(async () => {
 }
 
 .instrument-card img {
+  display: block;
   width: 100%;
-  aspect-ratio: 16 / 8.5;
-  object-fit: cover;
-  filter: saturate(0.92);
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: #f7f9f7;
+  filter: saturate(0.96);
 }
 
 .instrument-image-placeholder {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 8.5;
+  aspect-ratio: 4 / 3;
   background: var(--color-eco-green);
   color: var(--color-muted);
   font-size: 14px;
@@ -492,32 +621,61 @@ onMounted(async () => {
 }
 
 .detail-link {
+  margin-right: auto;
   color: var(--color-cau-green);
   font-size: 14px;
   font-weight: 700;
 }
 
-.delete-action {
-  border: 1px solid rgba(159, 47, 47, 0.18);
+.edit-action {
+  border: 1px solid rgba(0, 135, 60, 0.2);
   border-radius: var(--radius-sm);
   min-height: 30px;
   padding: 0 10px;
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
+  background: #fff;
+  color: var(--color-cau-green);
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
 }
 
-.delete-action:hover {
-  border-color: rgba(159, 47, 47, 0.34);
-  background: #fae0e0;
+.edit-action:hover {
+  background: var(--color-eco-green);
 }
 
 .empty-panel {
   padding: 24px;
   color: var(--color-muted);
   text-align: center;
+}
+
+.list-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.list-pager button {
+  border: 1px solid rgba(0, 135, 60, 0.2);
+  border-radius: var(--radius-sm);
+  min-height: 32px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.list-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .instrument-form {
@@ -591,6 +749,16 @@ onMounted(async () => {
   .instrument-toolbar,
   .form-two-col {
     grid-template-columns: 1fr;
+  }
+
+  .list-pager {
+    flex-wrap: wrap;
+  }
+
+  .list-pager span {
+    order: -1;
+    width: 100%;
+    text-align: center;
   }
 }
 </style>

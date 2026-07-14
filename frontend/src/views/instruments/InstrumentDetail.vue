@@ -9,24 +9,24 @@
         <div class="detail-content">
           <div class="detail-heading">
             <div>
-              <span>Instrument Detail</span>
               <h1>{{ instrument.name }}</h1>
               <p>{{ instrument.model || '型号待补充' }}</p>
             </div>
             <div class="detail-tools">
               <span :class="['status-tag', statusClass(instrument.status)]">{{ statusText(instrument.status) }}</span>
+              <button v-if="canManageInstruments && instrument.id > 0" type="button" class="edit-detail" @click="goEdit">编辑设备</button>
               <button v-if="canManageInstruments && instrument.id > 0" type="button" class="delete-detail" @click="confirmDelete">删除设备</button>
             </div>
           </div>
 
           <section class="info-section">
             <h2>位置</h2>
-            <p>{{ instrument.room || '未填写房间' }} {{ instrument.location_detail }}</p>
+            <p>{{ instrument.location_detail || instrument.room || '未填写位置' }}</p>
           </section>
 
           <section class="info-section">
             <h2>使用说明</h2>
-            <p>{{ instrument.notes || '暂无详细说明，可在仪器台账中补充使用方法、注意事项和安全要求。' }}</p>
+            <p class="detail-notes">{{ instrument.notes || '暂无详细说明，可在仪器台账中补充使用方法、注意事项和安全要求。' }}</p>
           </section>
         </div>
       </article>
@@ -88,6 +88,11 @@ async function confirmDelete() {
   }
 }
 
+function goEdit() {
+  if (!instrument.value) return
+  void router.push({ name: 'instruments-home', query: { edit: String(instrument.value.id) } })
+}
+
 function statusClass(status: string) {
   if (status === 'normal') return 'normal'
   if (status === 'maintenance') return 'maintenance'
@@ -136,9 +141,11 @@ onMounted(async () => {
 }
 
 .detail-card > img {
+  display: block;
   width: 100%;
-  max-height: 420px;
-  object-fit: cover;
+  max-height: 560px;
+  object-fit: contain;
+  background: #f7f9f7;
   filter: saturate(0.94);
 }
 
@@ -163,14 +170,8 @@ onMounted(async () => {
   padding-bottom: 20px;
 }
 
-.detail-heading span:first-child {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .detail-heading h1 {
-  margin: 5px 0 8px;
+  margin: 0 0 8px;
   color: var(--color-deep-green);
   font-size: clamp(30px, 4vw, 40px);
   font-weight: 650;
@@ -205,6 +206,7 @@ onMounted(async () => {
   gap: 10px;
 }
 
+.edit-detail,
 .delete-detail {
   border: 1px solid rgba(159, 47, 47, 0.2);
   border-radius: var(--radius-sm);
@@ -217,9 +219,23 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.edit-detail {
+  border-color: rgba(0, 135, 60, 0.22);
+  background: #fff;
+  color: var(--color-cau-green);
+}
+
+.edit-detail:hover {
+  background: var(--color-eco-green);
+}
+
 .delete-detail:hover {
   border-color: rgba(159, 47, 47, 0.34);
   background: #fae0e0;
+}
+
+.detail-notes {
+  white-space: pre-line;
 }
 
 @media (max-width: 760px) {

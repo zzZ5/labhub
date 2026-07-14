@@ -3,8 +3,7 @@
     <section class="student-page">
       <header class="surface-heading student-heading">
         <div>
-          <span>学生档案与成员账号</span>
-          <h1>学生信息、账号绑定与归档资料</h1>
+          <h1>学生档案</h1>
           <p>学生档案用于保存导师信息、研究方向、开题、中期、论文和答辩等资料；成员管理负责登录账号和系统角色。二者通过“关联成员账号”打通。</p>
         </div>
         <el-button v-if="canManageStudents" type="primary" @click="startCreate">新建学生档案</el-button>
@@ -46,7 +45,6 @@
           <section v-if="selectedStudent" class="card profile-card">
             <div class="profile-heading">
               <div>
-                <span>学生信息</span>
                 <h1>{{ selectedStudent.name }}</h1>
                 <p>{{ selectedStudent.research_direction || selectedStudent.research_topic || '研究方向待补充' }}</p>
               </div>
@@ -689,7 +687,6 @@ watch(studentTotalPages, (total) => {
 .side-heading span,
 .panel-heading p,
 .profile-heading p,
-.profile-heading span,
 .student-list small,
 .account-grid span,
 .account-grid small,
@@ -700,13 +697,8 @@ watch(studentTotalPages, (total) => {
   line-height: 1.65;
 }
 
-.profile-heading span {
-  color: var(--color-cau-green);
-  font-weight: 700;
-}
-
 .profile-heading h1 {
-  margin-top: 2px;
+  margin-top: 0;
   font-size: clamp(22px, 2.4vw, 28px);
   line-height: 1.2;
 }

@@ -3,8 +3,7 @@
     <section class="cms-page">
       <div class="cms-heading">
         <div>
-          <span>门户内容</span>
-          <h1>官网内容维护</h1>
+          <h1>门户内容</h1>
         </div>
         <div class="heading-actions">
           <div class="cms-stat-strip">
@@ -190,6 +189,16 @@
 
         <el-tab-pane label="团队成员" name="members">
           <section class="editor-grid">
+            <div class="import-strip">
+              <span>批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。</span>
+              <a href="/templates/members-import-template.xlsx" download>下载模板</a>
+              <button type="button" @click="chooseImportFile('members')">导入 Excel</button>
+              <input ref="memberImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'members')" />
+            </div>
+            <div v-if="importingKind === 'members'" class="upload-progress import-progress">
+              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+              <span>{{ importProgress < 100 ? '正在上传团队成员表，请不要关闭页面。' : '上传完成，正在写入团队成员。' }}</span>
+            </div>
             <ContentList title="团队成员" action-label="新增成员" :items="memberRows" :active-key="editingMemberId || ''" @create="resetMember" @edit="editMember" />
             <article class="card form-panel">
               <div class="form-heading">
@@ -287,9 +296,14 @@
         <el-tab-pane label="论文成果" name="publications">
           <section class="editor-grid">
             <div class="import-strip">
-              <span>批量导入：title, authors, journal, year, doi, abstract, visibility, sort_order</span>
-              <a href="/import-templates/publications-template.csv?v=20260702-utf8" download="publications-template.csv">下载模板</a>
-              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'publications')" />
+              <span>批量导入论文成果，优先按 DOI 更新；没有 DOI 时按题目和年份匹配。</span>
+              <a href="/templates/publications-import-template.xlsx" download>下载模板</a>
+              <button type="button" @click="chooseImportFile('publications')">导入 Excel</button>
+              <input ref="publicationImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'publications')" />
+            </div>
+            <div v-if="importingKind === 'publications'" class="upload-progress import-progress">
+              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+              <span>{{ importProgress < 100 ? '正在上传论文成果表，请不要关闭页面。' : '上传完成，正在写入论文成果。' }}</span>
             </div>
             <ContentList title="论文成果" action-label="新增论文" :items="publicationRows" :active-key="editingPublicationId || ''" @create="resetPublication" @edit="editPublication" />
             <article class="card form-panel">
@@ -333,9 +347,14 @@
         <el-tab-pane label="科研项目" name="projects">
           <section class="editor-grid">
             <div class="import-strip">
-              <span>批量导入：title, project_number, funding_source, principal_investigator, status, description, visibility, sort_order</span>
-              <a href="/import-templates/projects-template.csv?v=20260702-utf8" download="projects-template.csv">下载模板</a>
-              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'projects')" />
+              <span>批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。</span>
+              <a href="/templates/projects-import-template.xlsx" download>下载模板</a>
+              <button type="button" @click="chooseImportFile('projects')">导入 Excel</button>
+              <input ref="projectImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'projects')" />
+            </div>
+            <div v-if="importingKind === 'projects'" class="upload-progress import-progress">
+              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+              <span>{{ importProgress < 100 ? '正在上传科研项目表，请不要关闭页面。' : '上传完成，正在写入科研项目。' }}</span>
             </div>
             <ContentList title="科研项目" action-label="新增项目" :items="projectRows" :active-key="editingProjectId || ''" @create="resetProject" @edit="editProject" />
             <article class="card form-panel">
@@ -377,9 +396,14 @@
         <el-tab-pane label="专利成果" name="patents">
           <section class="editor-grid">
             <div class="import-strip">
-              <span>批量导入：title, patent_number, inventors, status, application_date, authorization_date, visibility, sort_order</span>
-              <a href="/import-templates/patents-template.csv?v=20260702-utf8" download="patents-template.csv">下载模板</a>
-              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'patents')" />
+              <span>批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。</span>
+              <a href="/templates/patents-import-template.xlsx" download>下载模板</a>
+              <button type="button" @click="chooseImportFile('patents')">导入 Excel</button>
+              <input ref="patentImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'patents')" />
+            </div>
+            <div v-if="importingKind === 'patents'" class="upload-progress import-progress">
+              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+              <span>{{ importProgress < 100 ? '正在上传专利成果表，请不要关闭页面。' : '上传完成，正在写入专利成果。' }}</span>
             </div>
             <ContentList title="专利成果" action-label="新增专利" :items="patentRows" :active-key="editingPatentId || ''" @create="resetPatent" @edit="editPatent" />
             <article class="card form-panel">
@@ -421,9 +445,14 @@
         <el-tab-pane label="获奖成果" name="awards">
           <section class="editor-grid">
             <div class="import-strip">
-              <span>批量导入：title, award_level, award_date, participants, description, visibility, sort_order</span>
-              <a href="/import-templates/awards-template.csv?v=20260702-utf8" download="awards-template.csv">下载模板</a>
-              <input type="file" accept=".csv,.tsv,.txt" @change="importResults($event, 'awards')" />
+              <span>批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。</span>
+              <a href="/templates/awards-import-template.xlsx" download>下载模板</a>
+              <button type="button" @click="chooseImportFile('awards')">导入 Excel</button>
+              <input ref="awardImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'awards')" />
+            </div>
+            <div v-if="importingKind === 'awards'" class="upload-progress import-progress">
+              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+              <span>{{ importProgress < 100 ? '正在上传获奖成果表，请不要关闭页面。' : '上传完成，正在写入获奖成果。' }}</span>
             </div>
             <ContentList title="获奖成果" action-label="新增获奖" :items="awardRows" :active-key="editingAwardId || ''" @create="resetAward" @edit="editAward" />
             <article class="card form-panel">
@@ -576,6 +605,13 @@ const cmsUploadProgress = ref(0)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
 const newsFileInputKey = ref(0)
+const importProgress = ref(0)
+const importingKind = ref<CmsImportKind | ''>('')
+const memberImportInputRef = ref<HTMLInputElement | null>(null)
+const publicationImportInputRef = ref<HTMLInputElement | null>(null)
+const projectImportInputRef = ref<HTMLInputElement | null>(null)
+const patentImportInputRef = ref<HTMLInputElement | null>(null)
+const awardImportInputRef = ref<HTMLInputElement | null>(null)
 
 const researchItems = ref<ResearchDirection[]>([])
 const siteSettings = ref<SiteSetting[]>([])
@@ -1398,124 +1434,60 @@ async function deleteAward() {
   await removeAfterConfirm('确定删除这个获奖成果吗？', () => cmsApi.deleteAward(editingAwardId.value as number), resetAward)
 }
 
-type ResultImportKind = 'publications' | 'projects' | 'patents' | 'awards'
+type CmsImportKind = 'members' | 'publications' | 'projects' | 'patents' | 'awards'
 
-async function importResults(event: Event, kind: ResultImportKind) {
+function chooseImportFile(kind: CmsImportKind) {
+  const inputMap: Record<CmsImportKind, HTMLInputElement | null> = {
+    members: memberImportInputRef.value,
+    publications: publicationImportInputRef.value,
+    projects: projectImportInputRef.value,
+    patents: patentImportInputRef.value,
+    awards: awardImportInputRef.value,
+  }
+  inputMap[kind]?.click()
+}
+
+async function importCmsFile(event: Event, kind: CmsImportKind) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
-  if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-    ElMessage.warning('请先在 Excel 中另存为 CSV，再导入。')
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    ElMessage.warning('请上传 .xlsx 文件。')
     return
   }
+  importingKind.value = kind
+  importProgress.value = 0
   try {
-    const rows = parseDelimited(await file.text())
-    if (!rows.length) {
-      ElMessage.warning('没有读取到可导入的数据。')
-      return
+    const progressHandler = (progressEvent: { loaded: number; total?: number }) => {
+      if (!progressEvent.total) return
+      importProgress.value = Math.min(99, Math.round((progressEvent.loaded / progressEvent.total) * 100))
     }
-    saving.value = true
-    for (const row of rows) {
-      const payload = normalizeImportRow(row, kind)
-      if (!payload.title) continue
-      if (kind === 'publications') await cmsApi.createPublication(payload)
-      if (kind === 'projects') await cmsApi.createProject(payload)
-      if (kind === 'patents') await cmsApi.createPatent(payload)
-      if (kind === 'awards') await cmsApi.createAward(payload)
-    }
+    const result = await importAction(kind, file, progressHandler)
+    importProgress.value = 100
     await loadAll()
-    ElMessage.success(`已导入 ${rows.length} 条记录`)
+    ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条${result.images ? `，图片 ${result.images} 张` : ''}。`)
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '导入失败，请检查表头和日期格式。')
+    ElMessage.error(error?.response?.data?.detail || '导入失败，请检查模板列名、日期格式和必填字段。')
   } finally {
-    saving.value = false
+    setTimeout(() => {
+      if (importingKind.value === kind) {
+        importingKind.value = ''
+        importProgress.value = 0
+      }
+    }, 900)
   }
 }
 
-function parseDelimited(text: string) {
-  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
-  if (lines.length < 2) return []
-  const delimiter = lines[0].includes('\t') ? '\t' : ','
-  const headers = splitDelimitedLine(lines[0], delimiter).map((item) => item.trim())
-  return lines.slice(1).map((line) => {
-    const values = splitDelimitedLine(line, delimiter)
-    return headers.reduce<Record<string, string>>((row, header, index) => {
-      row[header] = values[index]?.trim() || ''
-      return row
-    }, {})
-  })
-}
-
-function splitDelimitedLine(line: string, delimiter: string) {
-  const result: string[] = []
-  let value = ''
-  let quoted = false
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index]
-    if (char === '"' && line[index + 1] === '"') {
-      value += '"'
-      index += 1
-    } else if (char === '"') {
-      quoted = !quoted
-    } else if (char === delimiter && !quoted) {
-      result.push(value)
-      value = ''
-    } else {
-      value += char
-    }
+function importAction(kind: CmsImportKind, file: File, onUploadProgress: (event: { loaded: number; total?: number }) => void) {
+  const actionMap = {
+    members: cmsApi.importMembers,
+    publications: cmsApi.importPublications,
+    projects: cmsApi.importProjects,
+    patents: cmsApi.importPatents,
+    awards: cmsApi.importAwards,
   }
-  result.push(value)
-  return result
-}
-
-function normalizeImportRow(row: Record<string, string>, kind: ResultImportKind) {
-  const visibility = row.visibility || 'public'
-  if (kind === 'publications') {
-    return {
-      title: row.title || row.论文题目 || '',
-      authors: row.authors || row.作者 || '',
-      journal: row.journal || row.期刊 || '',
-      year: Number(row.year || row.年份 || new Date().getFullYear()),
-      doi: row.doi || row.DOI || '',
-      abstract: row.abstract || row.摘要 || '',
-      visibility,
-      sort_order: Number(row.sort_order || 0),
-    }
-  }
-  if (kind === 'projects') {
-    return {
-      title: row.title || row.项目名称 || '',
-      project_number: row.project_number || row.项目编号 || '',
-      funding_source: row.funding_source || row.资助来源 || row.来源 || '',
-      principal_investigator: row.principal_investigator || row.负责人 || '',
-      status: row.status || row.状态 || '',
-      description: row.description || row.说明 || '',
-      visibility,
-      sort_order: Number(row.sort_order || 0),
-    }
-  }
-  if (kind === 'patents') {
-    return {
-      title: row.title || row.专利名称 || '',
-      patent_number: row.patent_number || row.专利号 || '',
-      inventors: row.inventors || row.发明人 || '',
-      status: row.status || row.状态 || '',
-      application_date: row.application_date || row.申请日期 || '',
-      authorization_date: row.authorization_date || row.授权日期 || '',
-      visibility,
-      sort_order: Number(row.sort_order || 0),
-    }
-  }
-  return {
-    title: row.title || row.奖项名称 || '',
-    award_level: row.award_level || row.奖项等级 || '',
-    award_date: row.award_date || row.获奖日期 || '',
-    participants: row.participants || row.参与人员 || '',
-    description: row.description || row.说明 || '',
-    visibility,
-    sort_order: Number(row.sort_order || 0),
-  }
+  return actionMap[kind](file, onUploadProgress)
 }
 
 async function save(action: (onUploadProgress?: (event: { loaded: number; total?: number }) => void) => Promise<unknown>) {
@@ -1589,14 +1561,8 @@ onMounted(loadAll)
   box-shadow: none;
 }
 
-.cms-heading span {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .cms-heading h1 {
-  margin: 3px 0 0;
+  margin: 0;
   color: var(--color-deep-green);
   font-size: 24px;
   font-weight: 650;
@@ -1921,6 +1887,11 @@ onMounted(loadAll)
   background: var(--color-panel);
 }
 
+.import-progress {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
+
 .import-strip span {
   min-width: 0;
   overflow: hidden;
@@ -1931,24 +1902,27 @@ onMounted(loadAll)
 }
 
 .import-strip input {
-  flex: 0 0 210px;
-  color: var(--color-muted);
-  font-size: 12px;
+  display: none;
 }
 
-.import-strip a {
+.import-strip a,
+.import-strip button {
   flex: 0 0 auto;
   border: 1px solid rgba(0, 135, 60, 0.22);
   border-radius: 999px;
   padding: 5px 12px;
+  background: #fff;
   color: var(--color-primary);
+  cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.4;
   text-decoration: none;
   white-space: nowrap;
 }
 
-.import-strip a:hover {
+.import-strip a:hover,
+.import-strip button:hover {
   border-color: var(--color-primary);
   background: rgba(0, 135, 60, 0.06);
 }
@@ -2401,8 +2375,8 @@ onMounted(loadAll)
     white-space: normal;
   }
 
-  .import-strip input,
-  .import-strip a {
+  .import-strip a,
+  .import-strip button {
     width: 100%;
     flex: none;
   }

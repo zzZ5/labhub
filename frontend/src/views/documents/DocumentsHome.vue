@@ -2,8 +2,7 @@
   <InternalLayout title="内部资料库">
     <section class="library-hero">
       <div>
-        <span>内部资料</span>
-        <h1>课题组内部资料库</h1>
+        <h1>内部资料库</h1>
         <p>集中管理 SOP、实验记录模板、数据分析教程、论文开题与毕业材料，支持在线阅读、权限查看和版本追踪。</p>
       </div>
       <dl>
@@ -27,8 +26,7 @@
         <template v-if="previewDocument">
           <div class="side-heading">
             <div>
-              <span>资料列表</span>
-              <h2>当前可查看资料</h2>
+              <h2>资料列表</h2>
             </div>
             <button class="back-category" type="button" @click="closePreview">返回分类</button>
           </div>
@@ -46,7 +44,6 @@
         <template v-else>
           <div class="side-heading static">
             <div>
-              <span>分类导航</span>
               <h2>资料分类</h2>
             </div>
           </div>
@@ -83,7 +80,6 @@
         <section v-if="previewDocument" class="card embedded-reader">
           <header class="reader-heading">
             <div>
-              <span>资料阅读</span>
               <h2>{{ previewDocument.title }}</h2>
             </div>
             <div class="reader-actions">
@@ -118,7 +114,7 @@
         />
         <div v-else class="document-grid">
           <article
-            v-for="doc in displayDocuments"
+            v-for="doc in pagedDocuments"
             :key="doc.id"
             :class="['card document-card', { previewable: doc.can_preview }]"
             @click="handlePreview(doc)"
@@ -147,6 +143,11 @@
               </div>
             </footer>
           </article>
+        </div>
+        <div v-if="!previewDocument && documentTotalPages > 1" class="list-pager">
+          <button type="button" :disabled="documentPage === 1" @click="documentPage -= 1">上一页</button>
+          <span>{{ documentPage }} / {{ documentTotalPages }} 页，共 {{ displayDocuments.length }} 条</span>
+          <button type="button" :disabled="documentPage === documentTotalPages" @click="documentPage += 1">下一页</button>
         </div>
       </main>
     </section>
@@ -196,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
 
@@ -218,6 +219,8 @@ const documents = ref<LabDocument[]>([])
 const loading = ref(false)
 const keyword = ref('')
 const activeCategory = ref('')
+const documentPage = ref(1)
+const documentPageSize = 12
 const uploadVisible = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
@@ -235,6 +238,11 @@ const uploadForm = reactive({
 
 const displayCategories = computed(() => categories.value)
 const displayDocuments = computed(() => documents.value)
+const documentTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / documentPageSize)))
+const pagedDocuments = computed(() => {
+  const start = (documentPage.value - 1) * documentPageSize
+  return displayDocuments.value.slice(start, start + documentPageSize)
+})
 const previewUrl = computed(() => (previewDocument.value ? previewDocumentUrl(previewDocument.value) : ''))
 const previewableCount = computed(() => displayDocuments.value.filter((doc) => doc.can_preview).length)
 const activeCategoryName = computed(() => {
@@ -244,6 +252,7 @@ const activeCategoryName = computed(() => {
 
 function selectCategory(slug: string) {
   activeCategory.value = slug
+  documentPage.value = 1
   previewDocument.value = null
   void loadDocuments()
 }
@@ -264,6 +273,7 @@ async function loadDocuments() {
       search: keyword.value || undefined,
       category__slug: activeCategory.value || undefined,
     })
+    documentPage.value = 1
   } catch {
     documents.value = []
     previewDocument.value = null
@@ -359,6 +369,7 @@ async function handleDelete(doc: LabDocument) {
     ElMessage.success('资料已删除。')
     if (previewDocument.value?.id === doc.id) previewDocument.value = null
     await loadDocuments()
+    if (documentPage.value > documentTotalPages.value) documentPage.value = documentTotalPages.value
   } catch (error: any) {
     if (error === 'cancel' || error === 'close') return
     const detail = error?.response?.data?.detail
@@ -472,6 +483,11 @@ onMounted(() => {
   void loadCategories()
   void loadDocuments()
 })
+
+watch(documentTotalPages, (total) => {
+  if (documentPage.value > total) documentPage.value = total
+  if (documentPage.value < 1) documentPage.value = 1
+})
 </script>
 
 <style scoped>
@@ -489,15 +505,8 @@ onMounted(() => {
     #fff;
 }
 
-.library-hero span {
-  display: block;
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 750;
-}
-
 .library-hero h1 {
-  margin: 5px 0 6px;
+  margin: 0 0 6px;
   color: var(--color-deep-green);
   font-size: clamp(24px, 2.7vw, 31px);
   font-weight: 650;
@@ -721,6 +730,36 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
+}
+
+.list-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.list-pager button {
+  border: 1px solid rgba(0, 135, 60, 0.2);
+  border-radius: var(--radius-sm);
+  min-height: 32px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.list-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .document-card {
@@ -1030,6 +1069,16 @@ onMounted(() => {
 
   .reader-actions {
     flex-wrap: wrap;
+  }
+
+  .list-pager {
+    flex-wrap: wrap;
+  }
+
+  .list-pager span {
+    order: -1;
+    width: 100%;
+    text-align: center;
   }
 }
 </style>

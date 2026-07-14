@@ -3,8 +3,7 @@
     <section class="member-page">
       <header class="surface-heading member-heading">
         <div>
-          <span>账号、学校身份与系统权限</span>
-          <h1>成员账号管理</h1>
+          <h1>成员管理</h1>
           <p>学校身份用于人员分类；系统权限用于控制后台管理能力。学生账号可在这里一键生成学生档案，一个账号只会绑定一个档案。</p>
         </div>
         <div class="heading-actions">
@@ -73,7 +72,7 @@
         </div>
 
         <div class="account-list">
-          <article v-for="user in filteredUsers" :key="user.id" class="account-row-card">
+          <article v-for="user in pagedUsers" :key="user.id" class="account-row-card">
             <div class="member-cell"><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
             <div class="compact-tags">
               <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">{{ user.profile?.is_approved ? '已审核' : '待审核' }}</span>
@@ -90,6 +89,11 @@
           </article>
         </div>
         <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
+        <div v-if="memberTotalPages > 1" class="list-pager">
+          <button type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
+          <span>{{ memberPage }} / {{ memberTotalPages }} 页，共 {{ filteredUsers.length }} 人</span>
+          <button type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
+        </div>
       </article>
 
       <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
@@ -156,6 +160,8 @@ const keyword = ref('')
 const statusFilter = ref('all')
 const schoolFilter = ref('all')
 const permissionFilter = ref('all')
+const memberPage = ref(1)
+const memberPageSize = 12
 const schoolIdentityForms = reactive<Record<number, string>>({})
 const assignRoles = reactive<Record<number, string>>({})
 const accountForm = reactive({
@@ -230,6 +236,11 @@ const filteredUsers = computed(() => {
     const permissionMatched = permissionFilter.value === 'all' || systemRoles(user).includes(permissionFilter.value)
     return (!term || text.includes(term)) && statusMatched && schoolMatched && permissionMatched
   })
+})
+const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / memberPageSize)))
+const pagedUsers = computed(() => {
+  const start = (memberPage.value - 1) * memberPageSize
+  return filteredUsers.value.slice(start, start + memberPageSize)
 })
 const passwordTargetName = computed(() => (passwordTarget.value ? displayUser(passwordTarget.value) : ''))
 
@@ -492,6 +503,7 @@ async function reload() {
     pendingUsers.value = pendingData
     studentProfiles.value = studentData
     syncForms()
+    clampMemberPage()
   } catch (error: any) {
     users.value = []
     pendingUsers.value = []
@@ -504,6 +516,11 @@ async function reload() {
   } finally {
     loading.value = false
   }
+}
+
+function clampMemberPage() {
+  if (memberPage.value > memberTotalPages.value) memberPage.value = memberTotalPages.value
+  if (memberPage.value < 1) memberPage.value = 1
 }
 
 async function handleApprove(user: CurrentUser) {
@@ -603,6 +620,12 @@ watch(
     }
   },
 )
+
+watch([keyword, statusFilter, schoolFilter, permissionFilter], () => {
+  memberPage.value = 1
+})
+
+watch(memberTotalPages, clampMemberPage)
 </script>
 
 <style scoped>
@@ -873,6 +896,36 @@ watch(
   padding: 14px 0 2px;
 }
 
+.list-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.list-pager button {
+  border: 1px solid rgba(0, 135, 60, 0.2);
+  border-radius: var(--radius-sm);
+  min-height: 32px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.list-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .create-form {
   display: grid;
 }
@@ -934,6 +987,16 @@ watch(
   .heading-actions,
   .filters {
     justify-content: flex-start;
+  }
+
+  .list-pager {
+    flex-wrap: wrap;
+  }
+
+  .list-pager span {
+    order: -1;
+    width: 100%;
+    text-align: center;
   }
 }
 </style>

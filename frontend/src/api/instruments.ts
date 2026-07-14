@@ -44,6 +44,23 @@ export async function createInstrument(payload: Record<string, unknown>, onUploa
   return response.data
 }
 
+export interface InstrumentImportResult {
+  created: number
+  updated: number
+  images: number
+  total: number
+}
+
+export async function importInstrumentsExcel(file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = new FormData()
+  body.append('file', file)
+  const response = await http.post<InstrumentImportResult>('/instruments/instruments/import-excel/', body, {
+    timeout: 5400000,
+    onUploadProgress,
+  })
+  return response.data
+}
+
 export async function updateInstrument(id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const body = toInstrumentBody(payload)
   const response = await http.patch<Instrument>(`/instruments/instruments/${id}/`, body, {

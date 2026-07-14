@@ -68,6 +68,24 @@ async function remove(resource: CmsResource, idOrSlug: number | string) {
   await http.delete(`/cms/${resource}/${idOrSlug}/`)
 }
 
+export interface CmsImportResult {
+  created: number
+  updated: number
+  skipped: number
+  images: number
+  total: number
+}
+
+async function importFile(resource: CmsResource, file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await http.post<CmsImportResult>(`/cms/${resource}/import-file/`, formData, {
+    timeout: 5400000,
+    onUploadProgress,
+  })
+  return response.data
+}
+
 export interface CmsNewsArticle extends Omit<NewsArticle, 'category'> {
   category: NewsCategory | null
   content: string
@@ -108,6 +126,7 @@ export const cmsApi = {
   createMember: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Member>('members', payload, onUploadProgress),
   updateMember: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Member>('members', id, payload, onUploadProgress),
   deleteMember: (id: number) => remove('members', id),
+  importMembers: (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => importFile('members', file, onUploadProgress),
 
   listNewsCategories: () => list<NewsCategory>('news-categories'),
   createNewsCategory: (payload: Record<string, unknown>) => create<NewsCategory>('news-categories', payload),
@@ -125,21 +144,25 @@ export const cmsApi = {
   createPublication: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Publication>('publications', payload, onUploadProgress),
   updatePublication: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Publication>('publications', id, payload, onUploadProgress),
   deletePublication: (id: number) => remove('publications', id),
+  importPublications: (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => importFile('publications', file, onUploadProgress),
 
   listProjects: () => list<Project>('projects'),
   createProject: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Project>('projects', payload, onUploadProgress),
   updateProject: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Project>('projects', id, payload, onUploadProgress),
   deleteProject: (id: number) => remove('projects', id),
+  importProjects: (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => importFile('projects', file, onUploadProgress),
 
   listPatents: () => list<Patent>('patents'),
   createPatent: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Patent>('patents', payload, onUploadProgress),
   updatePatent: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Patent>('patents', id, payload, onUploadProgress),
   deletePatent: (id: number) => remove('patents', id),
+  importPatents: (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => importFile('patents', file, onUploadProgress),
 
   listAwards: () => list<Award>('awards'),
   createAward: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Award>('awards', payload, onUploadProgress),
   updateAward: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Award>('awards', id, payload, onUploadProgress),
   deleteAward: (id: number) => remove('awards', id),
+  importAwards: (file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) => importFile('awards', file, onUploadProgress),
 
   listInstrumentCategories: () => list<InstrumentCategory>('instrument-categories'),
   createInstrumentCategory: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<InstrumentCategory>('instrument-categories', payload, onUploadProgress),

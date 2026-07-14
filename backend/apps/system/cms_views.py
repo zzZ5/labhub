@@ -2,8 +2,10 @@ from uuid import uuid4
 
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
 
 from apps.accounts.permissions import CanManagePortalContent
 from apps.instruments.models import Instrument, InstrumentCategory
@@ -17,6 +19,8 @@ from apps.portal.models import ContactInfo, HomeBanner, ResearchDirection, SiteS
 from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer, ResearchDirectionSerializer, SiteSettingSerializer
 from apps.publications.models import Award, Patent, Project, Publication
 from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
+
+from .cms_importers import import_rows
 
 
 class CmsParserMixin:
@@ -81,6 +85,19 @@ class CmsMemberViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Member.objects.all().prefetch_related("educations", "experiences")
     serializer_class = MemberSerializer
     permission_classes = [CanManagePortalContent]
+
+    @action(detail=False, methods=["post"], url_path="import-file")
+    def import_file(self, request):
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response({"detail": "请上传团队成员导入文件。"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            result = import_rows(upload, upload.name, "members")
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"detail": "导入失败，请检查模板列名和日期格式。"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
 
 
 class CmsNewsCategoryViewSet(CmsParserMixin, viewsets.ModelViewSet):
@@ -241,11 +258,19 @@ class CmsPublicationViewSet(CmsParserMixin, viewsets.ModelViewSet):
     serializer_class = PublicationSerializer
     permission_classes = [CanManagePortalContent]
 
+    @action(detail=False, methods=["post"], url_path="import-file")
+    def import_file(self, request):
+        return import_cms_file(request, "publications", "请上传论文成果导入文件。")
+
 
 class CmsProjectViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [CanManagePortalContent]
+
+    @action(detail=False, methods=["post"], url_path="import-file")
+    def import_file(self, request):
+        return import_cms_file(request, "projects", "请上传科研项目导入文件。")
 
 
 class CmsPatentViewSet(CmsParserMixin, viewsets.ModelViewSet):
@@ -253,11 +278,32 @@ class CmsPatentViewSet(CmsParserMixin, viewsets.ModelViewSet):
     serializer_class = PatentSerializer
     permission_classes = [CanManagePortalContent]
 
+    @action(detail=False, methods=["post"], url_path="import-file")
+    def import_file(self, request):
+        return import_cms_file(request, "patents", "请上传专利成果导入文件。")
+
 
 class CmsAwardViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Award.objects.all()
     serializer_class = AwardSerializer
     permission_classes = [CanManagePortalContent]
+
+    @action(detail=False, methods=["post"], url_path="import-file")
+    def import_file(self, request):
+        return import_cms_file(request, "awards", "请上传获奖成果导入文件。")
+
+
+def import_cms_file(request, kind: str, missing_message: str):
+    upload = request.FILES.get("file")
+    if not upload:
+        return Response({"detail": missing_message}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        result = import_rows(upload, upload.name, kind)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        return Response({"detail": "导入失败，请检查模板列名、日期格式和必填字段。"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(result)
 
 
 class CmsInstrumentSerializer(serializers.ModelSerializer):
