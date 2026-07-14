@@ -587,10 +587,10 @@ function canEmbedPreview(doc: LabDocument) {
   const type = version?.file_type?.toLowerCase() || ''
   const filename = currentFilename(doc).toLowerCase()
   if (version?.preview_status === 'ready') return true
-  if (isOfficeDocument(doc)) return false
+  if (isDocxDocument(doc)) return true
   if (isLegacyDocDocument(doc)) return false
+  if (isOfficeDocument(doc)) return false
   return (
-    isDocxDocument(doc) ||
     type.startsWith('application/pdf') ||
     type.startsWith('image/') ||
     type.startsWith('text/') ||

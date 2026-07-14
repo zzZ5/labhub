@@ -378,11 +378,6 @@ class DocumentViewSet(ModelViewSet):
             return response
 
         content_type = version.file_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        if is_office_preview_candidate(filename) and version.preview_status == "failed":
-            detail = version.preview_error or "PDF 预览生成失败，请下载原文件查看。"
-            return Response({"detail": detail}, status=status.HTTP_409_CONFLICT)
-        if is_office_preview_candidate(filename) and version.preview_status == "pending":
-            return Response({"detail": "PDF 预览正在生成，请稍后再试。"}, status=status.HTTP_202_ACCEPTED)
         if is_docx_file(filename, content_type):
             try:
                 with version.file.open("rb") as file_obj:
@@ -394,6 +389,12 @@ class DocumentViewSet(ModelViewSet):
             response["X-Frame-Options"] = "SAMEORIGIN"
             response["X-Content-Type-Options"] = "nosniff"
             return response
+
+        if is_office_preview_candidate(filename) and version.preview_status == "failed":
+            detail = version.preview_error or "PDF 预览生成失败，请下载原文件查看。"
+            return Response({"detail": detail}, status=status.HTTP_409_CONFLICT)
+        if is_office_preview_candidate(filename) and version.preview_status == "pending":
+            return Response({"detail": "PDF 预览正在生成，请稍后再试。"}, status=status.HTTP_202_ACCEPTED)
 
         response = protected_file_response(version.file, filename, as_attachment=False, content_type=content_type)
         response["X-Frame-Options"] = "SAMEORIGIN"
