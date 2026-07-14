@@ -593,13 +593,10 @@ class Command(BaseCommand):
         document_category_specs = [
             ("组内制度与通知", "lab-policy", "实验室制度、值日安排、通知公告与常用流程。"),
             ("实验室安全", "lab-safety", "安全培训、危险源提示、废弃物处置与应急流程。"),
-            ("实验方法与 SOP", "sop", "仪器操作、样品前处理、实验步骤与质量控制。"),
-            ("仪器设备资料", "instrument-docs", "仪器说明书、维护记录、操作说明和配套软件。"),
-            ("数据与代码规范", "data-code", "数据模板、统计分析、绘图规范与代码归档要求。"),
+            ("实验方法", "sop", "实验步骤、样品前处理、质量控制和常用方法记录。"),
             ("项目与经费材料", "project-admin", "项目申报、过程管理、结题材料和经费相关模板。"),
             ("论文写作与投稿", "paper-writing", "论文模板、投稿说明、图表规范与回复审稿材料。"),
             ("组会与学术交流", "seminars", "组会汇报、文献分享、会议报告和讲座资料。"),
-            ("学生资料模板", "student-templates", "开题、中期、答辩、毕业归档等学生常用模板。"),
             ("行政表格与模板", "admin-forms", "学院、学校和课题组常用行政表格。"),
         ]
         document_categories = {}
@@ -614,11 +611,10 @@ class Command(BaseCommand):
                 },
             )
         sop_category = document_categories["sop"]
-        analysis_category = document_categories["data-code"]
         sample_documents = [
             ("堆肥反应器操作 SOP", sop_category, "v1.3", "包含开机检查、温度控制、通风参数、采样记录和安全注意事项。"),
             ("腐殖酸组分测定流程", sop_category, "v2.0", "说明样品前处理、提取步骤、质量控制和数据记录模板。"),
-            ("堆肥气体采样数据整理模板", analysis_category, "v1.1", "用于田间和反应器气体采样数据整理的统一模板。"),
+            ("堆肥气体采样数据整理模板", sop_category, "v1.1", "用于田间和反应器气体采样数据整理的统一模板。"),
         ]
         for title, category, version, description in sample_documents:
             document, _ = Document.objects.get_or_create(

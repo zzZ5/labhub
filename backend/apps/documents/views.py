@@ -20,6 +20,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus, DocumentTag, DocumentVersion
 from .responses import protected_file_response
 from .serializers import DocumentCategorySerializer, DocumentDownloadLogSerializer, DocumentSerializer, DocumentTagSerializer, DocumentWriteSerializer
+from .importers import import_documents_excel
 from .services import (
     can_delete_document,
     can_download_document,
@@ -51,14 +52,45 @@ def docx_to_html(file_obj, title):
 
     namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
     root = ElementTree.fromstring(xml_content)
-    paragraphs = []
-    for paragraph in root.findall(".//w:p", namespace):
-        parts = [node.text or "" for node in paragraph.findall(".//w:t", namespace)]
-        text = "".join(parts).strip()
-        if text:
-            paragraphs.append(text)
+    blocks = []
 
-    body = "\n".join(f"<p>{escape(paragraph)}</p>" for paragraph in paragraphs)
+    def paragraph_text(paragraph):
+        parts = [node.text or "" for node in paragraph.findall(".//w:t", namespace)]
+        return "".join(parts).strip()
+
+    def table_html(table):
+        rows = []
+        for row in table.findall("./w:tr", namespace):
+            cells = []
+            for cell in row.findall("./w:tc", namespace):
+                text = " ".join(filter(None, (paragraph_text(p) for p in cell.findall(".//w:p", namespace))))
+                cells.append(f"<td>{escape(text)}</td>")
+            if cells:
+                rows.append(f"<tr>{''.join(cells)}</tr>")
+        if not rows:
+            return ""
+        return f"<table>{''.join(rows)}</table>"
+
+    body = root.find("w:body", namespace)
+    for child in list(body) if body is not None else []:
+        tag = child.tag.rsplit("}", 1)[-1]
+        if tag == "p":
+            text = paragraph_text(child)
+            if text:
+                blocks.append(f"<p>{escape(text)}</p>")
+        elif tag == "tbl":
+            html = table_html(child)
+            if html:
+                blocks.append(html)
+
+    body = "\n".join(blocks)
+    if not body:
+        paragraphs = []
+        for paragraph in root.findall(".//w:p", namespace):
+            text = paragraph_text(paragraph)
+            if text:
+                paragraphs.append(text)
+        body = "\n".join(f"<p>{escape(paragraph)}</p>" for paragraph in paragraphs)
     if not body:
         body = '<p class="muted">该 Word 文档没有可提取的文本内容。</p>'
 
@@ -100,6 +132,24 @@ def docx_to_html(file_obj, title):
       font-size: 16px;
       line-height: 1.85;
       white-space: pre-wrap;
+    }}
+    table {{
+      width: 100%;
+      margin: 18px 0 22px;
+      border-collapse: collapse;
+      font-size: 15px;
+      line-height: 1.6;
+    }}
+    td {{
+      border: 1px solid #e5e7eb;
+      padding: 9px 11px;
+      vertical-align: top;
+      word-break: break-word;
+    }}
+    tr:first-child td {{
+      background: #eaf5ee;
+      color: #1f3d2b;
+      font-weight: 650;
     }}
     .muted {{
       color: #6b7280;
@@ -184,6 +234,23 @@ class DocumentViewSet(ModelViewSet):
         if not can_view_document(request.user, document):
             return Response({"detail": "无权查看该资料。"}, status=status.HTTP_403_FORBIDDEN)
         return super().retrieve(request, *args, **kwargs)
+
+    @action(detail=False, methods=["post"], url_path="import-excel")
+    def import_excel(self, request):
+        if not can_upload_document(request.user):
+            return Response({"detail": "无权维护资料库。"}, status=status.HTTP_403_FORBIDDEN)
+
+        excel_file = request.FILES.get("file")
+        archive_file = request.FILES.get("archive")
+        if not excel_file:
+            return Response({"detail": "请上传 .xlsx 格式的资料清单。"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = import_documents_excel(excel_file, archive_file=archive_file, user=request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(result, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):

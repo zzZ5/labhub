@@ -3,7 +3,7 @@
     <section class="library-hero">
       <div>
         <h1>内部资料库</h1>
-        <p>集中管理 SOP、实验记录模板、数据分析教程、论文开题与毕业材料，支持在线阅读、权限查看和版本追踪。</p>
+        <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读、权限查看和资料维护。</p>
       </div>
       <dl>
         <div>
@@ -31,7 +31,7 @@
             <button class="back-category" type="button" @click="closePreview">返回分类</button>
           </div>
           <button
-            v-for="doc in displayDocuments"
+            v-for="doc in pagedReaderDocuments"
             :key="doc.id"
             :class="{ active: previewDocument.id === doc.id, disabled: !doc.can_preview }"
             type="button"
@@ -40,6 +40,11 @@
             <strong>{{ doc.title }}</strong>
             <span>{{ currentFilename(doc) }}</span>
           </button>
+          <div v-if="readerTotalPages > 1" class="side-pager">
+            <button type="button" :disabled="readerPage === 1" @click="readerPage -= 1">上一页</button>
+            <span>{{ readerPage }} / {{ readerTotalPages }}</span>
+            <button type="button" :disabled="readerPage === readerTotalPages" @click="readerPage += 1">下一页</button>
+          </div>
         </template>
         <template v-else>
           <div class="side-heading static">
@@ -55,7 +60,7 @@
             type="button"
             @click="selectCategory(item.slug)"
           >
-            {{ item.name }}
+            {{ categoryName(item) }}
           </button>
         </template>
       </aside>
@@ -66,35 +71,31 @@
             <strong>{{ activeCategoryName }}</strong>
             <span>{{ loading ? '正在更新资料列表' : `共 ${displayDocuments.length} 条资料` }}</span>
           </div>
-          <el-input v-model="keyword" placeholder="搜索 SOP、实验方法、数据模板或论文材料" clearable @keyup.enter="loadDocuments" />
+          <el-input v-model="keyword" placeholder="搜索实验方法、论文材料、项目资料或组会资料" clearable @keyup.enter="loadDocuments" />
           <el-button type="primary" @click="loadDocuments">搜索</el-button>
-          <el-button plain @click="uploadVisible = true">上传资料</el-button>
-          <div class="filter-tags">
-            <span class="status-tag normal">成员可见</span>
-            <span class="status-tag pending">博士可见</span>
-            <span class="status-tag maintenance">导师可见</span>
-            <span class="status-tag archived">指定权限</span>
-          </div>
+          <el-button plain @click="openCreate">上传资料</el-button>
+          <el-button plain @click="importVisible = true">批量导入</el-button>
         </div>
 
         <section v-if="previewDocument" class="card embedded-reader">
           <header class="reader-heading">
             <div>
               <h2>{{ previewDocument.title }}</h2>
+              <p>{{ currentFileLabel(previewDocument) }}</p>
             </div>
             <div class="reader-actions">
               <el-button plain @click="closePreview">返回列表</el-button>
+              <el-button v-if="previewDocument.can_edit" plain @click="openEdit(previewDocument)">编辑</el-button>
               <el-button v-if="previewDocument.can_delete" plain type="danger" @click="handleDelete(previewDocument)">删除</el-button>
               <el-button v-if="previewDocument.can_download" type="primary" @click="handleDownload(previewDocument)">下载</el-button>
             </div>
           </header>
           <dl class="reader-meta">
-            <div><dt>分类</dt><dd>{{ previewDocument.category?.name || '未分类' }}</dd></div>
-            <div><dt>文件</dt><dd>{{ currentFileLabel(previewDocument) }}</dd></div>
+            <div><dt>分类</dt><dd>{{ categoryName(previewDocument.category) }}</dd></div>
             <div><dt>权限</dt><dd>{{ previewDocument.visibility_label }}</dd></div>
             <div><dt>更新</dt><dd>{{ formatDate(previewDocument.updated_at) }}</dd></div>
+            <div v-if="previewDocument.description"><dt>说明</dt><dd>{{ previewDocument.description }}</dd></div>
           </dl>
-          <p class="reader-description">{{ previewDocument.description || '暂无资料说明。' }}</p>
           <div class="document-reader">
             <iframe v-if="previewUrl && canEmbedPreview(previewDocument)" :src="previewUrl" title="资料在线查看" />
             <div v-else class="preview-empty">
@@ -128,15 +129,14 @@
               <p>{{ doc.description || '暂无资料说明。' }}</p>
             </div>
             <dl>
-              <div><dt>分类</dt><dd>{{ doc.category?.name || '未分类' }}</dd></div>
-              <div><dt>版本</dt><dd>{{ doc.current_version || latestVersion(doc) }}</dd></div>
+              <div><dt>分类</dt><dd>{{ categoryName(doc.category) }}</dd></div>
               <div><dt>大小</dt><dd>{{ currentFileSizeLabel(doc) }}</dd></div>
               <div><dt>更新</dt><dd>{{ formatDate(doc.updated_at) }}</dd></div>
             </dl>
             <footer>
               <span class="preview-hint">{{ doc.can_preview ? '点击卡片查看' : '暂无可预览文件' }}</span>
               <div class="document-actions">
-                <el-button v-if="doc.can_delete" plain type="danger" @click.stop="handleDelete(doc)">删除</el-button>
+                <el-button v-if="doc.can_edit" plain @click.stop="openEdit(doc)">编辑</el-button>
                 <el-button type="primary" :disabled="!doc.can_download" @click.stop="handleDownload(doc)">
                   {{ doc.can_download ? '下载' : '不可下载' }}
                 </el-button>
@@ -152,14 +152,14 @@
       </main>
     </section>
 
-    <el-dialog v-model="uploadVisible" title="上传内部资料" width="560px">
+    <el-dialog v-model="uploadVisible" :title="editingDocument ? '编辑内部资料' : '上传内部资料'" width="560px" @closed="handleUploadClosed">
       <el-form label-position="top">
         <el-form-item label="资料标题">
           <el-input v-model="uploadForm.title" placeholder="请输入资料标题" />
         </el-form-item>
         <el-form-item label="资料分类">
           <el-select v-model="uploadForm.category_id" clearable placeholder="选择分类">
-            <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option v-for="item in displayCategories" :key="item.id" :label="categoryName(item)" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="可见范围">
@@ -170,18 +170,13 @@
             <el-option label="公开" value="public" />
           </el-select>
         </el-form-item>
-        <el-form-item label="版本号">
-          <el-input v-model="uploadForm.version" placeholder="v1.0" />
-        </el-form-item>
         <el-form-item label="资料说明">
           <el-input v-model="uploadForm.description" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="更新说明">
-          <el-input v-model="uploadForm.change_log" type="textarea" :rows="2" />
-        </el-form-item>
-        <el-form-item label="文件">
+        <el-form-item :label="editingDocument ? '替换文件（可选）' : '文件'">
           <input class="file-input" type="file" @change="handleFileChange" />
           <small v-if="uploadForm.file" class="upload-file-note">{{ uploadForm.file.name }}（{{ formatFileSize(uploadForm.file.size) }}）</small>
+          <small v-else-if="editingDocument" class="upload-file-note">不选择文件则保留当前文件：{{ currentFileLabel(editingDocument) }}</small>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -189,8 +184,43 @@
           <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
           <span>{{ uploadProgress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
         </div>
-        <el-button @click="uploadVisible = false">取消</el-button>
-        <el-button type="primary" :loading="uploading" @click="submitDocument">保存资料</el-button>
+        <el-button @click="closeUploadDialog">取消</el-button>
+        <el-button type="primary" :loading="uploading" @click="submitDocument">{{ editingDocument ? '保存修改' : '保存资料' }}</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="importVisible" title="批量导入内部资料" width="620px">
+      <div class="import-panel">
+        <div class="import-note">
+          <strong>按模板填写资料清单</strong>
+          <p>第二张表填写资料标题、分类、权限、说明和文件名。需要带文件时，把所有文件打包成 zip，表格里的文件名要和 zip 内文件名一致。</p>
+          <a href="/templates/documents-import-template.xlsx" download>下载内部资料导入模板</a>
+        </div>
+        <el-form label-position="top">
+          <el-form-item label="资料清单（.xlsx）">
+            <input class="file-input" type="file" accept=".xlsx" @change="handleImportExcelChange" />
+            <small v-if="importForm.file" class="upload-file-note">{{ importForm.file.name }}（{{ formatFileSize(importForm.file.size) }}）</small>
+          </el-form-item>
+          <el-form-item label="资料文件包（.zip，可选）">
+            <input class="file-input" type="file" accept=".zip" @change="handleImportArchiveChange" />
+            <small v-if="importForm.archive" class="upload-file-note">{{ importForm.archive.name }}（{{ formatFileSize(importForm.archive.size) }}）</small>
+          </el-form-item>
+        </el-form>
+        <div v-if="importResult" class="import-result">
+          <strong>导入结果</strong>
+          <span>新增 {{ importResult.created }} 条，更新 {{ importResult.updated }} 条，跳过 {{ importResult.skipped }} 条。</span>
+          <ul v-if="importResult.errors.length">
+            <li v-for="item in importResult.errors.slice(0, 6)" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+      <template #footer>
+        <div v-if="importing || importProgress > 0" class="upload-progress dialog-upload-progress">
+          <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
+          <span>{{ importProgress < 100 ? '正在上传并导入，请不要关闭窗口。' : '上传完成，正在处理资料。' }}</span>
+        </div>
+        <el-button @click="importVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importing" @click="submitImport">开始导入</el-button>
       </template>
     </el-dialog>
   </InternalLayout>
@@ -209,7 +239,10 @@ import {
   downloadDocument,
   fetchDocumentCategories,
   fetchDocuments,
+  importDocumentsExcel,
   previewDocumentUrl,
+  updateDocument,
+  type DocumentImportResult,
   type DocumentCategory,
   type LabDocument,
 } from '../../api/documents'
@@ -221,19 +254,29 @@ const keyword = ref('')
 const activeCategory = ref('')
 const documentPage = ref(1)
 const documentPageSize = 12
+const readerPage = ref(1)
+const readerPageSize = 12
 const uploadVisible = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const importVisible = ref(false)
+const importing = ref(false)
+const importProgress = ref(0)
+const importResult = ref<DocumentImportResult | null>(null)
 const previewDocument = ref<LabDocument | null>(null)
+const editingDocument = ref<LabDocument | null>(null)
 
 const uploadForm = reactive({
   title: '',
   category_id: undefined as number | undefined,
   description: '',
   visibility: 'members',
-  version: 'v1.0',
-  change_log: '',
   file: undefined as File | undefined,
+})
+
+const importForm = reactive({
+  file: undefined as File | undefined,
+  archive: undefined as File | undefined,
 })
 
 const displayCategories = computed(() => categories.value)
@@ -243,16 +286,27 @@ const pagedDocuments = computed(() => {
   const start = (documentPage.value - 1) * documentPageSize
   return displayDocuments.value.slice(start, start + documentPageSize)
 })
+const readerTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / readerPageSize)))
+const pagedReaderDocuments = computed(() => {
+  const start = (readerPage.value - 1) * readerPageSize
+  return displayDocuments.value.slice(start, start + readerPageSize)
+})
 const previewUrl = computed(() => (previewDocument.value ? previewDocumentUrl(previewDocument.value) : ''))
 const previewableCount = computed(() => displayDocuments.value.filter((doc) => doc.can_preview).length)
 const activeCategoryName = computed(() => {
   if (!activeCategory.value) return '全部资料'
-  return displayCategories.value.find((item) => item.slug === activeCategory.value)?.name || '当前分类'
+  return categoryName(displayCategories.value.find((item) => item.slug === activeCategory.value)) || '当前分类'
 })
+
+function categoryName(category?: Pick<DocumentCategory, 'name'> | null) {
+  if (!category) return '未分类'
+  return category.name
+}
 
 function selectCategory(slug: string) {
   activeCategory.value = slug
   documentPage.value = 1
+  readerPage.value = 1
   previewDocument.value = null
   void loadDocuments()
 }
@@ -274,6 +328,7 @@ async function loadDocuments() {
       category__slug: activeCategory.value || undefined,
     })
     documentPage.value = 1
+    readerPage.value = 1
   } catch {
     documents.value = []
     previewDocument.value = null
@@ -286,6 +341,63 @@ function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   uploadForm.file = input.files?.[0]
   uploadProgress.value = 0
+}
+
+function resetUploadForm() {
+  uploadForm.title = ''
+  uploadForm.category_id = undefined
+  uploadForm.description = ''
+  uploadForm.visibility = 'members'
+  uploadForm.file = undefined
+}
+
+function closeUploadDialog() {
+  uploadVisible.value = false
+  editingDocument.value = null
+  resetUploadForm()
+}
+
+function handleUploadClosed() {
+  if (!uploading.value) {
+    editingDocument.value = null
+    resetUploadForm()
+  }
+}
+
+function openCreate() {
+  editingDocument.value = null
+  resetUploadForm()
+  uploadProgress.value = 0
+  uploadVisible.value = true
+}
+
+function openEdit(doc: LabDocument) {
+  if (!doc.can_edit) {
+    ElMessage.warning('当前账号没有编辑该资料的权限。')
+    return
+  }
+  editingDocument.value = doc
+  uploadForm.title = doc.title
+  uploadForm.category_id = doc.category?.id
+  uploadForm.description = doc.description || ''
+  uploadForm.visibility = doc.visibility || 'members'
+  uploadForm.file = undefined
+  uploadProgress.value = 0
+  uploadVisible.value = true
+}
+
+function handleImportExcelChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  importForm.file = input.files?.[0]
+  importProgress.value = 0
+  importResult.value = null
+}
+
+function handleImportArchiveChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  importForm.archive = input.files?.[0]
+  importProgress.value = 0
+  importResult.value = null
 }
 
 function formatFileSize(size: number) {
@@ -311,24 +423,29 @@ async function submitDocument() {
   uploading.value = true
   uploadProgress.value = 0
   try {
-    await createDocument({
+    const payload = {
       ...uploadForm,
       title: uploadForm.title.trim(),
       status: 'active',
       allow_download: true,
-    }, (event) => {
+    }
+    const saved = editingDocument.value
+      ? await updateDocument(editingDocument.value.id, payload, (event) => {
+        if (!event.total) return
+        uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      })
+      : await createDocument(payload, (event) => {
       if (!event.total) return
       uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
     uploadProgress.value = 100
-    ElMessage.success('资料已保存到内部资料库。')
-    uploadVisible.value = false
-    uploadForm.title = ''
-    uploadForm.description = ''
-    uploadForm.change_log = ''
-    uploadForm.version = 'v1.0'
-    uploadForm.file = undefined
+    ElMessage.success(editingDocument.value ? '资料已更新。' : '资料已保存到内部资料库。')
+    const editedId = editingDocument.value?.id
+    closeUploadDialog()
     await loadDocuments()
+    if (editedId && previewDocument.value?.id === editedId) {
+      previewDocument.value = documents.value.find((item) => item.id === editedId) || saved
+    }
   } catch (error: any) {
     ElMessage.error(uploadErrorMessage(error))
   } finally {
@@ -336,6 +453,33 @@ async function submitDocument() {
     setTimeout(() => {
       if (!uploading.value) uploadProgress.value = 0
     }, 800)
+  }
+}
+
+async function submitImport() {
+  if (!importForm.file) {
+    ElMessage.warning('请先选择 .xlsx 资料清单。')
+    return
+  }
+  importing.value = true
+  importProgress.value = 0
+  importResult.value = null
+  try {
+    const result = await importDocumentsExcel(importForm.file, importForm.archive, (event) => {
+      if (!event.total) return
+      importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+    })
+    importProgress.value = 100
+    importResult.value = result
+    ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条。`)
+    await loadDocuments()
+  } catch (error: any) {
+    ElMessage.error(uploadErrorMessage(error))
+  } finally {
+    importing.value = false
+    setTimeout(() => {
+      if (!importing.value) importProgress.value = 0
+    }, 1200)
   }
 }
 
@@ -360,7 +504,7 @@ async function handleDelete(doc: LabDocument) {
     return
   }
   try {
-    await ElMessageBox.confirm(`确定删除“${doc.title}”吗？删除后该资料及其文件版本将不可恢复。`, '删除内部资料', {
+    await ElMessageBox.confirm(`确定删除“${doc.title}”吗？删除后该资料及文件将不可恢复。`, '删除内部资料', {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning',
@@ -394,10 +538,6 @@ function visibilityClass(visibility: string) {
   if (visibility === 'phd') return 'pending'
   if (visibility === 'pi') return 'maintenance'
   return 'archived'
-}
-
-function latestVersion(doc: LabDocument) {
-  return doc.versions.find((item) => item.is_current)?.version || '-'
 }
 
 function currentVersion(doc: LabDocument) {
@@ -487,6 +627,11 @@ onMounted(() => {
 watch(documentTotalPages, (total) => {
   if (documentPage.value > total) documentPage.value = total
   if (documentPage.value < 1) documentPage.value = 1
+})
+
+watch(readerTotalPages, (total) => {
+  if (readerPage.value > total) readerPage.value = total
+  if (readerPage.value < 1) readerPage.value = 1
 })
 </script>
 
@@ -665,6 +810,41 @@ watch(documentTotalPages, (total) => {
   white-space: nowrap;
 }
 
+.side-pager {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--color-line);
+  margin-top: 10px;
+  padding-top: 12px;
+}
+
+.side-pager button {
+  width: auto;
+  min-height: 30px;
+  margin: 0;
+  padding: 0 9px;
+  border-color: rgba(0, 135, 60, 0.18);
+  background: #fff;
+  color: var(--color-cau-green);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.side-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.side-pager span {
+  color: var(--color-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .category-tree button strong,
 .category-tree button span {
   display: block;
@@ -692,7 +872,7 @@ watch(documentTotalPages, (total) => {
 
 .filter-bar {
   display: grid;
-  grid-template-columns: minmax(140px, 180px) minmax(240px, 1fr) auto auto;
+  grid-template-columns: minmax(140px, 180px) minmax(240px, 1fr) auto auto auto;
   align-items: center;
   gap: 12px;
 }
@@ -714,16 +894,6 @@ watch(documentTotalPages, (total) => {
 .filter-title span {
   color: var(--color-muted);
   font-size: 13px;
-}
-
-.filter-tags {
-  display: flex;
-  flex-wrap: wrap;
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-  gap: 8px;
-  border-top: 1px solid var(--color-line);
-  padding-top: 12px;
 }
 
 .document-grid {
@@ -866,16 +1036,19 @@ watch(documentTotalPages, (total) => {
 
 .reader-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
   border-bottom: 1px solid var(--color-line);
-  padding-bottom: 16px;
+  padding-bottom: 10px;
 }
 
 .reader-actions {
   display: flex;
-  gap: 10px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .reader-heading span {
@@ -885,24 +1058,35 @@ watch(documentTotalPages, (total) => {
 }
 
 .reader-heading h2 {
-  margin: 4px 0 0;
+  margin: 0;
   color: var(--color-deep-green);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 650;
+  line-height: 1.35;
+}
+
+.reader-heading p {
+  overflow: hidden;
+  max-width: min(720px, 58vw);
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .reader-meta {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 0;
 }
 
 .reader-meta div {
-  overflow: hidden;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  border-radius: 999px;
+  padding: 5px 10px;
   background: var(--color-panel);
 }
 
@@ -912,30 +1096,27 @@ watch(documentTotalPages, (total) => {
 }
 
 .reader-meta dt {
+  display: inline;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .reader-meta dd {
+  display: inline;
   overflow: hidden;
-  margin-top: 4px;
+  margin-left: 5px;
   color: var(--color-text);
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.reader-description {
-  margin: 16px 0 0;
-  color: var(--color-muted);
-  font-size: 14px;
 }
 
 .document-reader {
   overflow: hidden;
   border: 1px solid #dfe5e1;
-  border-radius: 12px;
-  margin-top: 20px;
+  border-radius: 10px;
+  margin-top: 10px;
   background: linear-gradient(180deg, #f4f6f5 0%, #eef2f0 100%);
 }
 
@@ -943,7 +1124,7 @@ watch(documentTotalPages, (total) => {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: min(76vh, 820px);
+  min-height: min(86vh, 980px);
   border: 0;
   background: #fff;
 }
@@ -1009,9 +1190,62 @@ watch(documentTotalPages, (total) => {
   text-align: left;
 }
 
+.import-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.import-note {
+  border: 1px solid rgba(0, 135, 60, 0.12);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  background: var(--color-eco-green);
+}
+
+.import-note strong,
+.import-result strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-deep-green);
+  font-weight: 650;
+}
+
+.import-note p {
+  margin: 0 0 8px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.import-note a {
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.import-result {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.import-result ul {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: #9f5135;
+}
+
 @media (max-width: 1280px) {
   .filter-bar {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
   }
 
   .filter-title {
@@ -1024,8 +1258,7 @@ watch(documentTotalPages, (total) => {
   .document-shell,
   .document-shell.is-reading,
   .document-grid,
-  .filter-bar,
-  .reader-meta {
+  .filter-bar {
     grid-template-columns: 1fr;
   }
 
@@ -1042,9 +1275,6 @@ watch(documentTotalPages, (total) => {
     max-height: none;
   }
 
-  .filter-tags {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1069,6 +1299,11 @@ watch(documentTotalPages, (total) => {
 
   .reader-actions {
     flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .reader-heading p {
+    max-width: 100%;
   }
 
   .list-pager {
