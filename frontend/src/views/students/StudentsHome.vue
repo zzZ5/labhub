@@ -34,10 +34,18 @@
             <small>{{ student.user_email || student.user_username || '未绑定账号' }}</small>
           </button>
           <div v-if="!filteredStudents.length" class="empty-note">{{ students.length ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
-          <div v-if="studentTotalPages > 1" class="student-pager">
-            <button type="button" :disabled="studentPage === 1" @click="studentPage -= 1">上一页</button>
-            <span>{{ studentPage }} / {{ studentTotalPages }}</span>
-            <button type="button" :disabled="studentPage === studentTotalPages" @click="studentPage += 1">下一页</button>
+          <div v-if="filteredStudents.length > 12" class="student-pager">
+            <span class="pager-summary">共 {{ filteredStudents.length }} 人</span>
+            <div class="pager-controls">
+              <button type="button" :disabled="studentPage === 1" @click="studentPage -= 1">上一页</button>
+              <span>{{ studentPage }} / {{ studentTotalPages }}</span>
+              <button type="button" :disabled="studentPage === studentTotalPages" @click="studentPage += 1">下一页</button>
+            </div>
+            <el-select v-model="studentPageSize" size="small" class="page-size-select" placeholder="分页">
+              <el-option label="12 人/页" :value="12" />
+              <el-option label="24 人/页" :value="24" />
+              <el-option label="48 人/页" :value="48" />
+            </el-select>
           </div>
         </aside>
 
@@ -185,10 +193,10 @@
             </el-form-item>
             <el-form-item label="可见范围">
               <el-select v-model="profileForm.visibility">
-                <el-option label="本人可见" value="private" />
+                <el-option label="成员可见" value="members" />
                 <el-option label="本人/导师可见" value="supervisor" />
                 <el-option label="硕博导师/管理员可见" value="pi" />
-                <el-option label="成员可见" value="members" />
+                <el-option label="本人可见" value="private" />
               </el-select>
             </el-form-item>
             <div class="form-actions">
@@ -286,7 +294,7 @@ const editingId = ref<number | null>(null)
 const studentKeyword = ref('')
 const degreeFilter = ref('')
 const studentPage = ref(1)
-const studentPageSize = 12
+const studentPageSize = ref(12)
 
 const profileForm = reactive<StudentProfilePayload>({
   user: 0,
@@ -300,7 +308,7 @@ const profileForm = reactive<StudentProfilePayload>({
   enrollment_date: null,
   graduation_date: null,
   destination: '',
-  visibility: 'supervisor',
+  visibility: 'members',
 })
 
 const uploadForm = reactive({
@@ -319,8 +327,8 @@ const filteredStudents = computed(() => {
     return matchesDegree && (!keyword || haystack.includes(keyword))
   })
 })
-const studentTotalPages = computed(() => Math.max(1, Math.ceil(filteredStudents.value.length / studentPageSize)))
-const pagedStudents = computed(() => filteredStudents.value.slice((studentPage.value - 1) * studentPageSize, studentPage.value * studentPageSize))
+const studentTotalPages = computed(() => Math.max(1, Math.ceil(filteredStudents.value.length / studentPageSize.value)))
+const pagedStudents = computed(() => filteredStudents.value.slice((studentPage.value - 1) * studentPageSize.value, studentPage.value * studentPageSize.value))
 const selectedStudent = computed(() => students.value.find((item) => item.id === selectedId.value) || filteredStudents.value[0] || students.value[0])
 const displayFiles = computed<StudentArchiveFile[]>(() => selectedStudent.value?.archive_files || [])
 const canManageStudents = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
@@ -423,7 +431,7 @@ function fillProfileForm(student?: StudentProfile) {
   profileForm.enrollment_date = student?.enrollment_date || null
   profileForm.graduation_date = student?.graduation_date || null
   profileForm.destination = student?.destination || ''
-  profileForm.visibility = student?.visibility || 'supervisor'
+  profileForm.visibility = student?.visibility || 'members'
 }
 
 function startCreate() {
@@ -601,6 +609,10 @@ watch([studentKeyword, degreeFilter], () => {
   if (filteredStudents.value.length && !filteredStudents.value.some((student) => student.id === selectedId.value)) {
     selectedId.value = filteredStudents.value[0].id
   }
+})
+
+watch(studentPageSize, () => {
+  studentPage.value = 1
 })
 
 watch(studentTotalPages, (total) => {
@@ -781,12 +793,33 @@ watch(studentTotalPages, (total) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 8px;
   border-top: 1px solid var(--color-line);
   margin-top: 10px;
   padding-top: 12px;
   color: var(--color-muted);
   font-size: 13px;
+}
+
+.student-pager .pager-summary {
+  flex: 0 0 auto;
+  color: var(--color-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.student-pager .pager-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.student-pager .page-size-select {
+  flex: 0 0 104px;
+  width: 104px;
 }
 
 .student-pager button {
@@ -802,6 +835,22 @@ watch(studentTotalPages, (total) => {
 .student-pager button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+@media (max-width: 640px) {
+  .student-pager {
+    flex-wrap: wrap;
+  }
+
+  .student-pager .pager-summary,
+  .student-pager .pager-controls,
+  .student-pager .page-size-select {
+    width: 100%;
+  }
+
+  .student-pager .pager-summary {
+    text-align: center;
+  }
 }
 
 .profile-list {

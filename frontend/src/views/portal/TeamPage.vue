@@ -28,8 +28,9 @@
         </div>
         <div v-if="!filteredMembers.length" class="card empty-panel">暂无公开团队成员，请在内部平台“门户内容”中维护。</div>
         <div v-if="totalPages > 1" class="team-pager">
+          <span class="pager-summary">共 {{ filteredMembers.length }} 人</span>
           <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
-          <span>第 {{ page }} / {{ totalPages }} 页</span>
+          <strong>{{ page }} / {{ totalPages }} 页</strong>
           <button type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
         </div>
       </div>
@@ -201,10 +202,23 @@ watch(totalPages, (total) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 14px;
   margin-top: 22px;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.team-pager .pager-summary {
+  width: 100%;
+  color: var(--color-text);
+  text-align: center;
+  font-weight: 650;
+}
+
+.team-pager strong {
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 .team-pager button {

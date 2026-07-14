@@ -31,7 +31,7 @@ class StudentProfile(models.Model):
     enrollment_date = models.DateField("入学日期", null=True, blank=True)
     graduation_date = models.DateField("毕业日期", null=True, blank=True)
     destination = models.CharField("毕业去向", max_length=200, blank=True)
-    visibility = models.CharField("可见性", max_length=20, choices=StudentVisibility.choices, default=StudentVisibility.SUPERVISOR)
+    visibility = models.CharField("可见性", max_length=20, choices=StudentVisibility.choices, default=StudentVisibility.MEMBERS)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 

@@ -528,14 +528,14 @@ const ContentList = defineComponent({
   setup(props, { emit }) {
     const keyword = ref('')
     const page = ref(1)
-    const pageSize = 12
+    const pageSize = ref(12)
     const filteredItems = computed(() => {
       const q = keyword.value.trim().toLowerCase()
       if (!q) return props.items
       return props.items.filter((item) => `${item.title} ${item.meta}`.toLowerCase().includes(q))
     })
-    const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize)))
-    const pagedItems = computed(() => filteredItems.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+    const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize.value)))
+    const pagedItems = computed(() => filteredItems.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
     const setPage = (nextPage: number) => {
       page.value = Math.min(totalPages.value, Math.max(1, nextPage))
     }
@@ -565,11 +565,26 @@ const ContentList = defineComponent({
               ]),
             ))
           : h('div', { class: 'empty-list' }, keyword.value ? '没有找到匹配内容。' : '暂无内容，点击右上角新增。'),
-        filteredItems.value.length > pageSize
+        filteredItems.value.length > 12
           ? h('div', { class: 'list-pager' }, [
-              h('button', { type: 'button', disabled: page.value === 1, onClick: () => setPage(page.value - 1) }, '上一页'),
-              h('span', `第 ${page.value} / ${totalPages.value} 页`),
-              h('button', { type: 'button', disabled: page.value === totalPages.value, onClick: () => setPage(page.value + 1) }, '下一页'),
+              h('span', { class: 'pager-summary' }, `共 ${filteredItems.value.length} 条`),
+              h('div', { class: 'pager-controls' }, [
+                h('button', { type: 'button', disabled: page.value === 1, onClick: () => setPage(page.value - 1) }, '上一页'),
+                h('span', `${page.value} / ${totalPages.value} 页`),
+                h('button', { type: 'button', disabled: page.value === totalPages.value, onClick: () => setPage(page.value + 1) }, '下一页'),
+              ]),
+              h('select', {
+                class: 'page-size-select',
+                value: pageSize.value,
+                onChange: (event: Event) => {
+                  pageSize.value = Number((event.target as HTMLSelectElement).value)
+                  page.value = 1
+                },
+              }, [
+                h('option', { value: 12 }, '12 条/页'),
+                h('option', { value: 24 }, '24 条/页'),
+                h('option', { value: 48 }, '48 条/页'),
+              ]),
             ])
           : null,
       ])
@@ -1824,11 +1839,39 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 10px;
   border-top: 1px solid var(--color-line);
   margin-top: 10px;
   padding-top: 10px;
   background: #fff;
+}
+
+.list-panel :deep(.pager-summary) {
+  flex: 0 0 auto;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.list-panel :deep(.pager-controls) {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-panel :deep(.page-size-select) {
+  flex: 0 0 108px;
+  width: 116px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 30px;
+  padding: 0 8px;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 13px;
 }
 
 .list-panel :deep(.list-pager button) {
@@ -1850,7 +1893,7 @@ onMounted(loadAll)
   opacity: 0.6;
 }
 
-.list-panel :deep(.list-pager span) {
+.list-panel :deep(.pager-controls span) {
   color: var(--color-muted);
   font-size: 13px;
 }
@@ -2349,9 +2392,20 @@ onMounted(loadAll)
   }
 
   .list-panel :deep(.list-pager) {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
+  }
+
+  .list-panel :deep(.pager-summary),
+  .list-panel :deep(.pager-controls),
+  .list-panel :deep(.page-size-select) {
+    width: 100%;
+  }
+
+  .list-panel :deep(.pager-summary) {
+    text-align: center;
   }
 
   .list-panel :deep(.list-pager button) {

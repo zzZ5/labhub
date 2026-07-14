@@ -89,10 +89,18 @@
           </article>
         </div>
         <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
-        <div v-if="memberTotalPages > 1" class="list-pager">
-          <button type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
-          <span>{{ memberPage }} / {{ memberTotalPages }} 页，共 {{ filteredUsers.length }} 人</span>
-          <button type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
+        <div v-if="filteredUsers.length > 12" class="list-pager member-list-pager">
+          <span class="pager-summary">共 {{ filteredUsers.length }} 人</span>
+          <div class="pager-controls">
+            <button type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
+            <span>{{ memberPage }} / {{ memberTotalPages }} 页</span>
+            <button type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
+          </div>
+          <el-select v-model="memberPageSize" size="small" class="page-size-select" placeholder="分页">
+            <el-option label="12 人/页" :value="12" />
+            <el-option label="24 人/页" :value="24" />
+            <el-option label="48 人/页" :value="48" />
+          </el-select>
         </div>
       </article>
 
@@ -161,7 +169,7 @@ const statusFilter = ref('all')
 const schoolFilter = ref('all')
 const permissionFilter = ref('all')
 const memberPage = ref(1)
-const memberPageSize = 12
+const memberPageSize = ref(12)
 const schoolIdentityForms = reactive<Record<number, string>>({})
 const assignRoles = reactive<Record<number, string>>({})
 const accountForm = reactive({
@@ -237,10 +245,10 @@ const filteredUsers = computed(() => {
     return (!term || text.includes(term)) && statusMatched && schoolMatched && permissionMatched
   })
 })
-const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / memberPageSize)))
+const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / memberPageSize.value)))
 const pagedUsers = computed(() => {
-  const start = (memberPage.value - 1) * memberPageSize
-  return filteredUsers.value.slice(start, start + memberPageSize)
+  const start = (memberPage.value - 1) * memberPageSize.value
+  return filteredUsers.value.slice(start, start + memberPageSize.value)
 })
 const passwordTargetName = computed(() => (passwordTarget.value ? displayUser(passwordTarget.value) : ''))
 
@@ -454,7 +462,7 @@ async function handleCreateStudentArchive(user: CurrentUser) {
       name: displayUser(user),
       degree_type: studentDegreeType(user),
       grade: '',
-      visibility: 'supervisor',
+      visibility: 'members',
     })
     ElMessage.success(`已生成“${profile.name}”的学生档案。`)
     await reload()
@@ -622,6 +630,10 @@ watch(
 )
 
 watch([keyword, statusFilter, schoolFilter, permissionFilter], () => {
+  memberPage.value = 1
+})
+
+watch(memberPageSize, () => {
   memberPage.value = 1
 })
 
@@ -899,7 +911,7 @@ watch(memberTotalPages, clampMemberPage)
 .list-pager {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 12px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -908,6 +920,30 @@ watch(memberTotalPages, clampMemberPage)
   background: #fff;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.member-list-pager {
+  flex-wrap: nowrap;
+}
+
+.pager-summary {
+  flex: 0 0 auto;
+  color: var(--color-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pager-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.page-size-select {
+  flex: 0 0 112px;
+  width: 128px;
 }
 
 .list-pager button {
@@ -990,13 +1026,21 @@ watch(memberTotalPages, clampMemberPage)
   }
 
   .list-pager {
-    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .list-pager span {
-    order: -1;
+  .pager-summary,
+  .pager-controls,
+  .page-size-select {
     width: 100%;
+  }
+
+  .pager-summary {
     text-align: center;
+  }
+
+  .pager-controls {
+    flex-wrap: wrap;
   }
 }
 </style>

@@ -74,10 +74,18 @@
           </article>
         </div>
         <div v-if="!filteredInstruments.length" class="card empty-panel">没有找到匹配的仪器设备。</div>
-        <div v-if="instrumentTotalPages > 1" class="list-pager">
-          <button type="button" :disabled="instrumentPage === 1" @click="instrumentPage -= 1">上一页</button>
-          <span>{{ instrumentPage }} / {{ instrumentTotalPages }} 页，共 {{ filteredInstruments.length }} 台</span>
-          <button type="button" :disabled="instrumentPage === instrumentTotalPages" @click="instrumentPage += 1">下一页</button>
+        <div v-if="filteredInstruments.length > 12" class="list-pager">
+          <span class="pager-summary">共 {{ filteredInstruments.length }} 台设备</span>
+          <div class="pager-controls">
+            <button type="button" :disabled="instrumentPage === 1" @click="instrumentPage -= 1">上一页</button>
+            <span>{{ instrumentPage }} / {{ instrumentTotalPages }} 页</span>
+            <button type="button" :disabled="instrumentPage === instrumentTotalPages" @click="instrumentPage += 1">下一页</button>
+          </div>
+          <el-select v-model="instrumentPageSize" size="small" class="page-size-select" placeholder="分页">
+            <el-option label="12 台/页" :value="12" />
+            <el-option label="24 台/页" :value="24" />
+            <el-option label="48 台/页" :value="48" />
+          </el-select>
         </div>
       </section>
 
@@ -131,7 +139,7 @@ const instruments = ref<Instrument[]>([])
 const keyword = ref('')
 const statusFilter = ref('')
 const instrumentPage = ref(1)
-const instrumentPageSize = 12
+const instrumentPageSize = ref(12)
 const formVisible = ref(false)
 const saving = ref(false)
 const editingInstrumentId = ref<number | null>(null)
@@ -158,10 +166,10 @@ const filteredInstruments = computed(() => {
     return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
   })
 })
-const instrumentTotalPages = computed(() => Math.max(1, Math.ceil(filteredInstruments.value.length / instrumentPageSize)))
+const instrumentTotalPages = computed(() => Math.max(1, Math.ceil(filteredInstruments.value.length / instrumentPageSize.value)))
 const pagedInstruments = computed(() => {
-  const start = (instrumentPage.value - 1) * instrumentPageSize
-  return filteredInstruments.value.slice(start, start + instrumentPageSize)
+  const start = (instrumentPage.value - 1) * instrumentPageSize.value
+  return filteredInstruments.value.slice(start, start + instrumentPageSize.value)
 })
 const statusSummary = computed(() => {
   const items = displayInstruments.value
@@ -336,6 +344,10 @@ onMounted(async () => {
 })
 
 watch([keyword, statusFilter], () => {
+  instrumentPage.value = 1
+})
+
+watch(instrumentPageSize, () => {
   instrumentPage.value = 1
 })
 
@@ -652,7 +664,8 @@ watch(instrumentTotalPages, clampInstrumentPage)
 .list-pager {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 12px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -660,6 +673,26 @@ watch(instrumentTotalPages, clampInstrumentPage)
   background: #fff;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.pager-summary {
+  flex: 0 0 auto;
+  color: var(--color-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pager-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.page-size-select {
+  flex: 0 0 112px;
+  width: 128px;
 }
 
 .list-pager button {
@@ -752,12 +785,17 @@ watch(instrumentTotalPages, clampInstrumentPage)
   }
 
   .list-pager {
+    justify-content: center;
     flex-wrap: wrap;
   }
 
-  .list-pager span {
-    order: -1;
+  .pager-summary,
+  .pager-controls,
+  .page-size-select {
     width: 100%;
+  }
+
+  .pager-summary {
     text-align: center;
   }
 }

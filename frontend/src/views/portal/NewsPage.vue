@@ -20,7 +20,7 @@
           </button>
         </div>
         <div class="news-grid">
-          <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
+          <RouterLink v-for="item in pagedNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
             <img v-if="item.cover_image" :src="item.cover_image" :alt="item.title" />
             <div v-else class="news-image-placeholder">暂无封面</div>
             <div>
@@ -31,6 +31,12 @@
           </RouterLink>
         </div>
         <div v-if="!displayNews.length" class="card empty-panel">暂无新闻活动，请在内部平台“门户内容”中维护。</div>
+        <div v-if="displayNews.length > pageSize" class="news-pager">
+          <span>共 {{ displayNews.length }} 条新闻</span>
+          <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
+          <strong>{{ page }} / {{ totalPages }} 页</strong>
+          <button type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
+        </div>
       </div>
     </section>
   </PortalLayout>
@@ -45,7 +51,11 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 const news = ref<NewsArticle[]>([])
 const categories = ref<NewsCategory[]>([])
 const activeCategory = ref('')
+const page = ref(1)
+const pageSize = 9
 const displayNews = computed(() => news.value)
+const totalPages = computed(() => Math.max(1, Math.ceil(displayNews.value.length / pageSize)))
+const pagedNews = computed(() => displayNews.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 
 async function loadNews() {
   try {
@@ -55,7 +65,15 @@ async function loadNews() {
   }
 }
 
-watch(activeCategory, loadNews)
+watch(activeCategory, () => {
+  page.value = 1
+  void loadNews()
+})
+
+watch(totalPages, (total) => {
+  if (page.value > total) page.value = total
+  if (page.value < 1) page.value = 1
+})
 
 onMounted(async () => {
   await Promise.allSettled([
@@ -151,6 +169,45 @@ onMounted(async () => {
   padding: 28px;
   color: var(--color-muted);
   box-shadow: none;
+}
+
+.news-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.news-pager span {
+  width: 100%;
+  color: var(--color-text);
+  text-align: center;
+  font-weight: 650;
+}
+
+.news-pager button {
+  border: 1px solid rgba(0, 135, 60, 0.2);
+  border-radius: var(--radius-sm);
+  min-height: 34px;
+  padding: 0 14px;
+  background: #fff;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.news-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.news-pager strong {
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 .news-card {

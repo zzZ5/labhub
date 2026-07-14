@@ -224,8 +224,9 @@ const Pager = defineComponent({
       const totalPages = Math.max(1, Math.ceil(props.total / props.pageSize))
       if (props.total <= props.pageSize) return null
       return h('div', { class: 'pager' }, [
+        h('span', { class: 'pager-summary' }, `共 ${props.total} 条`),
         h('button', { type: 'button', disabled: props.page <= 1, onClick: () => emit('change', props.page - 1) }, '上一页'),
-        h('span', `第 ${props.page} / ${totalPages} 页`),
+        h('strong', `${props.page} / ${totalPages} 页`),
         h('button', { type: 'button', disabled: props.page >= totalPages, onClick: () => emit('change', props.page + 1) }, '下一页'),
       ])
     }
@@ -530,9 +531,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   border-top: 1px solid var(--color-line);
   padding-top: 16px;
+}
+
+.pager-summary {
+  width: 100%;
+  color: var(--color-text);
+  text-align: right;
+  font-weight: 650;
 }
 
 .pager button {
@@ -552,7 +561,7 @@ onMounted(async () => {
   opacity: 0.55;
 }
 
-.pager span,
+.pager strong,
 .empty-note {
   color: var(--color-muted);
   font-size: 14px;

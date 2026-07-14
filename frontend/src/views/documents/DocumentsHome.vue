@@ -40,7 +40,7 @@
             <strong>{{ doc.title }}</strong>
             <span>{{ currentFilename(doc) }}</span>
           </button>
-          <div v-if="readerTotalPages > 1" class="side-pager">
+          <div v-if="displayDocuments.length" class="side-pager">
             <button type="button" :disabled="readerPage === 1" @click="readerPage -= 1">上一页</button>
             <span>{{ readerPage }} / {{ readerTotalPages }}</span>
             <button type="button" :disabled="readerPage === readerTotalPages" @click="readerPage += 1">下一页</button>
@@ -144,10 +144,18 @@
             </footer>
           </article>
         </div>
-        <div v-if="!previewDocument && documentTotalPages > 1" class="list-pager">
-          <button type="button" :disabled="documentPage === 1" @click="documentPage -= 1">上一页</button>
-          <span>{{ documentPage }} / {{ documentTotalPages }} 页，共 {{ displayDocuments.length }} 条</span>
-          <button type="button" :disabled="documentPage === documentTotalPages" @click="documentPage += 1">下一页</button>
+        <div v-if="!previewDocument && displayDocuments.length > 12" class="list-pager">
+          <span class="pager-summary">共 {{ displayDocuments.length }} 条资料</span>
+          <div class="pager-controls">
+            <button type="button" :disabled="documentPage === 1" @click="documentPage -= 1">上一页</button>
+            <span>{{ documentPage }} / {{ documentTotalPages }} 页</span>
+            <button type="button" :disabled="documentPage === documentTotalPages" @click="documentPage += 1">下一页</button>
+          </div>
+          <el-select v-model="documentPageSize" size="small" class="page-size-select" placeholder="分页">
+            <el-option label="12 条/页" :value="12" />
+            <el-option label="24 条/页" :value="24" />
+            <el-option label="48 条/页" :value="48" />
+          </el-select>
         </div>
       </main>
     </section>
@@ -253,7 +261,7 @@ const loading = ref(false)
 const keyword = ref('')
 const activeCategory = ref('')
 const documentPage = ref(1)
-const documentPageSize = 12
+const documentPageSize = ref(12)
 const readerPage = ref(1)
 const readerPageSize = 12
 const uploadVisible = ref(false)
@@ -281,10 +289,10 @@ const importForm = reactive({
 
 const displayCategories = computed(() => categories.value)
 const displayDocuments = computed(() => documents.value)
-const documentTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / documentPageSize)))
+const documentTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / documentPageSize.value)))
 const pagedDocuments = computed(() => {
-  const start = (documentPage.value - 1) * documentPageSize
-  return displayDocuments.value.slice(start, start + documentPageSize)
+  const start = (documentPage.value - 1) * documentPageSize.value
+  return displayDocuments.value.slice(start, start + documentPageSize.value)
 })
 const readerTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / readerPageSize)))
 const pagedReaderDocuments = computed(() => {
@@ -629,6 +637,10 @@ watch(documentTotalPages, (total) => {
   if (documentPage.value < 1) documentPage.value = 1
 })
 
+watch(documentPageSize, () => {
+  documentPage.value = 1
+})
+
 watch(readerTotalPages, (total) => {
   if (readerPage.value > total) readerPage.value = total
   if (readerPage.value < 1) readerPage.value = 1
@@ -905,7 +917,8 @@ watch(readerTotalPages, (total) => {
 .list-pager {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 12px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -914,6 +927,26 @@ watch(readerTotalPages, (total) => {
   background: #fff;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.pager-summary {
+  flex: 0 0 auto;
+  color: var(--color-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pager-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.page-size-select {
+  flex: 0 0 112px;
+  width: 128px;
 }
 
 .list-pager button {
@@ -1307,12 +1340,17 @@ watch(readerTotalPages, (total) => {
   }
 
   .list-pager {
+    justify-content: center;
     flex-wrap: wrap;
   }
 
-  .list-pager span {
-    order: -1;
+  .pager-summary,
+  .pager-controls,
+  .page-size-select {
     width: 100%;
+  }
+
+  .pager-summary {
     text-align: center;
   }
 }

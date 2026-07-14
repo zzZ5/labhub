@@ -1,115 +1,103 @@
 <template>
   <InternalLayout title="内部工作台">
-    <section class="dashboard-hero">
-      <div>
-        <h1>工作台</h1>
-        <p>集中查看课题组资料、仪器设备状态、学生信息与近期归档材料。</p>
-      </div>
-      <RouterLink class="outline-action" to="/">返回门户首页</RouterLink>
-    </section>
-
-    <section class="dashboard-grid">
-      <article v-for="item in dashboard.summary" :key="item.label" class="card summary-card">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}</strong>
-        <p>{{ item.note }}</p>
-      </article>
-    </section>
-
-    <section class="panel-grid">
-      <article class="card panel">
-        <div class="panel-heading">
-          <h2>仪器设备状态</h2>
-          <RouterLink to="/instruments">查看台账</RouterLink>
+    <section class="dashboard-page">
+      <header class="dashboard-hero">
+        <div>
+          <h1>工作台</h1>
+          <p>快速进入常用内部模块，查看近期资料、设备状态和学生归档概况。</p>
         </div>
-        <div v-if="dashboard.instrument_status.length" class="stack-list">
-          <div v-for="item in dashboard.instrument_status" :key="item.id" class="list-row">
+        <RouterLink class="outline-action" to="/">返回门户首页</RouterLink>
+      </header>
+
+      <section class="quick-grid">
+        <RouterLink v-for="item in quickLinks" :key="item.title" class="card quick-card" :to="item.to">
+          <span>{{ item.kicker }}</span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.description }}</p>
+        </RouterLink>
+      </section>
+
+      <section class="summary-strip">
+        <article v-for="item in visibleSummary" :key="item.label" class="card summary-card">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <p>{{ item.note }}</p>
+        </article>
+      </section>
+
+      <section class="panel-grid">
+        <article class="card panel">
+          <div class="panel-heading">
             <div>
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.location_detail || item.room || '未填写位置' }}</span>
+              <h2>近期资料</h2>
+              <p>最近更新、可查阅的内部资料。</p>
             </div>
-            <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
+            <RouterLink to="/documents">进入资料库</RouterLink>
           </div>
-        </div>
-        <div v-else class="empty-note">暂无需要关注的设备状态</div>
-      </article>
-
-      <article class="card panel">
-        <div class="panel-heading">
-          <h2>最新内部资料</h2>
-          <RouterLink to="/documents">进入资料库</RouterLink>
-        </div>
-        <div v-if="dashboard.latest_documents.length" class="stack-list">
-          <div v-for="doc in dashboard.latest_documents" :key="doc.id" class="list-row">
-            <div>
-              <strong>{{ doc.title }}</strong>
-              <span>{{ doc.category_name }} · {{ doc.current_version }} · {{ formatDate(doc.updated_at) }}</span>
+          <div v-if="dashboard.latest_documents.length" class="stack-list">
+            <div v-for="doc in dashboard.latest_documents" :key="doc.id" class="list-row">
+              <div>
+                <strong>{{ doc.title }}</strong>
+                <span>{{ doc.category_name || '未分类' }} · {{ formatDate(doc.updated_at) }}</span>
+              </div>
+              <span class="status-tag normal">{{ visibilityText(doc.visibility) }}</span>
             </div>
-            <span class="status-tag normal">{{ visibilityText(doc.visibility) }}</span>
           </div>
-        </div>
-        <div v-else class="empty-note">暂无可查阅资料</div>
-      </article>
+          <div v-else class="empty-note">暂无可查阅资料。</div>
+        </article>
 
-      <article class="card panel">
-        <div class="panel-heading">
-          <h2>待办事项</h2>
-          <span>{{ dashboard.todos.length }} 项</span>
-        </div>
-        <div v-if="dashboard.todos.length" class="todo-list">
-          <RouterLink v-for="todo in dashboard.todos" :key="todo.title" :to="todo.target" class="todo-row">
-            <span :class="['dot', todo.level]" />
+        <article class="card panel">
+          <div class="panel-heading">
             <div>
-              <strong>{{ todo.title }}</strong>
-              <p>{{ todo.detail }}</p>
+              <h2>设备状态</h2>
+              <p>仅显示维护中或停用的设备。</p>
             </div>
-          </RouterLink>
-        </div>
-        <div v-else class="empty-note">当前没有需要马上处理的事项</div>
-      </article>
+            <RouterLink to="/instruments">查看仪器平台</RouterLink>
+          </div>
+          <div v-if="dashboard.instrument_status.length" class="stack-list">
+            <div v-for="item in dashboard.instrument_status" :key="item.id" class="list-row">
+              <div>
+                <strong>{{ item.name }}</strong>
+                <span>{{ item.location_detail || item.room || '未填写位置' }}</span>
+              </div>
+              <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
+            </div>
+          </div>
+          <div v-else class="empty-note">当前没有需要关注的设备。</div>
+        </article>
 
-      <article class="card panel">
-        <div class="panel-heading">
-          <h2>学生资料归档</h2>
-          <RouterLink to="/students">查看学生信息</RouterLink>
-        </div>
-        <div v-if="dashboard.student_archives.length" class="progress-list">
-          <div v-for="student in dashboard.student_archives" :key="student.id" class="progress-row">
-            <div class="progress-meta">
+        <article class="card panel wide-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>学生归档</h2>
+              <p>展示最近可见的学生档案和归档材料数量。</p>
+            </div>
+            <RouterLink to="/students">查看学生档案</RouterLink>
+          </div>
+          <div v-if="dashboard.student_archives.length" class="student-grid">
+            <RouterLink v-for="student in dashboard.student_archives" :key="student.id" class="student-card" to="/students">
               <strong>{{ student.name }}</strong>
               <span>{{ degreeText(student.degree_type) }} {{ student.grade || '' }}</span>
-            </div>
-            <p>{{ student.file_count }} 份归档材料</p>
-            <p v-if="student.latest_file_title">最近上传：{{ student.latest_file_title }}</p>
-            <p v-else-if="student.research_direction">{{ student.research_direction }}</p>
+              <p>{{ student.file_count }} 份归档材料</p>
+              <small v-if="student.latest_file_title">最近上传：{{ student.latest_file_title }}</small>
+              <small v-else>{{ student.research_direction || '研究方向待补充' }}</small>
+            </RouterLink>
           </div>
-        </div>
-        <div v-else class="empty-note">暂无可见学生信息或归档材料</div>
-      </article>
-
-      <article class="card panel wide-panel">
-        <div class="panel-heading">
-          <h2>最近下载</h2>
-          <RouterLink to="/documents">资料库</RouterLink>
-        </div>
-        <div v-if="dashboard.recent_downloads.length" class="download-grid">
-          <div v-for="item in dashboard.recent_downloads" :key="item.id" class="download-item">
-            <strong>{{ item.document_title }}</strong>
-            <span>{{ item.version_label }} · {{ formatDate(item.downloaded_at) }}</span>
-          </div>
-        </div>
-        <div v-else class="empty-note">暂无下载记录</div>
-      </article>
+          <div v-else class="empty-note">暂无可见学生档案。</div>
+        </article>
+      </section>
     </section>
   </InternalLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 
 import { fetchDashboard, type DashboardData } from '../../api/dashboard'
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import { useSessionStore } from '../../stores/session'
 
+const session = useSessionStore()
 const dashboard = reactive<DashboardData>({
   summary: [
     { label: '待审核账号', value: 0, note: '仅管理员与硕博导师可见' },
@@ -124,8 +112,31 @@ const dashboard = reactive<DashboardData>({
   recent_downloads: [],
 })
 
+const canEditPortal = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'editor'])))
+const canManageMembers = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
+const pendingUserCount = computed(() => dashboard.summary.find((item) => item.label === '待审核账号')?.value || 0)
+const quickLinks = computed(() => {
+  const links = [
+    { title: '内部资料', kicker: '资料库', description: '查看实验方法、组会资料和项目材料', to: '/documents' },
+    { title: '仪器平台', kicker: '设备', description: '查看设备图片、位置和使用说明', to: '/instruments' },
+    { title: '学生档案', kicker: '归档', description: '维护学生信息和毕业相关材料', to: '/students' },
+  ]
+  if (canEditPortal.value) {
+    links.push({ title: '门户内容', kicker: '网站', description: '维护首页、新闻、成果和团队展示', to: '/cms' })
+  }
+  if (canManageMembers.value && pendingUserCount.value > 0) {
+    links.push({ title: '成员审核', kicker: '账号', description: `${pendingUserCount.value} 个账号等待确认`, to: '/members' })
+  }
+  return links
+})
+
+const visibleSummary = computed(() =>
+  dashboard.summary.filter((item) => item.label !== '待审核账号' || item.value > 0),
+)
+
 onMounted(async () => {
   try {
+    if (!session.initialized) await session.loadCurrentUser()
     const data = await fetchDashboard()
     Object.assign(dashboard, data)
   } catch {
@@ -167,22 +178,29 @@ function visibilityText(visibility: string) {
 }
 
 function degreeText(degree: string) {
-  return degree === 'phd' ? '博士' : degree === 'master' ? '硕士' : '学生'
+  if (degree === 'phd') return '博士'
+  if (degree === 'master') return '硕士'
+  if (degree === 'undergraduate') return '本科'
+  return '学生'
 }
 </script>
 
 <style scoped>
+.dashboard-page {
+  display: grid;
+  gap: 16px;
+}
+
 .dashboard-hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 10px;
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-lg);
   padding: 22px 26px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 56%, rgba(234, 245, 238, 0.86)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 58%, rgba(234, 245, 238, 0.82)),
     #fff;
   box-shadow: var(--shadow-flat);
 }
@@ -195,11 +213,15 @@ function degreeText(degree: string) {
   line-height: 1.2;
 }
 
-.dashboard-hero p {
+.dashboard-hero p,
+.quick-card p,
+.panel-heading p,
+.student-card p,
+.student-card small,
+.list-row div span {
   margin: 0;
   color: var(--color-muted);
-  font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .outline-action {
@@ -207,23 +229,54 @@ function degreeText(degree: string) {
   padding: 9px 16px;
 }
 
-.dashboard-grid {
+.quick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
 }
 
-.panel {
-  padding: 22px;
+.quick-card {
+  display: grid;
+  gap: 7px;
+  min-height: 118px;
+  padding: 17px 18px;
+  color: inherit;
+  box-shadow: none;
+}
+
+.quick-card:hover {
+  border-color: rgba(0, 135, 60, 0.28);
+  transform: translateY(-1px);
+}
+
+.quick-card span {
+  color: var(--color-cau-green);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quick-card strong {
+  color: var(--color-deep-green);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.quick-card p {
+  font-size: 14px;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 .summary-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  min-height: 54px;
-  padding: 10px 14px;
+  min-height: 56px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
   box-shadow: none;
 }
@@ -246,7 +299,6 @@ function degreeText(degree: string) {
 .summary-card strong {
   grid-column: 2;
   grid-row: 1 / span 2;
-  margin: 0;
   color: var(--color-deep-green);
   font-size: 24px;
   font-weight: 650;
@@ -259,7 +311,6 @@ function degreeText(degree: string) {
   overflow: hidden;
   color: var(--color-muted);
   font-size: 12px;
-  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -267,11 +318,12 @@ function degreeText(degree: string) {
 .panel-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .panel {
   border-radius: var(--radius-lg);
+  padding: 20px;
 }
 
 .wide-panel {
@@ -280,7 +332,7 @@ function degreeText(degree: string) {
 
 .panel-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
@@ -289,22 +341,20 @@ function degreeText(degree: string) {
 }
 
 .panel-heading h2 {
-  margin: 0;
+  margin: 0 0 4px;
   color: var(--color-deep-green);
   font-size: 19px;
   font-weight: 650;
 }
 
-.panel-heading a,
-.panel-heading span {
+.panel-heading a {
+  flex: 0 0 auto;
   color: var(--color-cau-green);
   font-size: 14px;
   font-weight: 700;
 }
 
-.stack-list,
-.todo-list,
-.progress-list {
+.stack-list {
   display: grid;
 }
 
@@ -313,101 +363,56 @@ function degreeText(degree: string) {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 62px;
-  padding: 13px 0;
+  min-height: 58px;
+  padding: 12px 0;
   border-top: 1px solid var(--color-line);
 }
 
-.list-row:first-child,
-.todo-row:first-child {
+.list-row:first-child {
   border-top: 0;
 }
 
 .list-row strong,
-.list-row span,
-.todo-row strong,
-.todo-row p {
+.list-row span {
   display: block;
 }
 
-.list-row div span,
-.todo-row p,
-.progress-row p,
-.download-item span {
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.todo-row {
+.student-grid {
   display: grid;
-  grid-template-columns: 10px 1fr;
-  gap: 12px;
-  padding: 14px 0;
-  border-top: 1px solid var(--color-line);
-  color: var(--color-text);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: var(--color-cau-green);
-}
-
-.dot.warning {
-  background: var(--color-soil);
-}
-
-.dot.info {
-  background: var(--color-blue-gray);
-}
-
-.progress-list {
-  gap: 18px;
-}
-
-.progress-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 6px;
-}
-
-.progress-meta strong {
-  color: var(--color-text);
-}
-
-.progress-meta span {
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.progress-row p {
-  margin: 6px 0 0;
-}
-
-.download-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
-.download-item {
+.student-card {
+  display: grid;
+  gap: 5px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
   background: var(--color-panel);
+  color: inherit;
 }
 
-.download-item:hover {
-  border-color: rgba(0, 135, 60, 0.18);
+.student-card:hover {
+  border-color: rgba(0, 135, 60, 0.22);
   background: #fff;
 }
 
-.download-item strong,
-.download-item span {
-  display: block;
+.student-card strong {
+  color: var(--color-text);
+}
+
+.student-card span {
+  color: var(--color-cau-green);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.student-card small {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-note {
@@ -417,29 +422,30 @@ function degreeText(degree: string) {
   font-size: 14px;
 }
 
-@media (max-width: 980px) {
-  .panel-grid,
-  .download-grid {
+@media (max-width: 1080px) {
+  .quick-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .dashboard-grid {
-    grid-template-columns: repeat(4, minmax(110px, 1fr));
-    overflow-x: auto;
-    padding-bottom: 2px;
+  .student-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
-  .dashboard-hero {
+@media (max-width: 760px) {
+  .dashboard-hero,
+  .panel-heading {
     display: grid;
     align-items: start;
+  }
+
+  .dashboard-hero {
     padding: 18px;
   }
 
-  .dashboard-grid,
+  .quick-grid,
   .panel-grid,
-  .download-grid {
+  .student-grid {
     grid-template-columns: 1fr;
   }
 
