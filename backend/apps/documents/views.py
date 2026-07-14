@@ -1,4 +1,6 @@
+import base64
 import mimetypes
+import posixpath
 from html import escape
 from io import BytesIO
 from pathlib import Path
@@ -49,22 +51,59 @@ def docx_to_html(file_obj, title):
     data = file_obj.read()
     with ZipFile(BytesIO(data)) as archive:
         xml_content = archive.read("word/document.xml")
+        rels_content = archive.read("word/_rels/document.xml.rels") if "word/_rels/document.xml.rels" in archive.namelist() else b""
 
-    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    namespace = {
+        "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+        "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+    }
     root = ElementTree.fromstring(xml_content)
     blocks = []
+    image_map = {}
+
+    if rels_content:
+        rels_root = ElementTree.fromstring(rels_content)
+        rel_namespace = {"pr": "http://schemas.openxmlformats.org/package/2006/relationships"}
+        with ZipFile(BytesIO(data)) as archive:
+            for rel in rels_root.findall("pr:Relationship", rel_namespace):
+                rel_id = rel.attrib.get("Id")
+                target = rel.attrib.get("Target", "")
+                rel_type = rel.attrib.get("Type", "")
+                if not rel_id or "image" not in rel_type or not target:
+                    continue
+                media_path = posixpath.normpath(posixpath.join("word", target))
+                if media_path not in archive.namelist():
+                    continue
+                content_type = mimetypes.guess_type(media_path)[0] or ""
+                if content_type not in {"image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"}:
+                    image_map[rel_id] = '<p class="image-note">该图片格式暂不支持在线预览，请下载原 Word 查看。</p>'
+                    continue
+                encoded = base64.b64encode(archive.read(media_path)).decode("ascii")
+                image_map[rel_id] = f'<figure><img src="data:{content_type};base64,{encoded}" alt="Word 文档图片" /></figure>'
 
     def paragraph_text(paragraph):
         parts = [node.text or "" for node in paragraph.findall(".//w:t", namespace)]
         return "".join(parts).strip()
+
+    def paragraph_html(paragraph):
+        parts = []
+        text = paragraph_text(paragraph)
+        if text:
+            parts.append(f"<p>{escape(text)}</p>")
+        for blip in paragraph.findall(".//a:blip", namespace):
+            rel_id = blip.attrib.get(f"{{{namespace['r']}}}embed") or blip.attrib.get(f"{{{namespace['r']}}}link")
+            if rel_id and rel_id in image_map:
+                parts.append(image_map[rel_id])
+        return "".join(parts)
 
     def table_html(table):
         rows = []
         for row in table.findall("./w:tr", namespace):
             cells = []
             for cell in row.findall("./w:tc", namespace):
-                text = " ".join(filter(None, (paragraph_text(p) for p in cell.findall(".//w:p", namespace))))
-                cells.append(f"<td>{escape(text)}</td>")
+                content = "".join(filter(None, (paragraph_html(p) for p in cell.findall("./w:p", namespace))))
+                cells.append(f"<td>{content}</td>")
             if cells:
                 rows.append(f"<tr>{''.join(cells)}</tr>")
         if not rows:
@@ -75,9 +114,9 @@ def docx_to_html(file_obj, title):
     for child in list(body) if body is not None else []:
         tag = child.tag.rsplit("}", 1)[-1]
         if tag == "p":
-            text = paragraph_text(child)
-            if text:
-                blocks.append(f"<p>{escape(text)}</p>")
+            html = paragraph_html(child)
+            if html:
+                blocks.append(html)
         elif tag == "tbl":
             html = table_html(child)
             if html:
@@ -151,6 +190,25 @@ def docx_to_html(file_obj, title):
       color: #1f3d2b;
       font-weight: 650;
     }}
+    figure {{
+      margin: 20px 0 24px;
+      text-align: center;
+    }}
+    img {{
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      background: #fff;
+    }}
+    .image-note {{
+      border: 1px dashed #c8d3cc;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f8f7f2;
+      color: #6b7280;
+      font-size: 14px;
+      text-align: center;
+    }}
     .muted {{
       color: #6b7280;
     }}
@@ -205,6 +263,7 @@ class DocumentViewSet(ModelViewSet):
             Document.objects.filter(status=DocumentStatus.ACTIVE)
             .select_related("category", "owner", "maintainer")
             .prefetch_related("tags", "versions", "permissions", "permissions__role")
+            .order_by("created_at", "id")
         )
         return visible_documents_for_user(self.request.user, queryset)
 

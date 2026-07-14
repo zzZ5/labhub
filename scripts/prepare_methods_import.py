@@ -1,8 +1,11 @@
 import re
 import shutil
 import zipfile
+import posixpath
 from copy import deepcopy
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from xml.etree import ElementTree
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -43,6 +46,12 @@ def text_of(block):
     return ""
 
 
+def paragraph_has_image(block):
+    if not isinstance(block, Paragraph):
+        return False
+    return bool(block._p.xpath(".//*[local-name()='blip']"))
+
+
 def is_heading2(block):
     return isinstance(block, Paragraph) and block.style and block.style.name == "Heading 2" and block.text.strip()
 
@@ -69,7 +78,16 @@ def safe_filename(index, title):
     return f"{index:02d}-{name}.docx"
 
 
-def first_description(blocks):
+def natural_section_label(section):
+    text = re.sub(r"^第[一二三四五六七八九十]+部分\s*", "", section or "").strip()
+    if not text:
+        return ""
+    if text.endswith(("实验", "培养", "测定", "分析", "使用")):
+        return f"{text}方法"
+    return text
+
+
+def first_description(blocks, section=""):
     location = ""
     equipment = ""
     for block in blocks:
@@ -83,6 +101,9 @@ def first_description(blocks):
         if location and equipment:
             break
     parts = []
+    section_label = natural_section_label(section)
+    if section_label:
+        parts.append(section_label)
     if location:
         parts.append(f"地点：{location}")
     if equipment:
@@ -117,32 +138,146 @@ def build_method_doc(title, blocks, output_path):
 
     for block in blocks:
         if isinstance(block, Paragraph):
-            if block.text.strip() and not is_section_heading_text(block.text):
+            if (block.text.strip() or paragraph_has_image(block)) and not is_section_heading_text(block.text):
                 copy_paragraph(doc, block)
         elif isinstance(block, Table):
             copy_table(doc, block)
 
     doc.save(output_path)
+    patch_media_relationships(output_path, SOURCE)
+
+
+def patch_media_relationships(docx_path, source_docx):
+    rel_ns = "http://schemas.openxmlformats.org/package/2006/relationships"
+    doc_ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    rel_attr_ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    content_type_ns = "http://schemas.openxmlformats.org/package/2006/content-types"
+    image_rel_type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+
+    ElementTree.register_namespace("", rel_ns)
+    ElementTree.register_namespace("w", doc_ns)
+    ElementTree.register_namespace("r", rel_attr_ns)
+
+    with zipfile.ZipFile(docx_path, "r") as target_zip, zipfile.ZipFile(source_docx, "r") as source_zip:
+        document_xml = target_zip.read("word/document.xml")
+        document_root = ElementTree.fromstring(document_xml)
+        used_rel_ids = {
+            value
+            for elem in document_root.iter()
+            for key, value in elem.attrib.items()
+            if key in {f"{{{rel_attr_ns}}}embed", f"{{{rel_attr_ns}}}link"}
+        }
+        if not used_rel_ids:
+            return
+
+        source_rels_root = ElementTree.fromstring(source_zip.read("word/_rels/document.xml.rels"))
+        source_rels = {
+            rel.attrib.get("Id"): rel.attrib
+            for rel in source_rels_root.findall(f"{{{rel_ns}}}Relationship")
+            if rel.attrib.get("Type") == image_rel_type
+        }
+
+        target_rels_root = ElementTree.fromstring(target_zip.read("word/_rels/document.xml.rels"))
+        existing_ids = {rel.attrib.get("Id") for rel in target_rels_root.findall(f"{{{rel_ns}}}Relationship")}
+
+        content_types_root = ElementTree.fromstring(target_zip.read("[Content_Types].xml"))
+        existing_defaults = {
+            default.attrib.get("Extension")
+            for default in content_types_root.findall(f"{{{content_type_ns}}}Default")
+        }
+
+        remap = {}
+        media_to_copy = []
+        next_index = 1
+        for old_id in sorted(used_rel_ids):
+            source_rel = source_rels.get(old_id)
+            if not source_rel:
+                continue
+            target = source_rel.get("Target", "")
+            source_media_path = posixpath.normpath(posixpath.join("word", target))
+            if source_media_path not in source_zip.namelist():
+                continue
+            while f"rIdImportedImage{next_index}" in existing_ids:
+                next_index += 1
+            new_id = f"rIdImportedImage{next_index}"
+            existing_ids.add(new_id)
+            next_index += 1
+
+            media_name = Path(source_media_path).name
+            new_target = f"media/{old_id}-{media_name}"
+            new_media_path = f"word/{new_target}"
+            remap[old_id] = new_id
+            media_to_copy.append((source_media_path, new_media_path))
+            ElementTree.SubElement(
+                target_rels_root,
+                f"{{{rel_ns}}}Relationship",
+                {"Id": new_id, "Type": image_rel_type, "Target": new_target},
+            )
+
+            extension = Path(media_name).suffix.lower().lstrip(".")
+            content_type = {
+                "emf": "image/x-emf",
+                "gif": "image/gif",
+                "jpeg": "image/jpeg",
+                "jpg": "image/jpeg",
+                "png": "image/png",
+                "svg": "image/svg+xml",
+                "webp": "image/webp",
+                "wmf": "image/x-wmf",
+            }.get(extension)
+            if extension and content_type and extension not in existing_defaults:
+                ElementTree.SubElement(
+                    content_types_root,
+                    f"{{{content_type_ns}}}Default",
+                    {"Extension": extension, "ContentType": content_type},
+                )
+                existing_defaults.add(extension)
+
+        if not remap:
+            return
+
+        for elem in document_root.iter():
+            for attr in (f"{{{rel_attr_ns}}}embed", f"{{{rel_attr_ns}}}link"):
+                if elem.attrib.get(attr) in remap:
+                    elem.set(attr, remap[elem.attrib[attr]])
+
+        with NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
+            temp_path = Path(temp_file.name)
+
+        with zipfile.ZipFile(temp_path, "w", zipfile.ZIP_DEFLATED) as output_zip:
+            for info in target_zip.infolist():
+                if info.filename in {"word/document.xml", "word/_rels/document.xml.rels", "[Content_Types].xml"}:
+                    continue
+                output_zip.writestr(info, target_zip.read(info.filename))
+            output_zip.writestr("word/document.xml", ElementTree.tostring(document_root, encoding="utf-8", xml_declaration=True))
+            output_zip.writestr("word/_rels/document.xml.rels", ElementTree.tostring(target_rels_root, encoding="utf-8", xml_declaration=True))
+            output_zip.writestr("[Content_Types].xml", ElementTree.tostring(content_types_root, encoding="utf-8", xml_declaration=True))
+            for source_media_path, new_media_path in media_to_copy:
+                output_zip.writestr(new_media_path, source_zip.read(source_media_path))
+
+    shutil.move(temp_path, docx_path)
 
 
 def extract_methods(source):
     source_doc = Document(source)
     methods = []
     current = None
+    current_section = ""
     for block in iter_blocks(source_doc):
         if is_heading1(block):
             if current:
                 methods.append(current)
                 current = None
+            current_section = re.sub(r"\s+", " ", block.text.strip())
             continue
         if is_heading2(block):
             if current:
                 methods.append(current)
-            current = {"title": clean_title(block.text), "blocks": []}
+            current = {"title": clean_title(block.text), "section": current_section, "blocks": []}
             continue
         if current is not None:
             text = text_of(block)
-            if text or isinstance(block, Table):
+            if text or isinstance(block, Table) or paragraph_has_image(block):
                 current["blocks"].append(block)
     if current:
         methods.append(current)
@@ -210,7 +345,7 @@ def main():
         filename = safe_filename(index, title)
         output_path = DOCS_DIR / filename
         build_method_doc(title, method["blocks"], output_path)
-        rows.append([title, "实验方法", "组内成员可见", first_description(method["blocks"]), filename, "是"])
+        rows.append([title, "实验方法", "组内成员可见", first_description(method["blocks"], method.get("section", "")), filename, "是"])
         filenames.append(filename)
 
     build_import_xlsx(rows)
