@@ -47,7 +47,7 @@
             </div>
             <div v-if="Number(paper?.impact_factor) > 0">
               <dt>影响因子</dt>
-              <dd>{{ paper.impact_factor }}</dd>
+              <dd>{{ paper?.impact_factor }}</dd>
             </div>
             <div v-if="paper?.pdf_file">
               <dt>PDF 大小</dt>
