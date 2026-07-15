@@ -92,9 +92,9 @@
         <div v-if="filteredUsers.length > 12" class="list-pager member-list-pager">
           <span class="pager-summary">共 {{ filteredUsers.length }} 人</span>
           <div class="pager-controls">
-            <button type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
-            <span>{{ memberPage }} / {{ memberTotalPages }} 页</span>
-            <button type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
+            <button class="pager-nav" type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
+            <PageJump compact inline :page="memberPage" :total-pages="memberTotalPages" @change="memberPage = $event" />
+            <button class="pager-nav" type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
           </div>
           <el-select v-model="memberPageSize" size="small" class="page-size-select" placeholder="分页">
             <el-option label="12 人/页" :value="12" />
@@ -146,6 +146,7 @@ import {
   updateUser,
 } from '../../api/accounts'
 import { createStudentProfile, fetchStudentProfiles, type StudentProfile } from '../../api/students'
+import PageJump from '../../components/PageJump.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
@@ -957,6 +958,12 @@ watch(memberTotalPages, clampMemberPage)
   font-weight: 700;
 }
 
+.list-pager .pager-nav {
+  width: 72px;
+  padding: 0;
+  text-align: center;
+}
+
 .list-pager button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -1029,13 +1036,8 @@ watch(memberTotalPages, clampMemberPage)
     justify-content: center;
   }
 
-  .pager-summary,
-  .pager-controls,
-  .page-size-select {
-    width: 100%;
-  }
-
   .pager-summary {
+    width: 100%;
     text-align: center;
   }
 

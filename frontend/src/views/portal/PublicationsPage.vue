@@ -173,6 +173,7 @@ import {
   type Publication,
   type PublicationStats,
 } from '../../api/publicPortal'
+import PageJump from '../../components/PageJump.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 type TabKey = 'papers' | 'projects' | 'patents' | 'awards'
@@ -232,9 +233,9 @@ const Pager = defineComponent({
       if (props.total <= props.pageSize) return null
       return h('div', { class: 'pager' }, [
         h('span', { class: 'pager-summary' }, `共 ${props.total} 条`),
-        h('button', { type: 'button', disabled: props.page <= 1, onClick: () => emit('change', props.page - 1) }, '上一页'),
-        h('strong', `${props.page} / ${totalPages} 页`),
-        h('button', { type: 'button', disabled: props.page >= totalPages, onClick: () => emit('change', props.page + 1) }, '下一页'),
+        h('button', { class: 'pager-nav', type: 'button', disabled: props.page <= 1, onClick: () => emit('change', props.page - 1) }, '上一页'),
+        h(PageJump, { compact: true, inline: true, page: props.page, totalPages, onChange: (page: number) => emit('change', page) }),
+        h('button', { class: 'pager-nav', type: 'button', disabled: props.page >= totalPages, onClick: () => emit('change', props.page + 1) }, '下一页'),
       ])
     }
   },
@@ -576,6 +577,12 @@ onMounted(async () => {
   color: var(--color-cau-green);
   cursor: pointer;
   font-weight: 700;
+}
+
+.pager .pager-nav {
+  width: 72px;
+  padding: 0;
+  text-align: center;
 }
 
 .pager button:disabled {

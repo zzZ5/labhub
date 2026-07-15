@@ -541,6 +541,7 @@ import { ElButton, ElMessage, ElMessageBox, ElProgress } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
 import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
+import PageJump from '../../components/PageJump.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
 
@@ -613,23 +614,10 @@ const ContentList = defineComponent({
           : h('div', { class: 'empty-list' }, keyword.value ? '没有找到匹配内容。' : '暂无内容，点击右上角新增。'),
         filteredItems.value.length > 12
           ? h('div', { class: 'list-pager' }, [
-              h('span', { class: 'pager-summary' }, `共 ${filteredItems.value.length} 条`),
               h('div', { class: 'pager-controls' }, [
-                h('button', { type: 'button', disabled: page.value === 1, onClick: () => setPage(page.value - 1) }, '上一页'),
-                h('span', `${page.value} / ${totalPages.value} 页`),
-                h('button', { type: 'button', disabled: page.value === totalPages.value, onClick: () => setPage(page.value + 1) }, '下一页'),
-              ]),
-              h('select', {
-                class: 'page-size-select',
-                value: pageSize.value,
-                onChange: (event: Event) => {
-                  pageSize.value = Number((event.target as HTMLSelectElement).value)
-                  page.value = 1
-                },
-              }, [
-                h('option', { value: 12 }, '12 条/页'),
-                h('option', { value: 24 }, '24 条/页'),
-                h('option', { value: 48 }, '48 条/页'),
+                h('button', { class: 'pager-nav', type: 'button', disabled: page.value === 1, onClick: () => setPage(page.value - 1) }, '上一页'),
+                h(PageJump, { compact: true, inline: true, page: page.value, totalPages: totalPages.value, onChange: setPage }),
+                h('button', { class: 'pager-nav', type: 'button', disabled: page.value === totalPages.value, onClick: () => setPage(page.value + 1) }, '下一页'),
               ]),
             ])
           : null,
@@ -1461,6 +1449,34 @@ function splitPublicationCitation(citation: string) {
   const doiMatch = text.match(/\bdoi[:：]?\s*(10\.\S+)/i)
   const doi = doiMatch?.[1]?.replace(/[.。]$/, '') || ''
   const withoutDoi = text.replace(/\bdoi[:：]?\s*10\.\S+/i, '').replace(/[.。]\s*$/, '').trim()
+  const trailingYear = withoutDoi.match(/(?:[.,;]\s*|\s+)((?:19|20)\d{2})[a-z]?\s*$/i)
+  if (trailingYear && trailingYear.index !== undefined) {
+    const body = withoutDoi.slice(0, trailingYear.index).replace(/[.,;\s]+$/, '').trim()
+    const authorSeparator = body.indexOf('. ')
+    if (authorSeparator > 0) {
+      const authors = body.slice(0, authorSeparator).replace(/[.\s]+$/, '').trim()
+      const remainder = body.slice(authorSeparator + 2).replace(/[.\s]+$/, '').trim()
+      const parts = remainder.split(',').map((part) => part.trim())
+      const pages = parts.at(-1) || ''
+      const volumeIssue = parts.at(-2) || ''
+      const journal = parts.at(-3) || ''
+      const title = parts.slice(0, -3).join(', ').trim()
+      const volumeMatch = volumeIssue.match(/^(\d+)(?:\(([^)]+)\))?$/)
+      const pagesMatch = pages.match(/^(?:[A-Za-z]?\d+)(?:\s*[-–—]\s*(?:[A-Za-z]?\d+))?$/i)
+      if (title && journal && volumeMatch && pagesMatch) {
+        return {
+          authors,
+          title,
+          journal,
+          year: Number(trailingYear[1]),
+          volume: volumeMatch[1],
+          issue: volumeMatch[2] || '',
+          pages: pages.replace(/\s*[-–—]\s*/g, '-'),
+          doi,
+        }
+      }
+    }
+  }
   const yearMatch = withoutDoi.match(/\b(19\d{2}|20\d{2})[a-z]?\b/i)
   const year = yearMatch ? Number(yearMatch[1]) : undefined
   let authors = ''
@@ -2065,10 +2081,9 @@ onMounted(loadAll)
 }
 
 .list-panel :deep(.list-pager) {
-  display: flex;
+  display: grid;
+  justify-items: center;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
   gap: 10px;
   border-top: 1px solid var(--color-line);
   margin-top: 10px;
@@ -2085,10 +2100,12 @@ onMounted(loadAll)
 }
 
 .list-panel :deep(.pager-controls) {
-  display: flex;
-  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 68px minmax(54px, 1fr) 68px;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
 }
 
 .list-panel :deep(.page-size-select) {
@@ -2125,6 +2142,8 @@ onMounted(loadAll)
 .list-panel :deep(.pager-controls span) {
   color: var(--color-muted);
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .editor-hint {
@@ -2398,6 +2417,15 @@ onMounted(loadAll)
 .secondary-inline-action:hover {
   border-color: var(--color-primary);
   background: rgba(0, 135, 60, 0.06);
+}
+
+.list-panel :deep(.list-pager .pager-nav) {
+  display: inline-grid;
+  place-items: center;
+  width: 68px;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
 }
 
 .citation-actions {
@@ -2704,20 +2732,7 @@ onMounted(loadAll)
   }
 
   .list-panel :deep(.list-pager) {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 8px;
-  }
-
-  .list-panel :deep(.pager-summary),
-  .list-panel :deep(.pager-controls),
-  .list-panel :deep(.page-size-select) {
-    width: 100%;
-  }
-
-  .list-panel :deep(.pager-summary) {
-    text-align: center;
   }
 
   .list-panel :deep(.list-pager button) {

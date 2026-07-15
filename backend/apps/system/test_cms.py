@@ -6,8 +6,30 @@ from django.urls import reverse
 from apps.accounts.models import Role, RoleCode, UserRole
 from apps.instruments.models import Instrument
 from apps.portal.models import ResearchDirection
+from apps.system.cms_importers import parse_publication_citation
 
 User = get_user_model()
+
+
+def test_parse_publication_citation_with_trailing_year():
+    citation = (
+        "Zhao, B., Shi, J., Zhao, R., Gao, S., Li, Y., Zhang, Y., Wei, Y., Guo, Y. "
+        "Constructing CRISPR-Cas9 system for metabolic reprogramming and cordycepin "
+        "biomanufacturing in Pichia pastoris, Bioresource Technology, 436, 132967. 2025"
+    )
+
+    parsed = parse_publication_citation(citation)
+
+    assert parsed == {
+        "authors": "Zhao, B., Shi, J., Zhao, R., Gao, S., Li, Y., Zhang, Y., Wei, Y., Guo, Y",
+        "title": "Constructing CRISPR-Cas9 system for metabolic reprogramming and cordycepin biomanufacturing in Pichia pastoris",
+        "journal": "Bioresource Technology",
+        "year": "2025",
+        "volume": "436",
+        "issue": "",
+        "pages": "132967",
+        "doi": "",
+    }
 
 
 def make_user(username, role_code):
@@ -45,7 +67,7 @@ def test_editor_can_create_research_direction(client):
     )
 
     assert response.status_code == 201
-    assert ResearchDirection.objects.filter(slug="smart-compost").exists()
+    assert ResearchDirection.objects.filter(title="智能堆肥").exclude(slug="").exists()
 
 
 @pytest.mark.django_db
@@ -70,7 +92,7 @@ def test_editor_can_upload_research_cover(client):
     )
 
     assert response.status_code == 201
-    assert ResearchDirection.objects.get(slug="cover-direction").cover_image
+    assert ResearchDirection.objects.get(title="封面方向").cover_image
 
 
 @pytest.mark.django_db

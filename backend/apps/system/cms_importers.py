@@ -87,6 +87,32 @@ def parse_publication_citation(value: str) -> dict[str, str]:
     doi = doi_match.group(1).rstrip(" .。") if doi_match else ""
     cleaned = re.sub(r"(?i)\bdoi[:：]?\s*10\.\S+", "", text).strip(" .。")
 
+    # Also accept citations entered as: Authors. Title, Journal, Volume, Pages. Year
+    trailing_year = re.search(r"(?:[.,;]\s*|\s+)((?:19|20)\d{2})[a-z]?\s*$", cleaned, flags=re.IGNORECASE)
+    if trailing_year:
+        body = cleaned[:trailing_year.start()].strip(" .,;")
+        author_separator = body.find(". ")
+        if author_separator > 0:
+            authors = body[:author_separator].strip(" .")
+            remainder = body[author_separator + 2:].strip(" .")
+            parts = [part.strip(" .") for part in remainder.rsplit(",", 3)]
+            if (
+                len(parts) == 4
+                and re.fullmatch(r"\d+(?:\([^)]+\))?", parts[2])
+                and re.fullmatch(r"(?:[A-Za-z]?\d+)(?:\s*[-–—]\s*(?:[A-Za-z]?\d+))?", parts[3], flags=re.IGNORECASE)
+            ):
+                volume_match = re.fullmatch(r"(?P<volume>\d+)(?:\((?P<issue>[^)]+)\))?", parts[2])
+                return {
+                    "authors": authors,
+                    "title": parts[0],
+                    "journal": parts[1],
+                    "year": trailing_year.group(1),
+                    "volume": volume_match.group("volume") if volume_match else "",
+                    "issue": (volume_match.group("issue") or "") if volume_match else "",
+                    "pages": re.sub(r"\s*[-–—]\s*", "-", parts[3]),
+                    "doi": doi,
+                }
+
     year_match = re.search(r"\b(19\d{2}|20\d{2})[a-z]?\b", cleaned, flags=re.IGNORECASE)
     year = year_match.group(1) if year_match else ""
     authors = title = journal = journal_meta = ""

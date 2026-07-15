@@ -41,9 +41,11 @@
             <span>{{ currentFilename(doc) }}</span>
           </button>
           <div v-if="displayDocuments.length" class="side-pager">
-            <button type="button" :disabled="readerPage === 1" @click="readerPage -= 1">上一页</button>
-            <span>{{ readerPage }} / {{ readerTotalPages }}</span>
-            <button type="button" :disabled="readerPage === readerTotalPages" @click="readerPage += 1">下一页</button>
+            <div class="side-pager-controls">
+              <button class="pager-nav" type="button" :disabled="readerPage === 1" @click="readerPage -= 1">上一页</button>
+              <PageJump compact inline :page="readerPage" :total-pages="readerTotalPages" @change="readerPage = $event" />
+              <button class="pager-nav" type="button" :disabled="readerPage === readerTotalPages" @click="readerPage += 1">下一页</button>
+            </div>
           </div>
         </template>
         <template v-else>
@@ -147,9 +149,9 @@
         <div v-if="!previewDocument && displayDocuments.length > 12" class="list-pager">
           <span class="pager-summary">共 {{ displayDocuments.length }} 条资料</span>
           <div class="pager-controls">
-            <button type="button" :disabled="documentPage === 1" @click="documentPage -= 1">上一页</button>
-            <span>{{ documentPage }} / {{ documentTotalPages }} 页</span>
-            <button type="button" :disabled="documentPage === documentTotalPages" @click="documentPage += 1">下一页</button>
+            <button class="pager-nav" type="button" :disabled="documentPage === 1" @click="documentPage -= 1">上一页</button>
+            <PageJump compact inline :page="documentPage" :total-pages="documentTotalPages" @change="documentPage = $event" />
+            <button class="pager-nav" type="button" :disabled="documentPage === documentTotalPages" @click="documentPage += 1">下一页</button>
           </div>
           <el-select v-model="documentPageSize" size="small" class="page-size-select" placeholder="分页">
             <el-option label="12 条/页" :value="12" />
@@ -240,6 +242,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
 
 import EmptyState from '../../components/EmptyState.vue'
+import PageJump from '../../components/PageJump.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import {
   createDocument,
@@ -824,16 +827,24 @@ watch(readerTotalPages, (total) => {
 
 .side-pager {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  justify-items: center;
   gap: 8px;
   border-top: 1px solid var(--color-line);
   margin-top: 10px;
   padding-top: 12px;
 }
 
+.side-pager-controls {
+  display: grid;
+  grid-template-columns: 64px minmax(44px, 1fr) 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
 .side-pager button {
-  width: auto;
+  width: 64px;
   min-height: 30px;
   margin: 0;
   padding: 0 9px;
@@ -854,7 +865,13 @@ watch(readerTotalPages, (total) => {
 .side-pager span {
   color: var(--color-muted);
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
   white-space: nowrap;
+}
+
+.side-pager-controls :deep(.page-jump) {
+  justify-self: center;
 }
 
 .category-tree button strong,
@@ -958,6 +975,12 @@ watch(readerTotalPages, (total) => {
   color: var(--color-cau-green);
   cursor: pointer;
   font-weight: 700;
+}
+
+.list-pager .pager-nav {
+  width: 72px;
+  padding: 0;
+  text-align: center;
 }
 
 .list-pager button:disabled {
@@ -1344,13 +1367,8 @@ watch(readerTotalPages, (total) => {
     flex-wrap: wrap;
   }
 
-  .pager-summary,
-  .pager-controls,
-  .page-size-select {
-    width: 100%;
-  }
-
   .pager-summary {
+    width: 100%;
     text-align: center;
   }
 }

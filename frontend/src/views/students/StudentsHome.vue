@@ -35,17 +35,11 @@
           </button>
           <div v-if="!filteredStudents.length" class="empty-note">{{ students.length ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
           <div v-if="filteredStudents.length > 12" class="student-pager">
-            <span class="pager-summary">共 {{ filteredStudents.length }} 人</span>
             <div class="pager-controls">
-              <button type="button" :disabled="studentPage === 1" @click="studentPage -= 1">上一页</button>
-              <span>{{ studentPage }} / {{ studentTotalPages }}</span>
-              <button type="button" :disabled="studentPage === studentTotalPages" @click="studentPage += 1">下一页</button>
+              <button class="pager-nav" type="button" :disabled="studentPage === 1" @click="studentPage -= 1">上一页</button>
+              <PageJump compact inline :page="studentPage" :total-pages="studentTotalPages" @change="studentPage = $event" />
+              <button class="pager-nav" type="button" :disabled="studentPage === studentTotalPages" @click="studentPage += 1">下一页</button>
             </div>
-            <el-select v-model="studentPageSize" size="small" class="page-size-select" placeholder="分页">
-              <el-option label="12 人/页" :value="12" />
-              <el-option label="24 人/页" :value="24" />
-              <el-option label="48 人/页" :value="48" />
-            </el-select>
           </div>
         </aside>
 
@@ -278,6 +272,7 @@ import {
   updateStudentProfile,
   uploadStudentArchiveFile,
 } from '../../api/students'
+import PageJump from '../../components/PageJump.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
@@ -790,10 +785,8 @@ watch(studentTotalPages, (total) => {
 }
 
 .student-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
+  display: grid;
+  justify-items: center;
   gap: 8px;
   border-top: 1px solid var(--color-line);
   margin-top: 10px;
@@ -802,55 +795,36 @@ watch(studentTotalPages, (total) => {
   font-size: 13px;
 }
 
-.student-pager .pager-summary {
-  flex: 0 0 auto;
-  color: var(--color-text);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .student-pager .pager-controls {
-  display: flex;
-  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 72px minmax(44px, 1fr) 72px;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 
-.student-pager .page-size-select {
-  flex: 0 0 104px;
-  width: 104px;
+.student-pager .pager-controls :deep(.page-jump) {
+  justify-self: center;
 }
 
 .student-pager button {
-  width: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  box-sizing: border-box;
   margin: 0;
   border: 1px solid var(--color-border);
   padding: 5px 10px;
   background: #fff;
   color: var(--color-text);
   font-size: 12px;
+  line-height: 1;
+  text-align: center;
 }
 
 .student-pager button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-@media (max-width: 640px) {
-  .student-pager {
-    flex-wrap: wrap;
-  }
-
-  .student-pager .pager-summary,
-  .student-pager .pager-controls,
-  .student-pager .page-size-select {
-    width: 100%;
-  }
-
-  .student-pager .pager-summary {
-    text-align: center;
-  }
 }
 
 .profile-list {

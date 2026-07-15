@@ -367,7 +367,12 @@ const displayAchievements = computed(() => {
   ]
   if (!items.length) return []
   const visibleItems = items.filter((item) => item.sortOrder > 0)
-  if (!visibleItems.length) return []
+  if (!visibleItems.length) {
+    return items
+      .filter((item) => item.type === 'paper' && item.sortOrder === 0)
+      .sort((a, b) => b.dateRank - a.dateRank || b.id - a.id)
+      .slice(0, 4)
+  }
   const typeOrder: HomeAchievement['type'][] = ['paper', 'project', 'patent', 'award']
   const sortOrders = Array.from(new Set(visibleItems.map((item) => item.sortOrder))).sort((a, b) => a - b)
   const ordered: HomeAchievement[] = []

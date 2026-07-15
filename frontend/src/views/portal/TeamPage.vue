@@ -33,9 +33,9 @@
         </div>
         <div v-if="!filteredMembers.length" class="card empty-panel">暂无公开团队成员，请在内部平台“门户内容”中维护。</div>
         <div v-if="totalPages > 1" class="team-pager">
-          <button type="button" :disabled="page === 1" @click="setPage(page - 1)">上一页</button>
-          <strong>{{ page }} / {{ totalPages }} 页</strong>
-          <button type="button" :disabled="page === totalPages" @click="setPage(page + 1)">下一页</button>
+          <button class="pager-nav" type="button" :disabled="page === 1" @click="setPage(page - 1)">上一页</button>
+          <PageJump compact inline :page="page" :total-pages="totalPages" @change="setPage" />
+          <button class="pager-nav" type="button" :disabled="page === totalPages" @click="setPage(page + 1)">下一页</button>
         </div>
       </div>
     </section>
@@ -48,6 +48,7 @@ import { ArrowRight, Search } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchMembers, type Member } from '../../api/publicPortal'
+import PageJump from '../../components/PageJump.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const members = ref<Member[]>([])
@@ -298,9 +299,11 @@ watch(totalPages, (total) => {
 }
 
 .team-pager button {
+  width: 72px;
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  padding: 8px 14px;
+  padding: 8px 0;
   background: #fff;
   color: var(--color-text);
   cursor: pointer;

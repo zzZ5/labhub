@@ -1,8 +1,10 @@
 import pytest
+from unittest.mock import Mock
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.urls import reverse
 from io import BytesIO
+from pathlib import Path
 from zipfile import ZipFile
 
 from apps.accounts.models import Role, RoleCode, UserRole
@@ -16,6 +18,7 @@ from .models import (
     DocumentVersion,
     DocumentVisibility,
 )
+from .views import convert_embedded_image_to_png
 
 User = get_user_model()
 
@@ -50,7 +53,7 @@ def pending_user(db):
 
 @pytest.fixture
 def active_document(db):
-    category = DocumentCategory.objects.create(name="实验 SOP", slug="sop")
+    category, _ = DocumentCategory.objects.get_or_create(slug="sop", defaults={"name": "实验方法"})
     document = Document.objects.create(
         title="堆肥反应器 SOP",
         category=category,
@@ -66,6 +69,18 @@ def active_document(db):
         is_current=True,
     )
     return document
+
+
+def test_convert_embedded_vector_image_to_png(monkeypatch):
+    def fake_run(command, **kwargs):
+        output_path = Path(command[-1]).with_suffix(".png")
+        output_path.write_bytes(b"png-preview")
+        return Mock(returncode=0)
+
+    monkeypatch.setattr("apps.documents.views.shutil.which", lambda _name: "/usr/bin/libreoffice")
+    monkeypatch.setattr("apps.documents.views.subprocess.run", fake_run)
+
+    assert convert_embedded_image_to_png(b"vector-image", "word/media/diagram.emf") == b"png-preview"
 
 
 @pytest.mark.django_db
@@ -118,7 +133,7 @@ def test_approved_member_can_download_and_log(client, approved_user, active_docu
 @pytest.mark.django_db
 def test_approved_member_can_preview_without_download_permission(client, approved_user):
     document = Document.objects.create(
-        title="鍙湪绾挎煡鐪嬬殑璧勬枡",
+        title="可在线查看的资料",
         visibility=DocumentVisibility.MEMBERS,
         status=DocumentStatus.ACTIVE,
         allow_download=False,

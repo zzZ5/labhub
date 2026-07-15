@@ -33,9 +33,9 @@
         <div v-if="!displayNews.length" class="card empty-panel">暂无新闻活动，请在内部平台“门户内容”中维护。</div>
         <div v-if="displayNews.length > pageSize" class="news-pager">
           <span>共 {{ displayNews.length }} 条新闻</span>
-          <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
-          <strong>{{ page }} / {{ totalPages }} 页</strong>
-          <button type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
+          <button class="pager-nav" type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
+          <PageJump compact inline :page="page" :total-pages="totalPages" @change="page = $event" />
+          <button class="pager-nav" type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
         </div>
       </div>
     </section>
@@ -47,6 +47,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchNews, fetchNewsCategories, type NewsArticle, type NewsCategory } from '../../api/publicPortal'
+import PageJump from '../../components/PageJump.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const news = ref<NewsArticle[]>([])
@@ -212,6 +213,12 @@ onMounted(async () => {
   color: var(--color-cau-green);
   cursor: pointer;
   font-weight: 700;
+}
+
+.news-pager .pager-nav {
+  width: 72px;
+  padding: 0;
+  text-align: center;
 }
 
 .news-pager button:disabled {

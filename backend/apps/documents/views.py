@@ -1,6 +1,9 @@
 import base64
 import mimetypes
 import posixpath
+import shutil
+import subprocess
+import tempfile
 from html import escape
 from io import BytesIO
 from pathlib import Path
@@ -34,6 +37,7 @@ from .services import (
 from apps.students.preview import is_office_preview_candidate
 
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+CONVERTIBLE_IMAGE_EXTENSIONS = {".emf", ".wmf", ".svg"}
 
 
 def client_ip(request):
@@ -45,6 +49,30 @@ def client_ip(request):
 
 def is_docx_file(filename, content_type):
     return content_type == DOCX_CONTENT_TYPE or filename.lower().endswith(".docx")
+
+
+def convert_embedded_image_to_png(image_data, filename):
+    if Path(filename).suffix.lower() not in CONVERTIBLE_IMAGE_EXTENSIONS:
+        return None
+    soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice:
+        return None
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / Path(filename).name
+        source_path.write_bytes(image_data)
+        try:
+            completed = subprocess.run(
+                [soffice, "--headless", "--nologo", "--nofirststartwizard", "--convert-to", "png", "--outdir", temp_dir, str(source_path)],
+                check=False,
+                capture_output=True,
+                timeout=20,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        output_path = source_path.with_suffix(".png")
+        if completed.returncode != 0 or not output_path.exists():
+            return None
+        return output_path.read_bytes()
 
 
 def docx_to_html(file_obj, title):
@@ -75,11 +103,15 @@ def docx_to_html(file_obj, title):
                 media_path = posixpath.normpath(posixpath.join("word", target))
                 if media_path not in archive.namelist():
                     continue
+                image_data = archive.read(media_path)
                 content_type = mimetypes.guess_type(media_path)[0] or ""
                 if content_type not in {"image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"}:
-                    image_map[rel_id] = '<p class="image-note">该图片格式暂不支持在线预览，请下载原 Word 查看。</p>'
-                    continue
-                encoded = base64.b64encode(archive.read(media_path)).decode("ascii")
+                    image_data = convert_embedded_image_to_png(image_data, media_path)
+                    if not image_data:
+                        image_map[rel_id] = '<p class="image-note">这张图片暂不能在线显示，请下载原 Word 查看。</p>'
+                        continue
+                    content_type = "image/png"
+                encoded = base64.b64encode(image_data).decode("ascii")
                 image_map[rel_id] = f'<figure><img src="data:{content_type};base64,{encoded}" alt="Word 文档图片" /></figure>'
 
     def paragraph_text(paragraph):
