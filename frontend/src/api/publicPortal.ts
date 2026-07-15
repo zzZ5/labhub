@@ -152,6 +152,7 @@ export interface Project {
   principal_investigator: string
   start_date: string | null
   end_date: string | null
+  amount?: string | number
   status: string
   visibility?: string
   description: string

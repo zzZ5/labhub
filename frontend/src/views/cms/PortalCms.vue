@@ -314,14 +314,48 @@
                 </div>
               </div>
               <el-form label-position="top">
-                <el-form-item label="论文题目"><el-input v-model="publicationForm.title" /></el-form-item>
-                <el-form-item label="作者"><el-input v-model="publicationForm.authors" type="textarea" :rows="2" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="期刊"><el-input v-model="publicationForm.journal" /></el-form-item>
-                  <el-form-item label="年份"><el-input-number v-model="publicationForm.year" :min="1990" :max="2100" /></el-form-item>
+                <el-form-item label="GB/T 7714-2025格式引文">
+                  <el-input
+                    v-model="publicationForm.citation_text"
+                    type="textarea"
+                    :rows="4"
+                    placeholder="例：作者. 论文题目. 期刊, 2026, 14(5): 123765. DOI: 10.xxxx/xxxxx"
+                  />
+                </el-form-item>
+                <div class="citation-actions">
+                  <button class="secondary-inline-action" type="button" @click="parsePublicationCitation()">拆分并预览</button>
+                  <span>保存前请确认拆分出的标题、作者和期刊信息。</span>
+                </div>
+                <div v-if="hasPublicationPreview" class="citation-preview">
+                  <div class="citation-preview__title">拆分预览</div>
+                  <dl>
+                    <div>
+                      <dt>题名</dt>
+                      <dd>{{ publicationPreview.title || '未识别' }}</dd>
+                    </div>
+                    <div>
+                      <dt>作者</dt>
+                      <dd>{{ publicationPreview.authors || '未识别' }}</dd>
+                    </div>
+                    <div>
+                      <dt>期刊</dt>
+                      <dd>{{ publicationPreview.journal || '未识别' }}</dd>
+                    </div>
+                    <div>
+                      <dt>年份</dt>
+                      <dd>{{ publicationPreview.year || '未识别' }}</dd>
+                    </div>
+                    <div>
+                      <dt>卷期页</dt>
+                      <dd>{{ publicationVolumePreview || '未识别' }}</dd>
+                    </div>
+                    <div>
+                      <dt>DOI</dt>
+                      <dd>{{ publicationPreview.doi || '未填写' }}</dd>
+                    </div>
+                  </dl>
                 </div>
                 <div class="form-two-col">
-                  <el-form-item label="DOI"><el-input v-model="publicationForm.doi" /></el-form-item>
                   <el-form-item label="可见范围">
                     <el-select v-model="publicationForm.visibility">
                       <el-option label="公开" value="public" />
@@ -329,15 +363,13 @@
                       <el-option label="管理员可见" value="admins" />
                     </el-select>
                   </el-form-item>
+                  <el-form-item label="首页排序"><el-input-number v-model="publicationForm.sort_order" :min="0" /></el-form-item>
                 </div>
                 <el-form-item label="摘要"><el-input v-model="publicationForm.abstract" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="PDF 附件">
                   <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, publicationForm, 'pdf_file')" />
                   <small v-if="editingPublicationPdf">当前 PDF：{{ displayFileLabel(editingPublicationPdf) }}</small>
                 </el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="排序"><el-input-number v-model="publicationForm.sort_order" :min="0" /></el-form-item>
-                </div>
               </el-form>
               <FormActions :saving="saving" :deletable="Boolean(editingPublicationId)" @save="savePublication" @delete="deletePublication" />
             </article>
@@ -375,16 +407,19 @@
                   <el-form-item label="状态"><el-input v-model="projectForm.status" /></el-form-item>
                 </div>
                 <div class="form-two-col">
+                  <el-form-item label="经费"><el-input v-model="projectForm.amount" placeholder="可留空" /></el-form-item>
+                  <el-form-item label="可见范围">
+                    <el-select v-model="projectForm.visibility">
+                      <el-option label="公开" value="public" />
+                      <el-option label="成员可见" value="members" />
+                      <el-option label="管理员可见" value="admins" />
+                    </el-select>
+                  </el-form-item>
+                </div>
+                <div class="form-two-col">
                   <el-form-item label="开始日期"><el-date-picker v-model="projectForm.start_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
                   <el-form-item label="结束日期"><el-date-picker v-model="projectForm.end_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
                 </div>
-                <el-form-item label="可见范围">
-                  <el-select v-model="projectForm.visibility">
-                    <el-option label="公开" value="public" />
-                    <el-option label="成员可见" value="members" />
-                    <el-option label="管理员可见" value="admins" />
-                  </el-select>
-                </el-form-item>
                 <el-form-item label="说明"><el-input v-model="projectForm.description" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="首页排序"><el-input-number v-model="projectForm.sort_order" :min="0" /></el-form-item>
               </el-form>
@@ -494,6 +529,7 @@
           </section>
         </el-tab-pane>
 
+
       </el-tabs>
     </section>
   </InternalLayout>
@@ -515,6 +551,16 @@ type Row<T> = {
   title: string
   meta: string
   source: T
+}
+type PublicationPreview = {
+  authors: string
+  title: string
+  journal: string
+  year: number | string
+  volume: string
+  issue: string
+  pages: string
+  doi: string
 }
 
 const ContentList = defineComponent({
@@ -729,15 +775,43 @@ const newsImageForm = reactive({
   sort_order: 0,
 })
 const publicationForm = reactive<CmsForm>({
+  citation_text: '',
   title: '',
   authors: '',
   journal: '',
   year: new Date().getFullYear(),
+  volume: '',
+  issue: '',
+  pages: '',
   doi: '',
+  impact_factor: '',
+  jcr_partition: '',
+  cas_partition: '',
   abstract: '',
   pdf_file: undefined,
   visibility: 'public',
   sort_order: 0,
+})
+const publicationPreview = reactive<PublicationPreview>({
+  authors: '',
+  title: '',
+  journal: '',
+  year: '',
+  volume: '',
+  issue: '',
+  pages: '',
+  doi: '',
+})
+const hasPublicationPreview = computed(() => Boolean(
+  publicationPreview.title
+  || publicationPreview.authors
+  || publicationPreview.journal
+  || publicationPreview.year
+  || publicationPreview.doi,
+))
+const publicationVolumePreview = computed(() => {
+  const volumeIssue = [publicationPreview.volume, publicationPreview.issue ? `(${publicationPreview.issue})` : ''].filter(Boolean).join('')
+  return [volumeIssue, publicationPreview.pages].filter(Boolean).join(': ')
 })
 const projectForm = reactive<CmsForm>({
   title: '',
@@ -746,6 +820,7 @@ const projectForm = reactive<CmsForm>({
   principal_investigator: '',
   start_date: '',
   end_date: '',
+  amount: '',
   status: '',
   visibility: 'public',
   description: '',
@@ -1281,37 +1356,189 @@ function resetPublication() {
   editingPublicationId.value = null
   editingPublicationPdf.value = ''
   Object.assign(publicationForm, {
+    citation_text: '',
     title: '',
     authors: '',
     journal: '',
     year: new Date().getFullYear(),
+    volume: '',
+    issue: '',
+    pages: '',
     doi: '',
+    impact_factor: '',
+    jcr_partition: '',
+    cas_partition: '',
     abstract: '',
     pdf_file: undefined,
     visibility: 'public',
     sort_order: 0,
   })
+  clearPublicationPreview()
 }
 
 function editPublication(item: Publication) {
   editingPublicationId.value = item.id
   editingPublicationPdf.value = item.pdf_file || ''
   Object.assign(publicationForm, {
+    citation_text: formatPublicationCitation(item),
     title: item.title,
     authors: item.authors,
     journal: item.journal || '',
     year: item.year,
+    volume: item.volume || '',
+    issue: item.issue || '',
+    pages: item.pages || '',
     doi: item.doi || '',
+    impact_factor: item.impact_factor || '',
+    jcr_partition: item.jcr_partition || '',
+    cas_partition: item.cas_partition || '',
     abstract: item.abstract || '',
     pdf_file: undefined,
     visibility: item.visibility || 'public',
     sort_order: (item as Publication & { sort_order?: number }).sort_order || 0,
   })
+  applyPublicationPreview({
+    title: item.title || '',
+    authors: item.authors || '',
+    journal: item.journal || '',
+    year: item.year || '',
+    volume: item.volume || '',
+    issue: item.issue || '',
+    pages: item.pages || '',
+    doi: item.doi || '',
+  }, false)
+}
+
+function clearPublicationPreview() {
+  Object.assign(publicationPreview, {
+    authors: '',
+    title: '',
+    journal: '',
+    year: '',
+    volume: '',
+    issue: '',
+    pages: '',
+    doi: '',
+  })
+}
+
+function applyPublicationPreview(parsed: Partial<PublicationPreview>, writeForm = true) {
+  Object.assign(publicationPreview, {
+    authors: parsed.authors || '',
+    title: parsed.title || '',
+    journal: parsed.journal || '',
+    year: parsed.year || '',
+    volume: parsed.volume || '',
+    issue: parsed.issue || '',
+    pages: parsed.pages || '',
+    doi: parsed.doi || '',
+  })
+  if (!writeForm) return
+  Object.entries(publicationPreview).forEach(([key, value]) => {
+    publicationForm[key] = value
+  })
+}
+
+function parsePublicationCitation(showMessage = true) {
+  const citation = String(publicationForm.citation_text || '').replace(/\s+/g, ' ').trim()
+  if (!citation) {
+    clearPublicationPreview()
+    if (showMessage) ElMessage.warning('请先填写 GB/T 7714-2025 格式引文。')
+    return false
+  }
+  const parsed = splitPublicationCitation(citation)
+  applyPublicationPreview(parsed)
+  if (!parsed.title || !parsed.authors || !parsed.journal || !parsed.year) {
+    if (showMessage) ElMessage.warning('拆分结果不完整，请检查引文中的作者、题名、期刊和年份。')
+    return false
+  }
+  if (showMessage) ElMessage.success('已拆分，请检查预览结果后保存。')
+  return true
+}
+
+function splitPublicationCitation(citation: string) {
+  const text = citation.replace(/^\[\d+\]\s*/, '').replace(/\s+/g, ' ').trim()
+  const doiMatch = text.match(/\bdoi[:：]?\s*(10\.\S+)/i)
+  const doi = doiMatch?.[1]?.replace(/[.。]$/, '') || ''
+  const withoutDoi = text.replace(/\bdoi[:：]?\s*10\.\S+/i, '').replace(/[.。]\s*$/, '').trim()
+  const yearMatch = withoutDoi.match(/\b(19\d{2}|20\d{2})[a-z]?\b/i)
+  const year = yearMatch ? Number(yearMatch[1]) : undefined
+  let authors = ''
+  let title = ''
+  let journalMeta = ''
+  if (yearMatch) {
+    const beforeYear = withoutDoi.slice(0, yearMatch.index).replace(/[.。,，]\s*$/, '').trim()
+    const afterYear = withoutDoi.slice((yearMatch.index || 0) + yearMatch[0].length).replace(/^[,，.。]\s*/, '').trim()
+    const yearIsAfterAuthors = /\b(19\d{2}|20\d{2})[a-z]?\.\s+/i.test(withoutDoi)
+    if (yearIsAfterAuthors) {
+      authors = beforeYear
+      const titleParts = afterYear.split(/\.\s+|。\s*/)
+      title = titleParts.shift()?.trim() || ''
+      journalMeta = titleParts.join('. ').trim()
+    } else {
+      const parts = beforeYear.split(/\.\s+|。\s*/).map((part) => part.replace(/[.。,，]\s*$/, '').trim()).filter(Boolean)
+      if (parts.length >= 3) {
+        authors = parts.slice(0, -2).join('. ')
+        title = parts[parts.length - 2]
+        journalMeta = [parts[parts.length - 1], afterYear].filter(Boolean).join(', ')
+      } else if (parts.length === 2) {
+        authors = parts[0]
+        title = parts[1]
+        journalMeta = afterYear
+      } else {
+        title = beforeYear || afterYear
+      }
+    }
+  } else {
+    title = withoutDoi
+  }
+  const parsedMeta = parsePublicationJournalMeta(journalMeta)
+
+  return {
+    authors,
+    title,
+    journal: parsedMeta.journal,
+    year,
+    volume: parsedMeta.volume,
+    issue: parsedMeta.issue,
+    pages: parsedMeta.pages,
+    doi,
+  }
+}
+
+function parsePublicationJournalMeta(value: string) {
+  const normalized = value.replace(/[.。]\s*$/, '').trim()
+  const match = normalized.match(/^(?<journal>.+?)[\.,。]\s*(?:19\d{2}|20\d{2})?[a-z]?\s*[,，]?\s*(?<volume>\d+)(?:\((?<issue>[^)]+)\))?(?:\s*[:：,，]\s*|\s+)?(?<pages>[A-Za-z]?\d+(?:[-–—]\d+)?|e\d+)?$/i)
+  return {
+    journal: (match?.groups?.journal || normalized).trim(),
+    volume: match?.groups?.volume || '',
+    issue: match?.groups?.issue || '',
+    pages: (match?.groups?.pages || '').replace(/[–—]/g, '-'),
+  }
+}
+
+function formatPublicationCitation(item: Publication) {
+  const volumeIssue = [item.volume, item.issue ? `(${item.issue})` : ''].filter(Boolean).join('')
+  const pages = item.pages ? `: ${item.pages}` : ''
+  const meta = [item.year, [volumeIssue, pages].filter(Boolean).join('')].filter(Boolean).join(', ')
+  const doi = item.doi ? ` DOI: ${item.doi}` : ''
+  return [item.authors, item.title, item.journal, meta].filter(Boolean).join('. ') + doi
+}
+
+function publicationPayload() {
+  const { citation_text: _citationText, ...payload } = publicationForm
+  return payload
 }
 
 async function savePublication() {
+  const parsed = parsePublicationCitation(false)
+  if (!parsed) {
+    ElMessage.warning('请先点击“拆分并预览”，确认结果后再保存。')
+    return
+  }
+  const payload = publicationPayload()
   await save((onUploadProgress) =>
-    editingPublicationId.value ? cmsApi.updatePublication(editingPublicationId.value, publicationForm, onUploadProgress) : cmsApi.createPublication(publicationForm, onUploadProgress),
+    editingPublicationId.value ? cmsApi.updatePublication(editingPublicationId.value, payload, onUploadProgress) : cmsApi.createPublication(payload, onUploadProgress),
   )
   resetPublication()
 }
@@ -1330,6 +1557,7 @@ function resetProject() {
     principal_investigator: '',
     start_date: '',
     end_date: '',
+    amount: '',
     status: '',
     visibility: 'public',
     description: '',
@@ -1346,6 +1574,7 @@ function editProject(item: Project) {
     principal_investigator: item.principal_investigator || '',
     start_date: item.start_date || '',
     end_date: item.end_date || '',
+    amount: item.amount || '',
     status: item.status || '',
     visibility: (item as Project & { visibility?: string }).visibility || 'public',
     description: item.description || '',
@@ -2145,6 +2374,88 @@ onMounted(loadAll)
   gap: 16px;
 }
 
+.form-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.secondary-inline-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-xs);
+  margin: -4px 0 14px;
+  padding: 6px 12px;
+  background: #fff;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.secondary-inline-action:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 135, 60, 0.06);
+}
+
+.citation-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -4px 0 12px;
+}
+
+.citation-actions .secondary-inline-action {
+  margin: 0;
+}
+
+.citation-actions span {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.citation-preview {
+  border: 1px solid rgba(0, 135, 60, 0.16);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: rgba(234, 245, 238, 0.52);
+}
+
+.citation-preview__title {
+  margin-bottom: 10px;
+  color: var(--color-deep-green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.citation-preview dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.citation-preview div {
+  min-width: 0;
+}
+
+.citation-preview dt {
+  margin-bottom: 2px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.citation-preview dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .external-link-editor {
   display: grid;
   gap: 8px;
@@ -2217,6 +2528,7 @@ onMounted(loadAll)
   .editor-grid,
   .editor-single,
   .form-two-col,
+  .form-three-col,
   .gallery-upload {
     grid-template-columns: 1fr;
   }
@@ -2442,6 +2754,20 @@ onMounted(loadAll)
 
   .form-heading h2 {
     font-size: 18px;
+  }
+
+  .citation-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .citation-preview dl {
+    grid-template-columns: 1fr;
+  }
+
+  .form-three-col {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .form-actions {

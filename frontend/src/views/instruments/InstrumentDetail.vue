@@ -1,7 +1,7 @@
 <template>
   <InternalLayout title="仪器详情">
     <section v-if="instrument" class="instrument-detail-page">
-      <RouterLink class="back-link" to="/instruments">返回仪器平台</RouterLink>
+      <RouterLink class="back-link" :to="returnTo">返回仪器平台</RouterLink>
 
       <article class="card detail-card">
         <img v-if="instrument.image" :src="instrument.image" :alt="instrument.name" />
@@ -84,6 +84,11 @@ import { useSessionStore } from '../../stores/session'
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+const returnTo = computed(() => {
+  const source = Array.isArray(route.query.from) ? route.query.from[0] : route.query.from
+  if (!source || !source.startsWith('/') || source.startsWith('//')) return '/instruments'
+  return source
+})
 const instruments = ref<Instrument[]>([])
 const formVisible = ref(false)
 const saving = ref(false)

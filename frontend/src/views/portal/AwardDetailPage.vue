@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="detail-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" to="/publications">返回科研成果</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回科研成果</RouterLink>
         <p class="section-kicker">获奖成果</p>
         <h1>{{ award?.title || '获奖成果' }}</h1>
       </div>
@@ -51,9 +51,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchAward, type Award } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/publications')
 const award = ref<Award | null>(null)
 
 const imageSizeLabel = computed(() => formatFileSize(award.value?.image_size || 0))

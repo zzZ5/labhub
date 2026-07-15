@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="member-head">
       <div class="container member-head-inner">
-        <RouterLink class="back-link portal-back-link" to="/team">返回团队成员</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回团队成员</RouterLink>
         <img :src="member?.avatar || '/site-icon.png'" :alt="member?.name || '团队成员'" />
         <div>
           <p class="section-kicker">团队成员</p>
@@ -18,8 +18,13 @@
         <main class="card detail-card">
           <section>
             <h2>个人简介</h2>
-            <p v-for="paragraph in profileParagraphs" :key="paragraph">{{ paragraph }}</p>
-            <p v-if="!profileParagraphs.length" class="muted">个人简介可在内部平台“门户内容 - 团队成员”中维护。</p>
+            <template v-if="profileSections.length">
+              <div v-for="section in profileSections" :key="section.title" class="profile-section">
+                <h3 v-if="section.title">{{ section.title }}</h3>
+                <p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p>
+              </div>
+            </template>
+            <p v-else class="muted">个人简介可在内部平台“门户内容 - 团队成员”中维护。</p>
           </section>
 
           <section v-if="member?.experiences?.length">
@@ -77,17 +82,27 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchMember, type Member } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/team')
 const member = ref<Member | null>(null)
 
-const profileParagraphs = computed(() =>
-  (member.value?.profile || '')
-    .split(/\n+/)
+const sectionHeadings = new Set(['工作经历', '教育经历', '学术与社会服务', '人才与团队项目', '教学工作', '教改项目与论文', '出版书籍与教材', '国际会议报告', '团队与研究生指导'])
+
+const profileSections = computed(() => {
+  const blocks = (member.value?.profile || '')
+    .split(/\n{2,}/)
     .map((item) => item.trim())
-    .filter(Boolean),
-)
+    .filter(Boolean)
+  return blocks.map((block, index) => {
+    const lines = block.split(/\n+/).map((item) => item.trim()).filter(Boolean)
+    const first = lines[0] || ''
+    if (sectionHeadings.has(first)) return { title: first, paragraphs: lines.slice(1) }
+    return { title: index === 0 ? '' : first, paragraphs: index === 0 ? lines : lines.slice(1) }
+  }).filter((section) => section.paragraphs.length)
+})
 
 function dateRange(start?: string | null, end?: string | null) {
   if (!start && !end) return '时间未填写'
@@ -197,6 +212,23 @@ onMounted(async () => {
   margin: 0 0 14px;
   color: var(--color-text);
   line-height: 1.85;
+}
+
+.profile-section {
+  border-top: 1px solid rgba(31, 61, 43, 0.08);
+  padding-top: 16px;
+}
+
+.profile-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.profile-section h3 {
+  margin: 0 0 10px;
+  color: var(--color-deep-green);
+  font-size: 17px;
+  font-weight: 650;
 }
 
 .muted {

@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="detail-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" to="/publications">返回科研成果</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回科研成果</RouterLink>
         <p class="section-kicker">专利成果</p>
         <h1>{{ patent?.title || '专利成果' }}</h1>
       </div>
@@ -50,9 +50,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchPatent, type Patent } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/publications')
 const patent = ref<Patent | null>(null)
 
 const pdfSizeLabel = computed(() => formatFileSize(patent.value?.pdf_file_size || 0))

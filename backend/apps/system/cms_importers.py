@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -55,13 +56,13 @@ def parse_int(value: str, default: int = 0) -> int:
         return default
 
 
-def parse_decimal(value: str) -> Decimal:
+def parse_decimal(value: str, default: Decimal | None = Decimal("0.00")) -> Decimal | None:
     if value in ("", None):
-        return Decimal("0.00")
+        return default
     try:
         return Decimal(str(value).strip())
     except (InvalidOperation, ValueError):
-        return Decimal("0.00")
+        return default
 
 
 def parse_date(value: str):
@@ -76,6 +77,65 @@ def parse_date(value: str):
             continue
     return None
 
+
+def parse_publication_citation(value: str) -> dict[str, str]:
+    text = re.sub(r"\s+", " ", clean_cell(value)).strip()
+    if not text:
+        return {}
+    text = re.sub(r"^\[\d+\]\s*", "", text)
+    doi_match = re.search(r"(?i)\bdoi[:：]?\s*(10\.\S+)", text)
+    doi = doi_match.group(1).rstrip(" .。") if doi_match else ""
+    cleaned = re.sub(r"(?i)\bdoi[:：]?\s*10\.\S+", "", text).strip(" .。")
+
+    year_match = re.search(r"\b(19\d{2}|20\d{2})[a-z]?\b", cleaned, flags=re.IGNORECASE)
+    year = year_match.group(1) if year_match else ""
+    authors = title = journal = journal_meta = ""
+    if year_match:
+        before_year = cleaned[: year_match.start()].strip(" ,，.。")
+        after_year = cleaned[year_match.end():].strip(" ,，.。")
+        year_is_after_authors = bool(re.search(r"\b(19\d{2}|20\d{2})[a-z]?\.\s+", cleaned, flags=re.IGNORECASE))
+        if year_is_after_authors:
+            authors = before_year
+            title_split = re.split(r"\.\s+|。\s*", after_year, maxsplit=1)
+            title = title_split[0].strip(" .。") if title_split else ""
+            journal_meta = title_split[1] if len(title_split) == 2 else ""
+            journal = journal_meta.strip(" .。")
+        else:
+            parts = [part.strip(" ,，.。") for part in re.split(r"\.\s+|。\s*", before_year) if part.strip(" ,，.。")]
+            if len(parts) >= 3:
+                authors = ". ".join(parts[:-2])
+                title = parts[-2]
+                journal = parts[-1]
+            elif len(parts) == 2:
+                authors, title = parts
+            else:
+                title = before_year
+            journal_meta = f"{journal}, {after_year}".strip(" ,，")
+    else:
+        title = cleaned
+
+    journal = (journal_meta or journal).strip(" .。")
+    volume = issue = pages = ""
+    meta_match = re.search(
+        r"^(?P<journal>.+?)[\.,。]\s*(?:19\d{2}|20\d{2})?[a-z]?\s*[,，]?\s*(?P<volume>\d+)(?:\((?P<issue>[^)]+)\))?(?:\s*[:：,，]\s*|\s+)?(?P<pages>[A-Za-z]?\d+(?:[-–—]\d+)?|e\d+)?$",
+        journal,
+    )
+    if meta_match:
+        journal = meta_match.group("journal") or ""
+        volume = meta_match.group("volume") or ""
+        issue = meta_match.group("issue") or ""
+        pages = (meta_match.group("pages") or "").replace("–", "-").replace("—", "-")
+
+    return {
+        "authors": authors.strip(" .。"),
+        "title": title.strip(" .。"),
+        "journal": journal.strip(" .。"),
+        "year": year,
+        "volume": volume,
+        "issue": issue,
+        "pages": pages,
+        "doi": doi,
+    }
 
 def normalize_visibility(value: str) -> str:
     text = (value or "").strip().lower()
@@ -139,6 +199,16 @@ def images_by_row(images: list[ImportImage]) -> dict[int, ImportImage]:
     return grouped
 
 
+def upsert_record(model, lookup: dict, defaults: dict):
+    instance = model.objects.filter(**lookup).order_by("id").first()
+    if instance:
+        for field, value in defaults.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance, False
+    return model.objects.create(**defaults), True
+
+
 def import_rows(file_obj: BinaryIO, filename: str, kind: str) -> dict[str, int]:
     if kind not in IMPORT_KINDS:
         raise ValueError("不支持的导入类型。")
@@ -195,30 +265,31 @@ def import_members(rows: list[dict[str, str]], image_lookup: dict[int, ImportIma
 def import_publications(rows: list[dict[str, str]], image_lookup: dict[int, ImportImage] | None = None) -> dict[str, int]:
     created = updated = skipped = 0
     for row in rows:
-        title = get_value(row, "论文题目", "题目", "title")
+        parsed = parse_publication_citation(get_value(row, "GB/T 7714-2025格式引文", "国标格式", "参考文献", "引文", "citation", "citation_text"))
+        title = get_value(row, "论文题目", "题目", "title", default=parsed.get("title", ""))
         if not title:
             skipped += 1
             continue
-        doi = get_value(row, "DOI", "doi")
-        year = parse_int(get_value(row, "年份", "year"), default=datetime.now().year)
+        doi = get_value(row, "DOI", "doi", default=parsed.get("doi", ""))
+        year = parse_int(get_value(row, "年份", "year", default=parsed.get("year", "")), default=datetime.now().year)
         lookup = {"doi__iexact": doi} if doi else {"title": title, "year": year}
         defaults = {
             "title": title,
-            "authors": get_value(row, "作者", "authors"),
-            "journal": get_value(row, "期刊", "journal"),
+            "authors": get_value(row, "作者", "authors", default=parsed.get("authors", "")),
+            "journal": get_value(row, "期刊", "journal", default=parsed.get("journal", "")),
             "year": year,
-            "volume": get_value(row, "卷", "volume"),
-            "issue": get_value(row, "期", "issue"),
-            "pages": get_value(row, "页码", "pages"),
+            "volume": get_value(row, "卷", "volume", default=parsed.get("volume", "")),
+            "issue": get_value(row, "期", "issue", default=parsed.get("issue", "")),
+            "pages": get_value(row, "页码", "pages", default=parsed.get("pages", "")),
             "doi": doi,
-            "impact_factor": parse_decimal(get_value(row, "影响因子", "impact_factor")),
+            "impact_factor": parse_decimal(get_value(row, "影响因子", "impact_factor"), default=None),
             "jcr_partition": get_value(row, "JCR分区", "JCR 分区", "jcr_partition"),
             "cas_partition": get_value(row, "中科院分区", "cas_partition"),
             "abstract": get_value(row, "摘要", "abstract"),
             "visibility": normalize_visibility(get_value(row, "可见范围", "visibility")),
             "sort_order": parse_int(get_value(row, "首页排序", "排序", "sort_order")),
         }
-        _, was_created = Publication.objects.update_or_create(defaults=defaults, **lookup)
+        _, was_created = upsert_record(Publication, lookup, defaults)
         created += int(was_created)
         updated += int(not was_created)
     return {"created": created, "updated": updated, "skipped": skipped, "images": 0, "total": len(rows)}
@@ -247,7 +318,7 @@ def import_projects(rows: list[dict[str, str]], image_lookup: dict[int, ImportIm
             "description": get_value(row, "说明", "description"),
             "sort_order": parse_int(get_value(row, "首页排序", "排序", "sort_order")),
         }
-        _, was_created = Project.objects.update_or_create(defaults=defaults, **lookup)
+        _, was_created = upsert_record(Project, lookup, defaults)
         created += int(was_created)
         updated += int(not was_created)
     return {"created": created, "updated": updated, "skipped": skipped, "images": 0, "total": len(rows)}
@@ -273,7 +344,7 @@ def import_patents(rows: list[dict[str, str]], image_lookup: dict[int, ImportIma
             "visibility": normalize_visibility(get_value(row, "可见范围", "visibility")),
             "sort_order": parse_int(get_value(row, "首页排序", "排序", "sort_order")),
         }
-        _, was_created = Patent.objects.update_or_create(defaults=defaults, **lookup)
+        _, was_created = upsert_record(Patent, lookup, defaults)
         created += int(was_created)
         updated += int(not was_created)
     return {"created": created, "updated": updated, "skipped": skipped, "images": 0, "total": len(rows)}
@@ -298,7 +369,7 @@ def import_awards(rows: list[dict[str, str]], image_lookup: dict[int, ImportImag
             "visibility": normalize_visibility(get_value(row, "可见范围", "visibility")),
             "sort_order": parse_int(get_value(row, "首页排序", "排序", "sort_order")),
         }
-        award, was_created = Award.objects.update_or_create(defaults=defaults, **lookup)
+        award, was_created = upsert_record(Award, lookup, defaults)
         created += int(was_created)
         updated += int(not was_created)
         image = image_lookup.get(index)

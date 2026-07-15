@@ -40,7 +40,7 @@ class PublicationViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "authors", "journal", "doi", "abstract"]
     ordering_fields = ["year", "sort_order", "created_at"]
-    ordering = ["-year", "sort_order", "-created_at"]
+    ordering = ["-year", "-created_at"]
 
 
 class ProjectViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
@@ -50,7 +50,7 @@ class ProjectViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "project_number", "funding_source", "principal_investigator", "status", "description"]
     ordering_fields = ["sort_order", "start_date", "end_date", "title"]
-    ordering = ["sort_order", "-start_date", "title"]
+    ordering = ["-start_date", "-end_date", "title"]
 
 
 class PatentViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
@@ -60,7 +60,7 @@ class PatentViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "patent_number", "inventors", "status"]
     ordering_fields = ["sort_order", "application_date", "authorization_date", "title"]
-    ordering = ["sort_order", "-application_date", "-authorization_date", "title"]
+    ordering = ["-application_date", "-authorization_date", "title"]
 
 
 class SoftwareCopyrightViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
@@ -75,7 +75,7 @@ class AwardViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "award_level", "participants", "description"]
     ordering_fields = ["sort_order", "award_date", "title"]
-    ordering = ["sort_order", "-award_date", "title"]
+    ordering = ["-award_date", "title"]
 
 
 class StandardViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):

@@ -20,7 +20,7 @@
           </button>
         </div>
         <div class="news-grid">
-          <RouterLink v-for="item in pagedNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
+          <RouterLink v-for="item in pagedNews" :key="item.title" class="card news-card" :to="{ path: `/news/${item.slug}`, query: { from: route.fullPath } }">
             <img v-if="item.cover_image" :src="item.cover_image" :alt="item.title" />
             <div v-else class="news-image-placeholder">暂无封面</div>
             <div>
@@ -44,14 +44,18 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { fetchNews, fetchNewsCategories, type NewsArticle, type NewsCategory } from '../../api/publicPortal'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const news = ref<NewsArticle[]>([])
 const categories = ref<NewsCategory[]>([])
-const activeCategory = ref('')
-const page = ref(1)
+const route = useRoute()
+const router = useRouter()
+const initialPage = Math.max(1, Number.parseInt(typeof route.query.page === 'string' ? route.query.page : '', 10) || 1)
+const activeCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
+const page = ref(initialPage)
 const pageSize = 9
 const displayNews = computed(() => news.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(displayNews.value.length / pageSize)))
@@ -67,8 +71,18 @@ async function loadNews() {
 
 watch(activeCategory, () => {
   page.value = 1
+  syncQuery()
   void loadNews()
 })
+
+watch(page, syncQuery)
+
+function syncQuery() {
+  const query: Record<string, string> = {}
+  if (activeCategory.value) query.category = activeCategory.value
+  if (page.value > 1) query.page = String(page.value)
+  void router.replace({ path: '/news', query })
+}
 
 watch(totalPages, (total) => {
   if (page.value > total) page.value = total

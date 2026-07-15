@@ -59,7 +59,7 @@
       <div class="container">
         <SectionHeader :title="researchSectionTitle" :description="researchSectionDescription" />
         <div v-if="displayResearchDirections.length" class="research-grid">
-          <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="item.to">
+          <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="{ path: item.to, query: { from: route.fullPath } }">
             <component :is="item.icon" />
             <h3>{{ item.title }}</h3>
             <p>{{ item.description }}</p>
@@ -81,7 +81,7 @@
           </div>
         </div>
         <div class="latest-paper-panel">
-          <RouterLink v-for="item in displayAchievements" :key="`${item.type}-${item.id}`" class="paper-compact" :to="item.to">
+          <RouterLink v-for="item in displayAchievements" :key="`${item.type}-${item.id}`" class="paper-compact" :to="{ path: item.to, query: { from: route.fullPath } }">
             <time>{{ item.badge }}</time>
             <div>
               <h3>{{ item.title }}</h3>
@@ -97,19 +97,29 @@
 
     <section class="page-section team-section">
       <div class="container">
-        <SectionHeader title="团队成员" description="课题组由不同阶段的师生和合作成员共同组成，在日常科研训练、学术交流和项目实践中推进团队协作。" />
+        <div class="team-heading-row">
+          <SectionHeader title="团队成员" description="汇聚不同研究背景的师生，在开放交流与协作实践中共同推进科研工作。" />
+          <RouterLink v-if="displayMembers.length" class="team-all-link" to="/team">
+            查看全部成员
+            <ArrowRight />
+          </RouterLink>
+        </div>
         <div class="member-grid">
-          <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="member.to">
-            <img :src="member.avatar" :alt="member.name" />
+          <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="{ path: member.to, query: { from: route.fullPath } }">
+            <div class="member-photo">
+              <img :src="member.avatar" :alt="member.name" />
+            </div>
             <div class="member-info">
-              <h3>{{ member.name }}</h3>
-              <span>{{ member.role }}</span>
+              <div class="member-name-row">
+                <h3>{{ member.name }}</h3>
+                <ArrowRight class="member-arrow" />
+              </div>
+              <span class="member-role">{{ member.role }}</span>
               <p>{{ member.focus }}</p>
             </div>
           </RouterLink>
         </div>
         <div v-if="!displayMembers.length" class="empty-inline">暂无公开团队成员。</div>
-        <RouterLink class="section-link" to="/team">查看团队成员</RouterLink>
       </div>
     </section>
 
@@ -117,7 +127,7 @@
       <div class="container">
         <SectionHeader title="新闻活动" description="发布组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
         <div class="news-grid">
-          <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="`/news/${item.slug}`">
+          <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="{ path: `/news/${item.slug}`, query: { from: route.fullPath } }">
             <img v-if="item.image" :src="item.image" :alt="item.title" />
             <div v-else class="news-image-placeholder">暂无封面</div>
             <div>
@@ -146,7 +156,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Cpu, DataAnalysis, MostlyCloudy, Orange, SetUp, WindPower } from '@element-plus/icons-vue'
+import { ArrowRight, Cpu, DataAnalysis, MostlyCloudy, Orange, SetUp, WindPower } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 
 import SectionHeader from '../../components/SectionHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
@@ -175,6 +186,7 @@ import {
   type SiteSetting,
 } from '../../api/publicPortal'
 
+const route = useRoute()
 const apiResearchDirections = ref<ResearchDirection[]>([])
 const apiMembers = ref<Member[]>([])
 const apiNews = ref<NewsArticle[]>([])
@@ -354,13 +366,15 @@ const displayAchievements = computed(() => {
     })),
   ]
   if (!items.length) return []
+  const visibleItems = items.filter((item) => item.sortOrder > 0)
+  if (!visibleItems.length) return []
   const typeOrder: HomeAchievement['type'][] = ['paper', 'project', 'patent', 'award']
-  const sortOrders = Array.from(new Set(items.map((item) => item.sortOrder))).sort((a, b) => a - b)
+  const sortOrders = Array.from(new Set(visibleItems.map((item) => item.sortOrder))).sort((a, b) => a - b)
   const ordered: HomeAchievement[] = []
 
   sortOrders.forEach((sortOrder) => {
     const buckets = typeOrder.map((type) =>
-      items
+      visibleItems
         .filter((item) => item.sortOrder === sortOrder && item.type === type)
         .sort((a, b) => b.dateRank - a.dateRank),
     )
@@ -376,7 +390,7 @@ const displayAchievements = computed(() => {
 })
 
 const displayMembers = computed(() => {
-  return apiMembers.value.slice(0, 4).map((member) => ({
+  return apiMembers.value.slice(0, 6).map((member) => ({
     name: member.name,
     role: memberIdentity(member),
     focus: member.research_direction || '农业生态环境过程',
@@ -408,10 +422,10 @@ onMounted(async () => {
     fetchResearchDirections(),
     fetchMembers(),
     fetchNews(),
-    fetchPublications({ page_size: 8, ordering: 'sort_order,-year' }),
-    fetchProjects({ page_size: 6, ordering: 'sort_order,-start_date' }),
-    fetchPatents({ page_size: 6, ordering: 'sort_order,-application_date' }),
-    fetchAwards({ page_size: 6, ordering: 'sort_order,-award_date' }),
+    fetchPublications({ page_size: 24, ordering: '-sort_order,-year' }),
+    fetchProjects({ page_size: 18, ordering: '-sort_order,-start_date' }),
+    fetchPatents({ page_size: 18, ordering: '-sort_order,-application_date' }),
+    fetchAwards({ page_size: 18, ordering: '-sort_order,-award_date' }),
     fetchPublicationStats(),
   ])
   if (setting.status === 'fulfilled') siteSetting.value = setting.value
@@ -947,41 +961,90 @@ onUnmounted(() => {
 
 .member-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
   border: 0;
+}
+
+.team-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.team-heading-row :deep(.section-header) {
+  margin-bottom: 0;
+}
+
+.team-all-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 135, 60, 0.36);
+  padding: 6px 0;
+  color: var(--color-cau-green);
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: gap 180ms ease, border-color 180ms ease;
+}
+
+.team-all-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.team-all-link:hover {
+  gap: 11px;
+  border-color: var(--color-cau-green);
 }
 
 .member-card {
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  align-items: center;
-  min-height: 128px;
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 156px;
   border: 1px solid rgba(31, 61, 43, 0.1);
   border-radius: var(--radius-md);
-  padding: 15px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 247, 242, 0.72)),
-    #fff;
+  overflow: hidden;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.96);
   color: inherit;
   text-decoration: none;
   box-shadow: var(--shadow-soft);
 }
 
-.member-card img {
-  width: 58px;
-  height: 58px;
-  border: 1px solid var(--color-line);
-  border-radius: 50%;
-  background: var(--color-eco-green);
+.member-photo {
+  min-height: 156px;
+  overflow: hidden;
+  background: var(--color-panel-strong);
+}
+
+.member-photo img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center top;
+  transition: transform 260ms ease;
 }
 
 .member-info {
   display: grid;
-  gap: 5px;
+  align-content: center;
+  gap: 8px;
   min-width: 0;
-  margin-top: 0;
+  padding: 20px 18px;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .member-info h3 {
@@ -989,17 +1052,29 @@ onUnmounted(() => {
   margin: 0;
   overflow: hidden;
   color: var(--color-deep-green);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.member-info span {
+.member-role {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--color-cau-green);
   font-size: 13px;
   font-weight: 650;
   line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.member-arrow {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: rgba(0, 135, 60, 0.56);
+  transition: transform 180ms ease, color 180ms ease;
 }
 
 .member-card p {
@@ -1008,9 +1083,23 @@ onUnmounted(() => {
   overflow: hidden;
   color: var(--color-muted);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.member-card:hover {
+  border-color: rgba(0, 135, 60, 0.24);
+  box-shadow: var(--shadow-hover);
+}
+
+.member-card:hover .member-photo img {
+  transform: scale(1.025);
+}
+
+.member-card:hover .member-arrow {
+  color: var(--color-cau-green);
+  transform: translateX(3px);
 }
 
 .news-card {
@@ -1157,6 +1246,10 @@ onUnmounted(() => {
   .member-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .member-card {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
@@ -1227,14 +1320,32 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .member-card {
-    grid-template-columns: 56px minmax(0, 1fr);
-    min-height: 112px;
+  .team-heading-row {
+    display: block;
+    margin-bottom: 24px;
   }
 
-  .member-card img {
-    width: 56px;
-    height: 56px;
+  .team-all-link {
+    margin-top: 16px;
+    margin-bottom: 0;
+  }
+
+  .member-card {
+    grid-template-columns: 92px minmax(0, 1fr);
+    min-height: 126px;
+  }
+
+  .member-photo {
+    min-height: 126px;
+  }
+
+  .member-info {
+    gap: 6px;
+    padding: 15px 14px;
+  }
+
+  .member-info h3 {
+    font-size: 17px;
   }
 
   .join-card {

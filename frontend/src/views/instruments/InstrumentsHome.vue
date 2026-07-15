@@ -136,10 +136,12 @@ const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
 const instruments = ref<Instrument[]>([])
-const keyword = ref('')
-const statusFilter = ref('')
-const instrumentPage = ref(1)
-const instrumentPageSize = ref(12)
+const queryText = (value: unknown) => typeof value === 'string' ? value : ''
+const queryNumber = (value: unknown, fallback: number) => Math.max(1, Number.parseInt(queryText(value), 10) || fallback)
+const keyword = ref(queryText(route.query.q))
+const statusFilter = ref(queryText(route.query.status))
+const instrumentPage = ref(queryNumber(route.query.page, 1))
+const instrumentPageSize = ref([12, 24, 48].includes(queryNumber(route.query.size, 12)) ? queryNumber(route.query.size, 12) : 12)
 const formVisible = ref(false)
 const saving = ref(false)
 const editingInstrumentId = ref<number | null>(null)
@@ -251,7 +253,8 @@ function openEditFromQuery() {
   const target = instruments.value.find((item) => item.id === editId)
   if (target) {
     openEdit(target)
-    void router.replace({ name: 'instruments-home' })
+    const { edit: _edit, ...query } = route.query
+    void router.replace({ name: 'instruments-home', query })
   }
 }
 
@@ -318,7 +321,16 @@ async function saveInstrument() {
 }
 
 function goDetail(id: number) {
-  void router.push({ name: 'instrument-detail', params: { id } })
+  void router.push({ name: 'instrument-detail', params: { id }, query: { from: route.fullPath } })
+}
+
+function syncInstrumentQuery() {
+  const query: Record<string, string> = {}
+  if (keyword.value.trim()) query.q = keyword.value.trim()
+  if (statusFilter.value) query.status = statusFilter.value
+  if (instrumentPage.value > 1) query.page = String(instrumentPage.value)
+  if (instrumentPageSize.value !== 12) query.size = String(instrumentPageSize.value)
+  void router.replace({ name: 'instruments-home', query })
 }
 
 function statusClass(status: string) {
@@ -345,11 +357,15 @@ onMounted(async () => {
 
 watch([keyword, statusFilter], () => {
   instrumentPage.value = 1
+  syncInstrumentQuery()
 })
 
 watch(instrumentPageSize, () => {
   instrumentPage.value = 1
+  syncInstrumentQuery()
 })
+
+watch(instrumentPage, syncInstrumentQuery)
 
 watch(instrumentTotalPages, clampInstrumentPage)
 </script>

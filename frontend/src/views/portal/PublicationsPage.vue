@@ -39,7 +39,7 @@
               </select>
               <button type="button" @click="loadPapers(1)">检索</button>
             </div>
-            <RouterLink v-for="paper in papers" :key="paper.id" class="paper-row" :to="`/publications/${paper.id}`">
+            <RouterLink v-for="paper in papers" :key="paper.id" class="paper-row" :to="{ path: `/publications/${paper.id}`, query: { from: route.fullPath } }">
               <time>{{ paper.year }}</time>
               <div>
                 <h3>{{ paper.title }}</h3>
@@ -59,14 +59,14 @@
             <div class="block-heading">
               <div>
                 <h2>科研项目</h2>
-                <p>{{ projectTotal }} 项公开项目，门户仅展示项目名称、编号、来源和状态</p>
+                <p>{{ projectTotal }} 项公开项目，可按项目名称、编号、来源或负责人检索</p>
               </div>
             </div>
             <div class="result-tools two">
               <input v-model="projectKeyword" type="search" placeholder="搜索项目名称、编号、来源或负责人" @keyup.enter="loadProjects(1)" />
               <button type="button" @click="loadProjects(1)">检索</button>
             </div>
-            <RouterLink v-for="project in projects" :key="project.id" class="simple-card" :to="`/publications/projects/${project.id}`">
+            <RouterLink v-for="project in projects" :key="project.id" class="simple-card" :to="{ path: `/publications/projects/${project.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ project.title }}</h3>
                 <p>{{ project.description || project.funding_source || '项目说明待补充' }}</p>
@@ -101,7 +101,7 @@
               <input v-model="patentKeyword" type="search" placeholder="搜索专利名称、专利号或发明人" @keyup.enter="loadPatents(1)" />
               <button type="button" @click="loadPatents(1)">检索</button>
             </div>
-            <RouterLink v-for="patent in patents" :key="patent.id" class="simple-card" :to="`/publications/patents/${patent.id}`">
+            <RouterLink v-for="patent in patents" :key="patent.id" class="simple-card" :to="{ path: `/publications/patents/${patent.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ patent.title }}</h3>
                 <p>{{ patent.inventors || '发明人待补充' }}</p>
@@ -125,14 +125,14 @@
             <div class="block-heading">
               <div>
                 <h2>获奖成果</h2>
-                <p>{{ awardTotal }} 项公开获奖，可按奖项名称、等级、参与人员检索</p>
+                <p>{{ awardTotal }} 项公开获奖，可按奖项名称、等级或参与人员检索</p>
               </div>
             </div>
             <div class="result-tools two">
               <input v-model="awardKeyword" type="search" placeholder="搜索奖项名称、等级或参与人员" @keyup.enter="loadAwards(1)" />
               <button type="button" @click="loadAwards(1)">检索</button>
             </div>
-            <RouterLink v-for="award in awards" :key="award.id" class="simple-card" :to="`/publications/awards/${award.id}`">
+            <RouterLink v-for="award in awards" :key="award.id" class="simple-card" :to="{ path: `/publications/awards/${award.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ award.title }}</h3>
                 <p>{{ award.description || award.participants || '奖项说明待补充' }}</p>
@@ -159,6 +159,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   fetchPatentPage,
@@ -177,7 +178,13 @@ import PortalLayout from '../../layouts/PortalLayout.vue'
 type TabKey = 'papers' | 'projects' | 'patents' | 'awards'
 
 const pageSize = 10
-const activeTab = ref<TabKey>('papers')
+const route = useRoute()
+const router = useRouter()
+const tabKeys: TabKey[] = ['papers', 'projects', 'patents', 'awards']
+const queryTab = typeof route.query.tab === 'string' && tabKeys.includes(route.query.tab as TabKey) ? route.query.tab as TabKey : 'papers'
+const queryPage = Math.max(1, Number.parseInt(typeof route.query.page === 'string' ? route.query.page : '', 10) || 1)
+const queryKeyword = typeof route.query.q === 'string' ? route.query.q : ''
+const activeTab = ref<TabKey>(queryTab)
 const stats = ref<PublicationStats | null>(null)
 
 const papers = ref<Publication[]>([])
@@ -185,16 +192,16 @@ const projects = ref<Project[]>([])
 const patents = ref<Patent[]>([])
 const awards = ref<Award[]>([])
 
-const paperKeyword = ref('')
-const projectKeyword = ref('')
-const patentKeyword = ref('')
-const awardKeyword = ref('')
-const paperYear = ref<number | ''>('')
+const paperKeyword = ref(queryTab === 'papers' ? queryKeyword : '')
+const projectKeyword = ref(queryTab === 'projects' ? queryKeyword : '')
+const patentKeyword = ref(queryTab === 'patents' ? queryKeyword : '')
+const awardKeyword = ref(queryTab === 'awards' ? queryKeyword : '')
+const paperYear = ref<number | ''>(queryTab === 'papers' && typeof route.query.year === 'string' ? Number(route.query.year) || '' : '')
 
-const paperPage = ref(1)
-const projectPage = ref(1)
-const patentPage = ref(1)
-const awardPage = ref(1)
+const paperPage = ref(queryTab === 'papers' ? queryPage : 1)
+const projectPage = ref(queryTab === 'projects' ? queryPage : 1)
+const patentPage = ref(queryTab === 'patents' ? queryPage : 1)
+const awardPage = ref(queryTab === 'awards' ? queryPage : 1)
 const paperTotal = ref(0)
 const projectTotal = ref(0)
 const patentTotal = ref(0)
@@ -233,6 +240,17 @@ const Pager = defineComponent({
   },
 })
 
+function syncActiveQuery() {
+  const pages = { papers: paperPage.value, projects: projectPage.value, patents: patentPage.value, awards: awardPage.value }
+  const keywords = { papers: paperKeyword.value, projects: projectKeyword.value, patents: patentKeyword.value, awards: awardKeyword.value }
+  const query: Record<string, string> = {}
+  if (activeTab.value !== 'papers') query.tab = activeTab.value
+  if (pages[activeTab.value] > 1) query.page = String(pages[activeTab.value])
+  if (keywords[activeTab.value].trim()) query.q = keywords[activeTab.value].trim()
+  if (activeTab.value === 'papers' && paperYear.value) query.year = String(paperYear.value)
+  void router.replace({ path: '/publications', query })
+}
+
 async function loadPapers(page = paperPage.value) {
   paperPage.value = page
   const data = await fetchPublicationPage({
@@ -243,6 +261,7 @@ async function loadPapers(page = paperPage.value) {
   })
   papers.value = data.results
   paperTotal.value = data.count
+  if (activeTab.value === 'papers') syncActiveQuery()
 }
 
 async function loadProjects(page = projectPage.value) {
@@ -250,6 +269,7 @@ async function loadProjects(page = projectPage.value) {
   const data = await fetchProjectPage({ page, page_size: pageSize, search: projectKeyword.value.trim() || undefined })
   projects.value = data.results
   projectTotal.value = data.count
+  if (activeTab.value === 'projects') syncActiveQuery()
 }
 
 async function loadPatents(page = patentPage.value) {
@@ -257,6 +277,7 @@ async function loadPatents(page = patentPage.value) {
   const data = await fetchPatentPage({ page, page_size: pageSize, search: patentKeyword.value.trim() || undefined })
   patents.value = data.results
   patentTotal.value = data.count
+  if (activeTab.value === 'patents') syncActiveQuery()
 }
 
 async function loadAwards(page = awardPage.value) {
@@ -264,9 +285,11 @@ async function loadAwards(page = awardPage.value) {
   const data = await fetchAwardPage({ page, page_size: pageSize, search: awardKeyword.value.trim() || undefined })
   awards.value = data.results
   awardTotal.value = data.count
+  if (activeTab.value === 'awards') syncActiveQuery()
 }
 
 watch(activeTab, async (tab) => {
+  syncActiveQuery()
   if (tab === 'projects' && !projects.value.length) await loadProjects(1)
   if (tab === 'patents' && !patents.value.length) await loadPatents(1)
   if (tab === 'awards' && !awards.value.length) await loadAwards(1)
@@ -274,10 +297,10 @@ watch(activeTab, async (tab) => {
 
 onMounted(async () => {
   const [paperData, projectData, patentData, awardData, statData] = await Promise.allSettled([
-    loadPapers(1),
-    loadProjects(1),
-    loadPatents(1),
-    loadAwards(1),
+    loadPapers(paperPage.value),
+    loadProjects(projectPage.value),
+    loadPatents(patentPage.value),
+    loadAwards(awardPage.value),
     fetchPublicationStats(),
   ])
   if (statData.status === 'fulfilled') stats.value = statData.value

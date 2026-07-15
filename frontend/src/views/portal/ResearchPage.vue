@@ -23,18 +23,20 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { fetchResearchDirections, type ResearchDirection } from '../../api/publicPortal'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const directions = ref<ResearchDirection[]>([])
+const route = useRoute()
 
 const displayDirections = computed(() =>
   directions.value.map((item, index) => ({
     index: `0${index + 1}`,
     title: item.title,
     summary: item.summary || '研究方向简介待补充。',
-    to: `/research/${item.slug}`,
+    to: { path: `/research/${item.slug}`, query: { from: route.fullPath } },
   })),
 )
 

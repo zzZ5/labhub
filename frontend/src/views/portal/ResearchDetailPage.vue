@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" to="/research">返回研究方向</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回研究方向</RouterLink>
         <p class="section-kicker">研究方向</p>
         <h1>{{ direction?.title || '研究方向' }}</h1>
         <p>{{ direction?.summary || '研究方向简介待补充。' }}</p>
@@ -34,9 +34,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchResearchDirection, type ResearchDirection } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/research')
 const direction = ref<ResearchDirection | null>(null)
 
 const contentParagraphs = computed(() =>

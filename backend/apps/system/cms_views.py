@@ -1,6 +1,8 @@
+import logging
 from uuid import uuid4
 
 from django.core.files.base import ContentFile
+from django.conf import settings
 from django.utils.text import slugify
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -21,6 +23,8 @@ from apps.publications.models import Award, Patent, Project, Publication
 from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
 
 from .cms_importers import import_rows
+
+logger = logging.getLogger(__name__)
 
 
 class CmsParserMixin:
@@ -95,8 +99,10 @@ class CmsMemberViewSet(CmsParserMixin, viewsets.ModelViewSet):
             result = import_rows(upload, upload.name, "members")
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response({"detail": "导入失败，请检查模板列名和日期格式。"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Member import failed")
+            detail = f"导入失败：{exc}" if settings.DEBUG else "导入失败，请检查模板列名和日期格式。"
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)
 
 
@@ -301,8 +307,10 @@ def import_cms_file(request, kind: str, missing_message: str):
         result = import_rows(upload, upload.name, kind)
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception:
-        return Response({"detail": "导入失败，请检查模板列名、日期格式和必填字段。"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        logger.exception("CMS import failed: %s", kind)
+        detail = f"导入失败：{exc}" if settings.DEBUG else "导入失败，请检查模板列名、日期格式和必填字段。"
+        return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
     return Response(result)
 
 

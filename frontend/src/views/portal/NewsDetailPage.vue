@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="news-detail-head">
       <div class="container detail-head-grid">
-        <RouterLink class="back-link portal-back-link" to="/news">返回新闻活动</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回新闻活动</RouterLink>
         <div>
           <p class="section-kicker">{{ article?.category?.name || '新闻活动' }}</p>
           <h1>{{ article?.title || '新闻活动' }}</h1>
@@ -66,9 +66,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchNewsArticle, type NewsArticle } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/news')
 const article = ref<NewsArticle | null>(null)
 
 const detailGalleryImages = computed(() => {

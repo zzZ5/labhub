@@ -3,24 +3,29 @@
     <section class="portal-page-head">
       <div class="container">
         <h1>团队成员</h1>
-        <p>课题组由不同阶段的师生和合作成员共同组成，展示成员信息、研究兴趣与团队协作网络。</p>
+        <p>汇聚不同研究背景的师生，在开放交流与协作实践中共同推进科研工作。</p>
       </div>
     </section>
     <section class="page-section">
       <div class="container">
         <div class="team-filter card">
-          <el-input v-model="keyword" clearable placeholder="搜索姓名、研究方向、邮箱" />
+          <el-input v-model="keyword" clearable placeholder="搜索姓名、头衔或研究方向">
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
           <el-select v-model="roleFilter" clearable placeholder="身份头衔">
             <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
           </el-select>
-          <span>{{ filteredMembers.length }} / {{ displayMembers.length }} 人</span>
+          <span class="result-count">{{ filteredMembers.length }} 位成员</span>
         </div>
         <div class="member-grid">
           <RouterLink v-for="member in pagedMembers" :key="member.name" class="card member-card" :to="member.to">
-            <img :src="member.avatar" :alt="member.name" />
-            <div>
-              <h2>{{ member.name }}</h2>
-              <span class="status-tag normal">{{ member.role_label || '团队成员' }}</span>
+            <div class="member-photo"><img :src="member.avatar || '/site-icon.png'" :alt="member.name" /></div>
+            <div class="member-content">
+              <div class="member-name-row">
+                <h2>{{ member.name }}</h2>
+                <ArrowRight />
+              </div>
+              <span class="member-role">{{ member.role_label || '团队成员' }}</span>
               <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
               <small v-if="member.email">{{ member.email }}</small>
             </div>
@@ -28,10 +33,9 @@
         </div>
         <div v-if="!filteredMembers.length" class="card empty-panel">暂无公开团队成员，请在内部平台“门户内容”中维护。</div>
         <div v-if="totalPages > 1" class="team-pager">
-          <span class="pager-summary">共 {{ filteredMembers.length }} 人</span>
-          <button type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
+          <button type="button" :disabled="page === 1" @click="setPage(page - 1)">上一页</button>
           <strong>{{ page }} / {{ totalPages }} 页</strong>
-          <button type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
+          <button type="button" :disabled="page === totalPages" @click="setPage(page + 1)">下一页</button>
         </div>
       </div>
     </section>
@@ -40,19 +44,25 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ArrowRight, Search } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { fetchMembers, type Member } from '../../api/publicPortal'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const members = ref<Member[]>([])
-const keyword = ref('')
-const roleFilter = ref('')
-const page = ref(1)
+const route = useRoute()
+const router = useRouter()
+const queryText = (value: unknown) => typeof value === 'string' ? value : ''
+const queryPage = (value: unknown) => Math.max(1, Number.parseInt(queryText(value), 10) || 1)
+const keyword = ref(queryText(route.query.q))
+const roleFilter = ref(queryText(route.query.role))
+const page = ref(queryPage(route.query.page))
 const pageSize = 12
 
 const displayMembers = computed(() => members.value.map((member) => ({
   ...member,
-  to: member.id ? `/team/${member.id}` : '/team',
+  to: member.id ? { path: `/team/${member.id}`, query: { from: route.fullPath } } : '/team',
 })))
 const roleOptions = computed(() => {
   const map = new Map<string, string>()
@@ -81,9 +91,24 @@ onMounted(async () => {
   }
 })
 
+function syncQuery() {
+  const query: Record<string, string> = {}
+  if (page.value > 1) query.page = String(page.value)
+  if (keyword.value.trim()) query.q = keyword.value.trim()
+  if (roleFilter.value) query.role = roleFilter.value
+  void router.replace({ path: '/team', query })
+}
+
+function setPage(value: number) {
+  page.value = Math.min(Math.max(1, value), totalPages.value)
+}
+
 watch([keyword, roleFilter], () => {
   page.value = 1
+  syncQuery()
 })
+
+watch(page, syncQuery)
 
 watch(totalPages, (total) => {
   if (page.value > total) page.value = total
@@ -145,57 +170,115 @@ watch(totalPages, (total) => {
   grid-template-columns: minmax(0, 1fr) 180px auto;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
-  padding: 14px;
+  margin-bottom: 24px;
+  border-color: rgba(31, 61, 43, 0.09);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.86);
   box-shadow: none;
 }
 
-.team-filter span {
+.result-count {
+  min-width: 84px;
   color: var(--color-muted);
   font-size: 14px;
+  text-align: right;
   white-space: nowrap;
 }
 
 .member-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
 .member-card {
   display: grid;
-  grid-template-columns: 58px 1fr;
-  gap: 15px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  min-height: 160px;
+  overflow: hidden;
   border-color: rgba(31, 61, 43, 0.1);
-  padding: 22px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.96);
   color: inherit;
   text-decoration: none;
-  box-shadow: none;
+  box-shadow: var(--shadow-soft);
 }
 
-.member-card img {
-  width: 58px;
-  height: 58px;
-  border-radius: 14px;
+.member-photo {
+  min-height: 160px;
+  overflow: hidden;
+  background: var(--color-panel-strong);
+}
+
+.member-photo img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center top;
+  transition: transform 240ms ease;
+}
+
+.member-content {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 18px 16px;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.member-name-row svg {
+  width: 17px;
+  flex: 0 0 auto;
+  color: rgba(0, 135, 60, 0.5);
+  transition: transform 180ms ease;
 }
 
 .member-card h2 {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--color-deep-green);
   font-size: 19px;
 }
 
+.member-role {
+  color: var(--color-cau-green);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .member-card p {
-  margin: 10px 0 0;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
   color: var(--color-muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .member-card small {
   display: block;
-  margin-top: 10px;
-  color: var(--color-cau-green);
+  overflow: hidden;
+  color: var(--color-blue-gray);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-card:hover .member-photo img {
+  transform: scale(1.025);
+}
+
+.member-card:hover .member-name-row svg {
+  transform: translateX(3px);
 }
 
 .team-pager {
@@ -207,13 +290,6 @@ watch(totalPages, (total) => {
   margin-top: 22px;
   color: var(--color-muted);
   font-size: 14px;
-}
-
-.team-pager .pager-summary {
-  width: 100%;
-  color: var(--color-text);
-  text-align: center;
-  font-weight: 650;
 }
 
 .team-pager strong {
@@ -254,6 +330,23 @@ watch(totalPages, (total) => {
 
   .team-filter {
     grid-template-columns: 1fr;
+  }
+
+  .result-count {
+    text-align: left;
+  }
+
+  .member-card {
+    grid-template-columns: 94px minmax(0, 1fr);
+    min-height: 132px;
+  }
+
+  .member-photo {
+    min-height: 132px;
+  }
+
+  .member-content {
+    padding: 15px 14px;
   }
 }
 </style>

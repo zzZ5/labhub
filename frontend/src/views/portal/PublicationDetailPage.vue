@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="detail-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" to="/publications">返回科研成果</RouterLink>
+        <RouterLink class="back-link portal-back-link" :to="returnTo">返回科研成果</RouterLink>
         <p class="section-kicker">论文详情</p>
         <h1>{{ paper?.title || '论文详情' }}</h1>
         <div class="tags">
@@ -45,7 +45,7 @@
               <dt>分区</dt>
               <dd>{{ [paper?.jcr_partition, paper?.cas_partition].filter(Boolean).join(' / ') }}</dd>
             </div>
-            <div v-if="paper?.impact_factor">
+            <div v-if="Number(paper?.impact_factor) > 0">
               <dt>影响因子</dt>
               <dd>{{ paper.impact_factor }}</dd>
             </div>
@@ -68,9 +68,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchPublication, type Publication } from '../../api/publicPortal'
+import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const route = useRoute()
+const returnTo = usePortalReturn('/publications')
 const paper = ref<Publication | null>(null)
 
 const doiUrl = computed(() => {
