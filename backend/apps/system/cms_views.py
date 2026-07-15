@@ -22,7 +22,7 @@ from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer,
 from apps.publications.models import Award, Patent, Project, Publication
 from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
 
-from .cms_importers import import_rows
+from .cms_importers import import_rows, parse_publication_citation
 
 logger = logging.getLogger(__name__)
 
@@ -263,6 +263,15 @@ class CmsPublicationViewSet(CmsParserMixin, viewsets.ModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
     permission_classes = [CanManagePortalContent]
+
+    @action(detail=False, methods=["post"], url_path="parse-citation")
+    def parse_citation(self, request):
+        citation = str(request.data.get("citation", "")).strip()
+        if not citation:
+            return Response({"detail": "请填写论文引文。"}, status=status.HTTP_400_BAD_REQUEST)
+        parsed = parse_publication_citation(citation)
+        missing = [field for field in ("authors", "title", "journal", "year") if not parsed.get(field)]
+        return Response({**parsed, "complete": not missing, "missing_fields": missing})
 
     @action(detail=False, methods=["post"], url_path="import-file")
     def import_file(self, request):

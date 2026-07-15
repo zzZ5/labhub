@@ -1427,110 +1427,27 @@ function applyPublicationPreview(parsed: Partial<PublicationPreview>, writeForm 
   })
 }
 
-function parsePublicationCitation(showMessage = true) {
+async function parsePublicationCitation(showMessage = true) {
   const citation = String(publicationForm.citation_text || '').replace(/\s+/g, ' ').trim()
   if (!citation) {
     clearPublicationPreview()
     if (showMessage) ElMessage.warning('请先填写 GB/T 7714-2025 格式引文。')
     return false
   }
-  const parsed = splitPublicationCitation(citation)
+  let parsed
+  try {
+    parsed = await cmsApi.parsePublicationCitation(citation)
+  } catch (error: any) {
+    if (showMessage) ElMessage.error(uploadErrorMessage(error, '引文拆分失败，请稍后重试。'))
+    return false
+  }
   applyPublicationPreview(parsed)
-  if (!parsed.title || !parsed.authors || !parsed.journal || !parsed.year) {
-    if (showMessage) ElMessage.warning('拆分结果不完整，请检查引文中的作者、题名、期刊和年份。')
+  if (!parsed.complete) {
+    if (showMessage) ElMessage.warning('拆分结果不完整，请检查预览后补充缺失信息。')
     return false
   }
   if (showMessage) ElMessage.success('已拆分，请检查预览结果后保存。')
   return true
-}
-
-function splitPublicationCitation(citation: string) {
-  const text = citation.replace(/^\[\d+\]\s*/, '').replace(/\s+/g, ' ').trim()
-  const doiMatch = text.match(/\bdoi[:：]?\s*(10\.\S+)/i)
-  const doi = doiMatch?.[1]?.replace(/[.。]$/, '') || ''
-  const withoutDoi = text.replace(/\bdoi[:：]?\s*10\.\S+/i, '').replace(/[.。]\s*$/, '').trim()
-  const trailingYear = withoutDoi.match(/(?:[.,;]\s*|\s+)((?:19|20)\d{2})[a-z]?\s*$/i)
-  if (trailingYear && trailingYear.index !== undefined) {
-    const body = withoutDoi.slice(0, trailingYear.index).replace(/[.,;\s]+$/, '').trim()
-    const authorSeparator = body.indexOf('. ')
-    if (authorSeparator > 0) {
-      const authors = body.slice(0, authorSeparator).replace(/[.\s]+$/, '').trim()
-      const remainder = body.slice(authorSeparator + 2).replace(/[.\s]+$/, '').trim()
-      const parts = remainder.split(',').map((part) => part.trim())
-      const pages = parts.at(-1) || ''
-      const volumeIssue = parts.at(-2) || ''
-      const journal = parts.at(-3) || ''
-      const title = parts.slice(0, -3).join(', ').trim()
-      const volumeMatch = volumeIssue.match(/^(\d+)(?:\(([^)]+)\))?$/)
-      const pagesMatch = pages.match(/^(?:[A-Za-z]?\d+)(?:\s*[-–—]\s*(?:[A-Za-z]?\d+))?$/i)
-      if (title && journal && volumeMatch && pagesMatch) {
-        return {
-          authors,
-          title,
-          journal,
-          year: Number(trailingYear[1]),
-          volume: volumeMatch[1],
-          issue: volumeMatch[2] || '',
-          pages: pages.replace(/\s*[-–—]\s*/g, '-'),
-          doi,
-        }
-      }
-    }
-  }
-  const yearMatch = withoutDoi.match(/\b(19\d{2}|20\d{2})[a-z]?\b/i)
-  const year = yearMatch ? Number(yearMatch[1]) : undefined
-  let authors = ''
-  let title = ''
-  let journalMeta = ''
-  if (yearMatch) {
-    const beforeYear = withoutDoi.slice(0, yearMatch.index).replace(/[.。,，]\s*$/, '').trim()
-    const afterYear = withoutDoi.slice((yearMatch.index || 0) + yearMatch[0].length).replace(/^[,，.。]\s*/, '').trim()
-    const yearIsAfterAuthors = /\b(19\d{2}|20\d{2})[a-z]?\.\s+/i.test(withoutDoi)
-    if (yearIsAfterAuthors) {
-      authors = beforeYear
-      const titleParts = afterYear.split(/\.\s+|。\s*/)
-      title = titleParts.shift()?.trim() || ''
-      journalMeta = titleParts.join('. ').trim()
-    } else {
-      const parts = beforeYear.split(/\.\s+|。\s*/).map((part) => part.replace(/[.。,，]\s*$/, '').trim()).filter(Boolean)
-      if (parts.length >= 3) {
-        authors = parts.slice(0, -2).join('. ')
-        title = parts[parts.length - 2]
-        journalMeta = [parts[parts.length - 1], afterYear].filter(Boolean).join(', ')
-      } else if (parts.length === 2) {
-        authors = parts[0]
-        title = parts[1]
-        journalMeta = afterYear
-      } else {
-        title = beforeYear || afterYear
-      }
-    }
-  } else {
-    title = withoutDoi
-  }
-  const parsedMeta = parsePublicationJournalMeta(journalMeta)
-
-  return {
-    authors,
-    title,
-    journal: parsedMeta.journal,
-    year,
-    volume: parsedMeta.volume,
-    issue: parsedMeta.issue,
-    pages: parsedMeta.pages,
-    doi,
-  }
-}
-
-function parsePublicationJournalMeta(value: string) {
-  const normalized = value.replace(/[.。]\s*$/, '').trim()
-  const match = normalized.match(/^(?<journal>.+?)[\.,。]\s*(?:19\d{2}|20\d{2})?[a-z]?\s*[,，]?\s*(?<volume>\d+)(?:\((?<issue>[^)]+)\))?(?:\s*[:：,，]\s*|\s+)?(?<pages>[A-Za-z]?\d+(?:[-–—]\d+)?|e\d+)?$/i)
-  return {
-    journal: (match?.groups?.journal || normalized).trim(),
-    volume: match?.groups?.volume || '',
-    issue: match?.groups?.issue || '',
-    pages: (match?.groups?.pages || '').replace(/[–—]/g, '-'),
-  }
 }
 
 function formatPublicationCitation(item: Publication) {
@@ -1547,7 +1464,7 @@ function publicationPayload() {
 }
 
 async function savePublication() {
-  const parsed = parsePublicationCitation(false)
+  const parsed = await parsePublicationCitation(false)
   if (!parsed) {
     ElMessage.warning('请先点击“拆分并预览”，确认结果后再保存。')
     return

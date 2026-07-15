@@ -32,6 +32,29 @@ def test_parse_publication_citation_with_trailing_year():
     }
 
 
+@pytest.mark.django_db
+def test_editor_can_parse_publication_citation(client):
+    make_user("citation-editor", RoleCode.EDITOR)
+    client.login(username="citation-editor", password="pass12345")
+    citation = (
+        "Zhao, B., Shi, J., Zhao, R., Gao, S., Li, Y., Zhang, Y., Wei, Y., Guo, Y. "
+        "Constructing CRISPR-Cas9 system for metabolic reprogramming and cordycepin "
+        "biomanufacturing in Pichia pastoris, Bioresource Technology, 436, 132967. 2025"
+    )
+
+    response = client.post(
+        reverse("cms-publication-parse-citation"),
+        {"citation": citation},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["complete"] is True
+    assert response.json()["journal"] == "Bioresource Technology"
+    assert response.json()["volume"] == "436"
+    assert response.json()["pages"] == "132967"
+
+
 def make_user(username, role_code):
     user = User.objects.create_user(username=username, password="pass12345")
     user.profile.is_approved = True

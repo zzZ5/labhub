@@ -76,6 +76,19 @@ export interface CmsImportResult {
   total: number
 }
 
+export interface ParsedPublicationCitation {
+  authors: string
+  title: string
+  journal: string
+  year: string
+  volume: string
+  issue: string
+  pages: string
+  doi: string
+  complete: boolean
+  missing_fields: string[]
+}
+
 async function importFile(resource: CmsResource, file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
   formData.append('file', file)
@@ -141,6 +154,10 @@ export const cmsApi = {
   deleteNewsImage: (id: number) => remove('news-images', id),
 
   listPublications: () => list<Publication>('publications'),
+  parsePublicationCitation: async (citation: string) => {
+    const response = await http.post<ParsedPublicationCitation>('/cms/publications/parse-citation/', { citation })
+    return response.data
+  },
   createPublication: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<Publication>('publications', payload, onUploadProgress),
   updatePublication: (id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => update<Publication>('publications', id, payload, onUploadProgress),
   deletePublication: (id: number) => remove('publications', id),
