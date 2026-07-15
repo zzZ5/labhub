@@ -194,8 +194,13 @@ def read_rows_from_excel(file_obj: BinaryIO) -> tuple[list[dict[str, str]], list
     else:
         sheet = workbook.worksheets[0]
     headers = [clean_cell(value) for value in next(sheet.iter_rows(min_row=1, max_row=1, values_only=True))]
-    rows = [row_dict(headers, values) for values in sheet.iter_rows(min_row=2, values_only=True)]
-    rows = [row for row in rows if any(row.values())]
+    rows = []
+    for row_number, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        row = row_dict(headers, values)
+        if not any(row.values()):
+            continue
+        row["__row_number__"] = str(row_number)
+        rows.append(row)
 
     images: list[ImportImage] = []
     for index, image in enumerate(getattr(sheet, "_images", []), start=1):
@@ -280,10 +285,13 @@ def import_members(rows: list[dict[str, str]], image_lookup: dict[int, ImportIma
         member, was_created = Member.objects.update_or_create(defaults=defaults, **lookup)
         created += int(was_created)
         updated += int(not was_created)
-        image = image_lookup.get(index)
+        source_row = parse_int(row.get("__row_number__", ""), default=index)
+        image = image_lookup.get(source_row)
         if image:
             member.avatar.save(f"{slugify(name, allow_unicode=True) or 'member'}-{image.filename}", ContentFile(image.content), save=True)
             images += 1
+        elif get_value(row, "头像", "avatar").strip().lower() in {"清空", "删除", "remove", "clear"} and member.avatar:
+            member.avatar.delete(save=True)
     return {"created": created, "updated": updated, "skipped": skipped, "images": images, "total": len(rows)}
 
 
@@ -398,7 +406,8 @@ def import_awards(rows: list[dict[str, str]], image_lookup: dict[int, ImportImag
         award, was_created = upsert_record(Award, lookup, defaults)
         created += int(was_created)
         updated += int(not was_created)
-        image = image_lookup.get(index)
+        source_row = parse_int(row.get("__row_number__", ""), default=index)
+        image = image_lookup.get(source_row)
         if image:
             award.image.save(f"{slugify(title, allow_unicode=True) or 'award'}-{image.filename}", ContentFile(image.content), save=True)
             images += 1

@@ -15,7 +15,14 @@ from apps.instruments.serializers import InstrumentCategorySerializer
 from apps.members.models import Member
 from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
-from apps.news.serializers import NewsCategorySerializer, NewsImageSerializer, extract_docx_images, parse_docx_blocks, render_docx_blocks
+from apps.news.serializers import (
+    NewsCategorySerializer,
+    NewsImageSerializer,
+    extract_docx_images,
+    parse_docx_blocks,
+    render_docx_blocks,
+    sanitize_news_html,
+)
 from apps.system.uploads import validate_upload_size
 from apps.portal.models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
 from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer, ResearchDirectionSerializer, SiteSettingSerializer
@@ -137,6 +144,7 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
             "content",
             "cover_image",
             "word_file",
+            "word_html",
             "category",
             "category_id",
             "images",
@@ -148,7 +156,10 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "word_html", "created_at", "updated_at"]
+
+    def validate_content(self, value):
+        return sanitize_news_html(value)
 
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
@@ -163,10 +174,14 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data.pop("slug", None)
         has_new_word_file = "word_file" in validated_data
+        has_new_content = "content" in validated_data
         self._validate_word_file(validated_data)
         article = super().update(instance, validated_data)
         if has_new_word_file and article.word_file:
             self._sync_word_images(article)
+        elif has_new_content and article.word_html:
+            article.word_html = ""
+            article.save(update_fields=["word_html", "updated_at"])
         return article
 
     def _validate_word_file(self, validated_data):
@@ -177,29 +192,6 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         filename = getattr(word_file, "name", "")
         if not filename.lower().endswith(".docx"):
             raise serializers.ValidationError({"word_file": "请上传 .docx 格式的 Word 文档。"})
-
-    def _sync_word_images(self, article):
-        NewsImage.objects.filter(article=article, caption__startswith="Word 图片").delete()
-        try:
-            with article.word_file.open("rb") as file_obj:
-                images = extract_docx_images(file_obj)
-        except Exception:
-            return
-
-        first_image_file = None
-        for index, (filename, image_data) in enumerate(images[:20], start=1):
-            image_file = ContentFile(image_data, name=filename)
-            NewsImage.objects.create(
-                article=article,
-                image=image_file,
-                caption=f"Word 图片 {index}",
-                sort_order=index,
-            )
-            if first_image_file is None:
-                first_image_file = ContentFile(image_data, name=filename)
-
-        if first_image_file and not article.cover_image:
-            article.cover_image.save(first_image_file.name, first_image_file, save=True)
 
     def _sync_word_images(self, article):
         NewsImage.objects.filter(article=article, caption__startswith="Word ").delete()
@@ -227,8 +219,9 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
             if first_image_file is None:
                 first_image_file = ContentFile(image_data, name=filename)
 
-        article.word_html = render_docx_blocks(blocks, image_urls)
-        article.save(update_fields=["word_html", "updated_at"])
+        article.word_html = sanitize_news_html(render_docx_blocks(blocks, image_urls))
+        article.content = article.word_html
+        article.save(update_fields=["word_html", "content", "updated_at"])
 
         if first_image_file and not article.cover_image:
             article.cover_image.save(first_image_file.name, first_image_file, save=True)

@@ -217,8 +217,23 @@
                 </div>
                 <el-form-item label="研究方向"><el-input v-model="memberForm.research_direction" /></el-form-item>
                 <el-form-item label="头像">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, memberForm, 'avatar')" />
-                  <small v-if="editingMemberAvatar">当前头像：{{ displayFileLabel(editingMemberAvatar) }}</small>
+                  <div class="member-avatar-field">
+                    <div class="member-avatar-preview">
+                      <img
+                        v-if="memberAvatarPreviewUrl && !memberAvatarLoadFailed"
+                        :src="memberAvatarPreviewUrl"
+                        :alt="String(memberForm.name || '成员头像')"
+                        @error="memberAvatarLoadFailed = true"
+                      />
+                      <span v-else>{{ memberForm.name ? String(memberForm.name).slice(0, 1) : '头像' }}</span>
+                    </div>
+                    <div class="member-avatar-control">
+                      <input :key="memberAvatarInputKey" class="file-input" type="file" accept="image/*" @change="setFile($event, memberForm, 'avatar')" />
+                      <small v-if="selectedMemberAvatar">待上传：{{ selectedMemberAvatar.name }}（{{ formatFileSize(selectedMemberAvatar.size) }}）</small>
+                      <small v-else-if="editingMemberAvatar">当前头像：{{ displayFileLabel(editingMemberAvatar) }}</small>
+                      <small v-else>建议使用清晰的正方形或竖版照片。</small>
+                    </div>
+                  </div>
                 </el-form-item>
                 <el-form-item label="简介"><el-input v-model="memberForm.profile" type="textarea" :rows="4" /></el-form-item>
                 <el-form-item label="展示排序">
@@ -232,9 +247,9 @@
         </el-tab-pane>
 
         <el-tab-pane label="新闻活动" name="news">
-          <section class="editor-grid">
+          <section class="editor-grid news-editor-grid">
             <ContentList title="新闻活动" action-label="新增新闻" :items="newsRows" :active-key="editingNewsSlug" @create="resetNews" @edit="editNews" />
-            <article class="card form-panel">
+            <article class="card form-panel news-form-panel">
               <div class="form-heading">
                 <div>
                   <span>{{ editingNewsSlug ? '正在编辑' : '新增内容' }}</span>
@@ -261,22 +276,36 @@
                     </el-select>
                   </el-form-item>
                 </div>
-                <el-form-item label="摘要"><el-input v-model="newsForm.summary" type="textarea" :rows="3" /></el-form-item>
-                <el-form-item label="Word 稿件">
-                  <input :key="newsFileInputKey" class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
-                  <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
-                  <small v-else-if="editingNewsWordFile">当前 Word 稿件：{{ displayFileLabel(editingNewsWordFile) }}</small>
-                  <small>上传 .docx 后保存，新闻详情页会优先展示 Word 转 HTML 的内容；下方正文可作为不用 Word 时的备用正文。</small>
+                <el-form-item label="摘要"><el-input v-model="newsForm.summary" type="textarea" :rows="2" maxlength="260" show-word-limit /></el-form-item>
+                <el-form-item label="正文" class="news-body-field">
+                  <RichTextEditor
+                    ref="newsEditorRef"
+                    v-model="newsContent"
+                    :uploading="uploadingNewsImage"
+                    :upload-progress="newsImageUploadProgress"
+                    @image-selected="insertNewsBodyImage"
+                  />
+                  <small>插图会放在当前光标位置。上传 Word 后保存，内容会转入这里并可继续编辑。</small>
                 </el-form-item>
-                <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress">
-                  <el-progress :percentage="newsUploadProgress" :status="newsUploadProgress === 100 ? 'success' : undefined" />
-                  <span>{{ newsUploadProgress < 100 ? '正在上传新闻文件，请不要关闭页面。' : '上传完成，正在保存新闻内容。' }}</span>
+                <div class="news-assets-grid">
+                  <div class="news-asset-field">
+                    <strong>Word 稿件</strong>
+                    <input :key="newsFileInputKey" class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
+                    <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
+                    <small v-else-if="editingNewsWordFile">已上传：{{ displayFileLabel(editingNewsWordFile) }}</small>
+                    <small v-else>可选，支持 .docx 正文和内嵌图片。</small>
+                  </div>
+                  <div class="news-asset-field">
+                    <strong>封面图</strong>
+                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
+                    <small v-if="editingNewsCover">已上传：{{ displayFileLabel(editingNewsCover) }}</small>
+                    <small v-else>用于新闻列表，未上传时使用正文首图。</small>
+                  </div>
                 </div>
-                <el-form-item label="正文"><el-input v-model="newsForm.content" type="textarea" :rows="8" /></el-form-item>
-                <el-form-item label="封面图">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
-                  <small v-if="editingNewsCover">当前封面：{{ displayFileLabel(editingNewsCover) }}</small>
-                </el-form-item>
+                <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress news-save-progress">
+                  <el-progress :percentage="newsUploadProgress" :status="newsUploadProgress === 100 ? 'success' : undefined" />
+                  <span>{{ newsUploadProgress < 100 ? '正在上传并保存…' : '上传完成，正在处理正文。' }}</span>
+                </div>
                 <div class="form-two-col">
                   <el-form-item label="可见范围">
                     <el-select v-model="newsForm.visibility">
@@ -536,12 +565,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElButton, ElMessage, ElMessageBox, ElProgress } from 'element-plus'
 
-import { cmsApi, type CmsNewsArticle, type CmsNewsImage } from '../../api/cms'
+import { cmsApi, type CmsNewsArticle } from '../../api/cms'
 import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import PageJump from '../../components/PageJump.vue'
+import RichTextEditor from '../../components/RichTextEditor.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
 
@@ -654,6 +684,10 @@ const cmsUploadProgress = ref(0)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
 const newsFileInputKey = ref(0)
+const newsEditorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)
+const memberAvatarInputKey = ref(0)
+const memberAvatarObjectUrl = ref('')
+const memberAvatarLoadFailed = ref(false)
 const importProgress = ref(0)
 const importingKind = ref<CmsImportKind | ''>('')
 const memberImportInputRef = ref<HTMLInputElement | null>(null)
@@ -689,7 +723,6 @@ const editingNewsSlug = ref('')
 const editingNewsId = ref<number | null>(null)
 const editingNewsCover = ref('')
 const editingNewsWordFile = ref('')
-const editingNewsImages = ref<CmsNewsImage[]>([])
 const editingPublicationId = ref<number | null>(null)
 const editingPublicationPdf = ref('')
 const editingProjectId = ref<number | null>(null)
@@ -756,11 +789,6 @@ const newsForm = reactive<CmsForm>({
   status: 'published',
   visibility: 'public',
   is_pinned: false,
-})
-const newsImageForm = reactive({
-  file: undefined as File | undefined,
-  caption: '',
-  sort_order: 0,
 })
 const publicationForm = reactive<CmsForm>({
   citation_text: '',
@@ -865,6 +893,14 @@ const newsRows = computed<Row<CmsNewsArticle>[]>(() =>
   })),
 )
 const selectedNewsWordFile = computed(() => (newsForm.word_file instanceof File ? newsForm.word_file : null))
+const newsContent = computed({
+  get: () => String(newsForm.content || ''),
+  set: (value: string) => {
+    newsForm.content = value
+  },
+})
+const selectedMemberAvatar = computed(() => (memberForm.avatar instanceof File ? memberForm.avatar : null))
+const memberAvatarPreviewUrl = computed(() => memberAvatarObjectUrl.value || editingMemberAvatar.value)
 const publicationRows = computed<Row<Publication>[]>(() =>
   publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
 )
@@ -1016,7 +1052,18 @@ async function saveFooterContent() {
 function setFile(event: Event, form: CmsForm, field: FileField) {
   const input = event.target as HTMLInputElement
   form[field] = input.files?.[0]
+  if (form === memberForm && field === 'avatar') {
+    releaseMemberAvatarPreview()
+    const file = input.files?.[0]
+    if (file) memberAvatarObjectUrl.value = URL.createObjectURL(file)
+    memberAvatarLoadFailed.value = false
+  }
   if (form === newsForm && (field === 'word_file' || field === 'cover_image')) newsUploadProgress.value = 0
+}
+
+function releaseMemberAvatarPreview() {
+  if (memberAvatarObjectUrl.value) URL.revokeObjectURL(memberAvatarObjectUrl.value)
+  memberAvatarObjectUrl.value = ''
 }
 
 function displayFileName(value?: string | null) {
@@ -1165,8 +1212,11 @@ async function deleteResearch() {
 }
 
 function resetMember() {
+  releaseMemberAvatarPreview()
   editingMemberId.value = null
   editingMemberAvatar.value = ''
+  memberAvatarInputKey.value += 1
+  memberAvatarLoadFailed.value = false
   Object.assign(memberForm, {
     name: '',
     role_type: '',
@@ -1179,8 +1229,11 @@ function resetMember() {
 }
 
 function editMember(item: Member) {
+  releaseMemberAvatarPreview()
   editingMemberId.value = item.id
   editingMemberAvatar.value = item.avatar || ''
+  memberAvatarInputKey.value += 1
+  memberAvatarLoadFailed.value = false
   Object.assign(memberForm, {
     name: item.name,
     role_type: item.role_label || item.role_type || '',
@@ -1207,7 +1260,6 @@ function resetNews() {
   editingNewsId.value = null
   editingNewsCover.value = ''
   editingNewsWordFile.value = ''
-  editingNewsImages.value = []
   newsFileInputKey.value += 1
   newsUploadProgress.value = 0
   Object.assign(newsForm, {
@@ -1223,7 +1275,6 @@ function resetNews() {
     visibility: 'public',
     is_pinned: false,
   })
-  resetNewsImageForm()
 }
 
 function editNews(item: CmsNewsArticle) {
@@ -1231,13 +1282,12 @@ function editNews(item: CmsNewsArticle) {
   editingNewsId.value = item.id
   editingNewsCover.value = item.cover_image || ''
   editingNewsWordFile.value = item.word_file || ''
-  editingNewsImages.value = (item.images || []) as CmsNewsImage[]
   newsFileInputKey.value += 1
   newsUploadProgress.value = 0
   Object.assign(newsForm, {
     title: item.title,
     summary: item.summary || '',
-    content: item.content || '',
+    content: item.word_html || item.content || '',
     cover_image: undefined,
     word_file: undefined,
     event_date: item.event_date || '',
@@ -1279,45 +1329,49 @@ async function deleteNews() {
   await removeAfterConfirm('确定删除这条新闻吗？', () => cmsApi.deleteNews(editingNewsSlug.value), resetNews)
 }
 
-function setNewsImageFile(event: Event) {
-  const input = event.target as HTMLInputElement
-  newsImageForm.file = input.files?.[0]
-  newsImageUploadProgress.value = 0
+async function ensureNewsDraft() {
+  if (editingNewsId.value) return editingNewsId.value
+  const title = String(newsForm.title || '').trim()
+  if (!title) {
+    ElMessage.warning('请先填写新闻标题，再插入图片。')
+    return null
+  }
+  const saved = await cmsApi.createNews({
+    title,
+    summary: newsForm.summary || '',
+    content: newsForm.content || '',
+    event_date: newsForm.event_date || '',
+    location: newsForm.location || '',
+    category_id: newsForm.category_id,
+    status: 'draft',
+    visibility: newsForm.visibility || 'public',
+    is_pinned: false,
+  })
+  editingNewsId.value = saved.id
+  editingNewsSlug.value = saved.slug
+  newsForm.status = 'draft'
+  await loadAll()
+  return saved.id
 }
 
-function resetNewsImageForm() {
-  newsImageForm.file = undefined
-  newsImageForm.caption = ''
-  newsImageForm.sort_order = 0
-}
-
-async function uploadNewsImage() {
-  if (!editingNewsId.value) {
-    ElMessage.warning('请先保存新闻正文，再添加活动图片。')
-    return
-  }
-  if (!newsImageForm.file) {
-    ElMessage.warning('请选择要上传的图片。')
-    return
-  }
+async function insertNewsBodyImage(file: File) {
   uploadingNewsImage.value = true
   newsImageUploadProgress.value = 0
   try {
-    await cmsApi.createNewsImage({
-      article_id: editingNewsId.value,
-      image: newsImageForm.file,
-      caption: newsImageForm.caption,
-      sort_order: newsImageForm.sort_order,
+    const articleId = await ensureNewsDraft()
+    if (!articleId) return
+    const uploaded = await cmsApi.createNewsImage({
+      article_id: articleId,
+      image: file,
+      caption: '正文插图',
+      sort_order: 0,
     }, (event) => {
       if (!event.total) return
       newsImageUploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
     newsImageUploadProgress.value = 100
-    resetNewsImageForm()
-    await loadAll()
-    const updated = newsItems.value.find((item) => item.id === editingNewsId.value)
-    if (updated) editNews(updated)
-    ElMessage.success('活动图片已添加')
+    newsEditorRef.value?.insertImage(uploaded.image, file.name)
+    ElMessage.success('图片已插入正文，请保存新闻。')
   } catch (error: any) {
     ElMessage.error(uploadErrorMessage(error, '图片上传失败'))
   } finally {
@@ -1325,18 +1379,6 @@ async function uploadNewsImage() {
     setTimeout(() => {
       if (!uploadingNewsImage.value) newsImageUploadProgress.value = 0
     }, 800)
-  }
-}
-
-async function deleteNewsImage(id: number) {
-  try {
-    await cmsApi.deleteNewsImage(id)
-    await loadAll()
-    const updated = newsItems.value.find((item) => item.id === editingNewsId.value)
-    if (updated) editNews(updated)
-    ElMessage.success('图片已删除')
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '图片删除失败')
   }
 }
 
@@ -1718,6 +1760,7 @@ function visibilityText(visibility?: string) {
 }
 
 onMounted(loadAll)
+onBeforeUnmount(releaseMemberAvatarPreview)
 </script>
 
 <style scoped>
@@ -2023,6 +2066,102 @@ onMounted(loadAll)
   justify-content: center;
   gap: 8px;
   width: 100%;
+}
+
+.news-editor-grid {
+  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.news-form-panel {
+  min-width: 0;
+}
+
+.news-body-field :deep(.el-form-item__content) {
+  display: block;
+}
+
+.news-body-field .rich-editor {
+  width: 100%;
+}
+
+.news-assets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 2px 0 14px;
+}
+
+.news-asset-field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: #fafcfb;
+}
+
+.news-asset-field strong {
+  color: var(--color-deep-green);
+  font-size: 14px;
+}
+
+.news-asset-field small {
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.news-save-progress {
+  margin-top: 0;
+}
+
+.member-avatar-field {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: #fafcfb;
+}
+
+.member-avatar-preview {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(31, 61, 43, 0.12);
+  border-radius: 7px;
+  background: var(--color-eco-green);
+  color: var(--color-deep-green);
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.member-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.member-avatar-control {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.member-avatar-control small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .list-panel :deep(.page-size-select) {
@@ -2476,6 +2615,18 @@ onMounted(loadAll)
   .form-three-col,
   .gallery-upload {
     grid-template-columns: 1fr;
+  }
+
+  .news-assets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-avatar-field {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  .member-avatar-preview {
+    width: 84px;
   }
 
   .cms-heading {

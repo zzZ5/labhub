@@ -19,8 +19,8 @@
         <main class="card article-card">
           <img v-if="article.cover_image" class="cover-image" :src="article.cover_image" :alt="article.title" />
           <p v-if="article?.summary" class="lead">{{ article.summary }}</p>
-          <div v-if="article?.word_html" class="article-body word-body" v-html="article.word_html"></div>
-          <div v-else class="article-body">
+          <div v-if="hasRichBody" class="article-body rich-body" v-html="articleHtml"></div>
+          <div v-else class="article-body plain-body">
             <p v-for="paragraph in paragraphs" :key="paragraph">{{ paragraph }}</p>
           </div>
           <div v-if="detailGalleryImages.length" class="image-gallery">
@@ -75,12 +75,14 @@ const article = ref<NewsArticle | null>(null)
 
 const detailGalleryImages = computed(() => {
   const images = article.value?.images || []
-  if (!article.value?.word_html) return images
-  return images.filter((image) => !image.caption?.startsWith('Word'))
+  return images.filter((image) => !image.caption?.startsWith('Word') && image.caption !== '正文插图')
 })
 
+const articleHtml = computed(() => article.value?.word_html || article.value?.content || '')
+const hasRichBody = computed(() => /<[a-z][\s\S]*>/i.test(articleHtml.value))
+
 const paragraphs = computed(() => {
-  const content = article.value?.content || article.value?.summary || ''
+  const content = articleHtml.value || article.value?.summary || ''
   return content
     .split(/\n+/)
     .map((line) => line.trim())
@@ -187,7 +189,7 @@ onMounted(async () => {
   line-height: 1.9;
 }
 
-.word-body :deep(p) {
+.rich-body :deep(p) {
   margin: 0 0 18px;
   color: var(--color-text);
   font-size: 16px;
@@ -195,14 +197,49 @@ onMounted(async () => {
   white-space: pre-wrap;
 }
 
-.word-body :deep(figure) {
+.rich-body :deep(h2) {
+  margin: 32px 0 14px;
+  color: var(--color-deep-green);
+  font-size: 26px;
+  line-height: 1.45;
+}
+
+.rich-body :deep(h3) {
+  margin: 26px 0 12px;
+  color: var(--color-deep-green);
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+.rich-body :deep(ul),
+.rich-body :deep(ol) {
+  margin: 0 0 20px;
+  padding-left: 1.7em;
+  line-height: 1.9;
+}
+
+.rich-body :deep(blockquote) {
+  margin: 24px 0;
+  border-left: 3px solid var(--color-cau-green);
+  padding: 5px 0 5px 20px;
+  color: var(--color-muted);
+}
+
+.rich-body :deep(a) {
+  color: var(--color-cau-green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rich-body :deep(figure) {
   margin: 24px 0;
 }
 
-.word-body :deep(img) {
+.rich-body :deep(img) {
   display: block;
-  max-width: 100%;
+  max-width: min(100%, 920px);
   height: auto;
+  margin: 24px auto;
   border-radius: var(--radius-md);
 }
 

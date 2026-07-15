@@ -1,12 +1,14 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.accounts.models import Role, RoleCode, UserRole
 from apps.instruments.models import Instrument
+from apps.members.models import Member
 from apps.portal.models import ResearchDirection
-from apps.system.cms_importers import parse_publication_citation
+from apps.system.cms_importers import import_members, parse_publication_citation
 
 User = get_user_model()
 
@@ -30,6 +32,28 @@ def test_parse_publication_citation_with_trailing_year():
         "pages": "132967",
         "doi": "",
     }
+
+
+@pytest.mark.django_db
+def test_member_import_keeps_image_rows_and_can_clear_avatar():
+    keep = Member.objects.create(name="保留头像")
+    keep.avatar.save("keep.gif", ContentFile(b"GIF89a"), save=True)
+    clear = Member.objects.create(name="清空头像")
+    clear.avatar.save("clear.gif", ContentFile(b"GIF89a"), save=True)
+
+    result = import_members(
+        [
+            {"__row_number__": "2", "姓名": "保留头像", "头像": ""},
+            {"__row_number__": "4", "姓名": "清空头像", "头像": "清空"},
+        ],
+        {},
+    )
+
+    keep.refresh_from_db()
+    clear.refresh_from_db()
+    assert keep.avatar
+    assert not clear.avatar
+    assert result["updated"] == 2
 
 
 @pytest.mark.django_db

@@ -5,10 +5,36 @@ from zipfile import BadZipFile, ZipFile
 from xml.etree import ElementTree
 
 from rest_framework import serializers
+import bleach
+from bleach.css_sanitizer import CSSSanitizer
 
 from apps.system.serializer_fields import file_field_size
 
 from .models import NewsArticle, NewsCategory, NewsImage, NewsTag
+
+
+NEWS_HTML_TAGS = {
+    "p", "h2", "h3", "strong", "b", "em", "i", "u", "s", "strike",
+    "ul", "ol", "li", "blockquote", "a", "img", "figure", "figcaption",
+    "br", "hr",
+}
+NEWS_HTML_ATTRIBUTES = {
+    "a": ["href", "target", "rel"],
+    "img": ["src", "alt", "title", "loading"],
+    "*": ["style"],
+}
+NEWS_CSS_SANITIZER = CSSSanitizer(allowed_css_properties=["text-align"])
+
+
+def sanitize_news_html(value):
+    return bleach.clean(
+        value or "",
+        tags=NEWS_HTML_TAGS,
+        attributes=NEWS_HTML_ATTRIBUTES,
+        protocols={"http", "https", "mailto"},
+        css_sanitizer=NEWS_CSS_SANITIZER,
+        strip=True,
+    )
 
 
 class NewsCategorySerializer(serializers.ModelSerializer):
@@ -66,6 +92,8 @@ class NewsArticleSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data["content"] = sanitize_news_html(data.get("content"))
+        data["word_html"] = sanitize_news_html(data.get("word_html"))
         view = self.context.get("view")
         if getattr(view, "action", "") != "retrieve":
             data["word_html"] = ""
