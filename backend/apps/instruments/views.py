@@ -2,11 +2,9 @@ from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.accounts.models import RoleCode
-from apps.accounts.services import user_has_role
+from apps.accounts.permissions import ApprovedMemberAccess
 
 from .importers import import_instruments_from_excel
 from .models import Instrument, InstrumentCategory, InstrumentFaultReport, InstrumentMaintenanceRecord, InstrumentTrainingRecord
@@ -22,22 +20,20 @@ from .serializers import (
 class InstrumentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = InstrumentCategory.objects.all()
     serializer_class = InstrumentCategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
     lookup_field = "slug"
 
 
 def can_manage_instruments(user):
-    return bool(
-        user
-        and user.is_authenticated
-        and (user.is_superuser or user_has_role(user, RoleCode.ADMIN, RoleCode.PI, RoleCode.INSTRUMENT_MANAGER))
-    )
+    from .services import user_can_manage_instrument
+
+    return user_can_manage_instrument(user)
 
 
 class InstrumentViewSet(viewsets.ModelViewSet):
     queryset = Instrument.objects.select_related("category", "manager", "manager__profile").prefetch_related("training_records")
     serializer_class = InstrumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_queryset(self):
@@ -80,7 +76,7 @@ class InstrumentViewSet(viewsets.ModelViewSet):
 class InstrumentTrainingRecordViewSet(viewsets.ModelViewSet):
     queryset = InstrumentTrainingRecord.objects.select_related("instrument", "user", "user__profile", "trainer")
     serializer_class = InstrumentTrainingRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
 
     def perform_create(self, serializer):
         serializer.save(trainer=self.request.user)
@@ -89,7 +85,7 @@ class InstrumentTrainingRecordViewSet(viewsets.ModelViewSet):
 class InstrumentMaintenanceRecordViewSet(viewsets.ModelViewSet):
     queryset = InstrumentMaintenanceRecord.objects.select_related("instrument", "maintainer")
     serializer_class = InstrumentMaintenanceRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
 
     def perform_create(self, serializer):
         serializer.save(maintainer=self.request.user)
@@ -97,7 +93,7 @@ class InstrumentMaintenanceRecordViewSet(viewsets.ModelViewSet):
 
 class InstrumentFaultReportViewSet(viewsets.ModelViewSet):
     serializer_class = InstrumentFaultReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
 
     def get_queryset(self):
         return InstrumentFaultReport.objects.select_related("instrument", "reporter", "handled_by")

@@ -22,6 +22,7 @@ import AwardDetailPage from '../views/portal/AwardDetailPage.vue'
 import NewsPage from '../views/portal/NewsPage.vue'
 import NewsDetailPage from '../views/portal/NewsDetailPage.vue'
 import StudentsHome from '../views/students/StudentsHome.vue'
+import AccountSettings from '../views/account/AccountSettings.vue'
 import { useSessionStore } from '../stores/session'
 
 const router = createRouter({
@@ -143,16 +144,22 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/account',
+      name: 'account-settings',
+      component: AccountSettings,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/members',
       name: 'members-admin',
       component: MembersAdmin,
-      meta: { requiresAuth: true, requiredRoles: ['admin', 'pi'] },
+      meta: { requiresAuth: true, requiredRoles: ['admin'] },
     },
     {
       path: '/cms',
       name: 'portal-cms',
       component: PortalCms,
-      meta: { requiresAuth: true, requiredRoles: ['admin', 'pi', 'editor'] },
+      meta: { requiresAuth: true, requiredRoles: ['admin', 'editor'] },
     },
   ],
 })

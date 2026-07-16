@@ -4,7 +4,7 @@
       <header class="surface-heading member-heading">
         <div>
           <h1>成员管理</h1>
-          <p>学校身份用于人员分类；系统权限用于控制后台管理能力。学生账号可在这里一键生成学生档案，一个账号只会绑定一个档案。</p>
+          <p>学校身份、成员状态和系统权限分别维护。毕业或离组不会自动删除账号和历史档案。</p>
         </div>
         <div class="heading-actions">
           <el-button plain @click="openCreateDrawer">新建账号</el-button>
@@ -66,6 +66,7 @@
           <div class="filters">
             <el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" />
             <el-select v-model="statusFilter" placeholder="状态"><el-option label="全部状态" value="all" /><el-option label="已审核" value="approved" /><el-option label="待审核" value="pending" /></el-select>
+            <el-select v-model="membershipFilter" placeholder="成员状态"><el-option label="全部成员" value="all" /><el-option v-for="item in membershipStatusOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
             <el-select v-model="schoolFilter" placeholder="学校身份"><el-option label="全部身份" value="all" /><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
             <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
           </div>
@@ -73,13 +74,17 @@
 
         <div class="account-list">
           <article v-for="user in pagedUsers" :key="user.id" class="account-row-card">
-            <div class="member-cell"><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
+            <div class="member-cell">
+              <div class="account-avatar"><img v-if="user.profile?.avatar" :src="user.profile.avatar" :alt="displayUser(user)" /><span v-else>{{ initials(displayUser(user)) }}</span></div>
+              <div><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
+            </div>
             <div class="compact-tags">
               <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">{{ user.profile?.is_approved ? '已审核' : '待审核' }}</span>
               <span :class="['status-tag', user.is_active ? 'normal' : 'rejected']">{{ user.is_active ? '可登录' : '已停用' }}</span>
               <span class="status-tag archived">{{ roleLabel(schoolIdentity(user)) }}</span>
+              <span :class="['status-tag', membershipStatus(user) === 'active' ? 'normal' : 'archived']">{{ membershipStatusLabel(membershipStatus(user)) }}</span>
             </div>
-            <div class="permission-chips compact-permissions"><span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span><span v-if="!systemRoles(user).length" class="status-tag archived">普通权限</span></div>
+            <div class="permission-chips compact-permissions"><span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span><span v-if="!systemRoles(user).length" class="status-tag archived">无管理权限</span></div>
             <div class="student-link-cell"><RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
             <div class="account-actions">
               <el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button>
@@ -107,11 +112,18 @@
       <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
         <el-form label-position="top" class="create-form">
           <el-form-item label="姓名"><el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" /></el-form-item>
+          <el-form-item label="头像">
+            <div class="avatar-editor">
+              <div class="account-avatar large"><img v-if="accountAvatarPreview" :src="accountAvatarPreview" alt="头像预览" /><span v-else>{{ initials(accountForm.real_name) }}</span></div>
+              <label class="avatar-upload">选择图片<input type="file" accept="image/*" @change="handleAccountAvatar" /></label>
+            </div>
+          </el-form-item>
           <el-form-item label="邮箱"><el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" /></el-form-item>
           <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
           <el-form-item v-if="!editingUserId" label="初始密码"><el-input v-model="accountForm.password" type="password" autocomplete="new-password" show-password /></el-form-item>
-          <el-form-item label="学校身份"><el-select v-model="accountForm.role_type"><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
-          <el-alert v-if="accountForm.role_type === 'alumni'" class="form-hint" type="info" :closable="false" title="已毕业或离组成员会保留账号、学生档案和归档资料；如不需要继续登录内部平台，请保持登录状态为停用。" />
+          <el-form-item label="学校身份"><el-select v-model="accountForm.school_identity"><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
+          <el-form-item label="成员状态"><el-segmented v-model="accountForm.membership_status" :options="membershipStatusOptions" /></el-form-item>
+          <el-alert v-if="accountForm.membership_status !== 'active'" class="form-hint" type="info" :closable="false" title="历史成员的账号、学生档案和归档资料会继续保留，是否允许登录请单独设置。" />
           <el-form-item label="系统权限"><el-checkbox-group v-model="accountForm.system_roles"><el-checkbox v-for="role in systemPermissionOptions" :key="role.value" :label="role.value">{{ role.label }}</el-checkbox></el-checkbox-group></el-form-item>
           <el-form-item label="账号状态"><el-switch v-model="accountForm.is_approved" active-text="已审核" inactive-text="待审核" /></el-form-item>
           <el-form-item v-if="editingUserId" label="登录状态"><el-switch v-model="accountForm.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
@@ -160,25 +172,27 @@ const savingId = ref<number | null>(null)
 const accountDrawerVisible = ref(false)
 const accountSaving = ref(false)
 const editingUserId = ref<number | null>(null)
-const syncingAccountForm = ref(false)
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
 const passwordTarget = ref<CurrentUser | null>(null)
+const accountAvatarPreview = ref('')
 const errorMessage = ref('')
 const keyword = ref('')
 const statusFilter = ref('all')
 const schoolFilter = ref('all')
 const permissionFilter = ref('all')
+const membershipFilter = ref('all')
 const memberPage = ref(1)
 const memberPageSize = ref(12)
 const schoolIdentityForms = reactive<Record<number, string>>({})
-const assignRoles = reactive<Record<number, string>>({})
 const accountForm = reactive({
   real_name: '',
   email: '',
   username: '',
   password: '',
-  role_type: 'member',
+  school_identity: 'other',
+  membership_status: 'active',
+  avatar: undefined as File | undefined,
   is_approved: true,
   is_active: true,
   system_roles: [] as string[],
@@ -189,14 +203,17 @@ const passwordForm = reactive({
 })
 
 const schoolIdentityOptions = [
-  { value: 'member', label: '课题组成员' },
-  { value: 'undergraduate', label: '本科生' },
-  { value: 'master', label: '硕士生' },
-  { value: 'phd', label: '博士生' },
-  { value: 'alumni', label: '已毕业学生' },
-  { value: 'postdoc', label: '博士后' },
   { value: 'pi', label: '硕博导师' },
-  { value: 'other', label: '其他' },
+  { value: 'postdoc', label: '博士后' },
+  { value: 'phd', label: '博士生' },
+  { value: 'master', label: '硕士生' },
+  { value: 'undergraduate', label: '本科生' },
+  { value: 'other', label: '其他成员' },
+]
+
+const membershipStatusOptions = [
+  { value: 'active', label: '在组' },
+  { value: 'former', label: '已毕业/离组' },
 ]
 
 const systemPermissionOptions = [
@@ -242,8 +259,9 @@ const filteredUsers = computed(() => {
       (statusFilter.value === 'approved' && user.profile?.is_approved) ||
       (statusFilter.value === 'pending' && !user.profile?.is_approved)
     const schoolMatched = schoolFilter.value === 'all' || schoolIdentity(user) === schoolFilter.value
+    const membershipMatched = membershipFilter.value === 'all' || membershipStatus(user) === membershipFilter.value
     const permissionMatched = permissionFilter.value === 'all' || systemRoles(user).includes(permissionFilter.value)
-    return (!term || text.includes(term)) && statusMatched && schoolMatched && permissionMatched
+    return (!term || text.includes(term)) && statusMatched && schoolMatched && membershipMatched && permissionMatched
   })
 })
 const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / memberPageSize.value)))
@@ -262,19 +280,21 @@ function displayUser(user: CurrentUser) {
   return studentByUserId.value[user.id]?.name || user.profile?.real_name || user.first_name || user.username
 }
 
+function initials(value: string) {
+  return value.trim().slice(0, 1) || '员'
+}
+
 function roleLabel(code: string) {
   return allRoleOptions.find((item) => item.value === code)?.label || code
 }
 
 function roleDescription(code: string) {
   const descriptions: Record<string, string> = {
-    member: '普通内部成员，可访问基础内部资料。',
     undergraduate: '本科生身份，可维护本人学生档案和归档资料。',
     master: '硕士生身份，可维护本人学生档案和归档资料。',
     phd: '博士生身份，可维护本人学生档案和归档资料。',
-    alumni: '已毕业或离组学生，默认不再登录内部平台。',
     postdoc: '博士后身份，可访问成员内部资料和科研管理信息。',
-    pi: '硕博导师，可查看和管理学生档案。',
+    pi: '硕博导师，可查看所指导学生的档案，不自动获得后台管理权限。',
     other: '其他学校身份，用于人员分类。',
     editor: '维护门户内容、新闻、成员展示和科研成果。',
     document_manager: '上传、维护和归档内部资料。',
@@ -290,9 +310,17 @@ function displayRoles(user: CurrentUser) {
 }
 
 function schoolIdentity(user: CurrentUser) {
-  const profileIdentity = user.profile?.role_type
+  const profileIdentity = user.profile?.school_identity
   if (schoolIdentityCodes.includes(profileIdentity)) return profileIdentity
-  return displayRoles(user).find((role) => schoolIdentityCodes.includes(role)) || 'member'
+  return 'other'
+}
+
+function membershipStatus(user: CurrentUser) {
+  return user.profile?.membership_status || 'active'
+}
+
+function membershipStatusLabel(status: string) {
+  return membershipStatusOptions.find((item) => item.value === status)?.label || status
 }
 
 function systemRoles(user: CurrentUser) {
@@ -308,11 +336,6 @@ function studentDegreeType(user: CurrentUser) {
   return ['undergraduate', 'master', 'phd'].includes(identity) ? identity : 'master'
 }
 
-function assignableRoles(user: CurrentUser) {
-  const existing = new Set(systemRoles(user))
-  return systemPermissionRoles.value.filter((role) => !existing.has(role.code))
-}
-
 function syncForms() {
   users.value.forEach((user) => {
     schoolIdentityForms[user.id] = schoolIdentity(user)
@@ -323,20 +346,19 @@ function syncForms() {
 }
 
 function resetAccountForm() {
-  syncingAccountForm.value = true
   editingUserId.value = null
   accountForm.real_name = ''
   accountForm.email = ''
   accountForm.username = ''
   accountForm.password = ''
-  accountForm.role_type = 'member'
+  accountForm.school_identity = 'other'
+  accountForm.membership_status = 'active'
+  accountForm.avatar = undefined
+  accountAvatarPreview.value = ''
   accountForm.is_approved = true
   accountForm.is_active = true
   accountForm.system_roles = []
   accountForm.phone = ''
-  requestAnimationFrame(() => {
-    syncingAccountForm.value = false
-  })
 }
 
 function openCreateDrawer() {
@@ -345,27 +367,34 @@ function openCreateDrawer() {
 }
 
 function openEditDrawer(user: CurrentUser) {
-  syncingAccountForm.value = true
   editingUserId.value = user.id
   accountForm.real_name = displayUser(user)
   accountForm.email = user.email || ''
   accountForm.username = user.username || ''
   accountForm.password = ''
-  accountForm.role_type = schoolIdentity(user)
+  accountForm.school_identity = schoolIdentity(user)
+  accountForm.membership_status = membershipStatus(user)
+  accountForm.avatar = undefined
+  accountAvatarPreview.value = user.profile?.avatar || ''
   accountForm.is_approved = Boolean(user.profile?.is_approved)
   accountForm.is_active = Boolean(user.is_active)
   accountForm.system_roles = systemRoles(user)
   accountForm.phone = user.profile?.phone || ''
   accountDrawerVisible.value = true
-  requestAnimationFrame(() => {
-    syncingAccountForm.value = false
-  })
 }
 
 function openPasswordDialog(user: CurrentUser) {
   passwordTarget.value = user
   passwordForm.password = ''
   passwordVisible.value = true
+}
+
+function handleAccountAvatar(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  accountForm.avatar = file
+  accountAvatarPreview.value = URL.createObjectURL(file)
 }
 
 async function submitAccountForm() {
@@ -381,25 +410,22 @@ async function submitAccountForm() {
   try {
     if (editingUserId.value) {
       const currentUser = users.value.find((user) => user.id === editingUserId.value)
-      const previousIdentity = currentUser ? schoolIdentity(currentUser) : 'member'
       const previousSystemRoles = currentUser ? systemRoles(currentUser) : []
       await updateUser(editingUserId.value, {
         email: accountForm.email.trim(),
         username: accountForm.username.trim(),
         real_name: accountForm.real_name.trim(),
         phone: accountForm.phone.trim(),
-        role_type: accountForm.role_type,
+        school_identity: accountForm.school_identity,
+        membership_status: accountForm.membership_status,
+        avatar: accountForm.avatar,
         is_approved: accountForm.is_approved,
         is_active: accountForm.is_active,
       })
-      if (currentUser && previousIdentity !== accountForm.role_type && currentUser.roles.includes(previousIdentity)) {
-        await removeUserRole(editingUserId.value, previousIdentity)
-      }
-      await assignUserRole(editingUserId.value, accountForm.role_type)
       const nextSystemRoles = new Set(accountForm.system_roles)
       await Promise.all(previousSystemRoles.filter((role) => !nextSystemRoles.has(role)).map((role) => removeUserRole(editingUserId.value!, role)))
       await Promise.all(accountForm.system_roles.filter((role) => !previousSystemRoles.includes(role)).map((role) => assignUserRole(editingUserId.value!, role)))
-      if (currentUser && accountForm.role_type === 'alumni' && studentByUserId.value[currentUser.id]) {
+      if (currentUser && accountForm.membership_status !== 'active' && studentByUserId.value[currentUser.id]) {
         ElMessage.info('该成员的学生档案和归档资料已保留，可在学生档案中继续查看。')
       }
       ElMessage.success('成员账号已保存。')
@@ -410,7 +436,9 @@ async function submitAccountForm() {
         password: accountForm.password,
         real_name: accountForm.real_name.trim(),
         phone: accountForm.phone.trim(),
-        role_type: accountForm.role_type,
+        school_identity: accountForm.school_identity,
+        membership_status: accountForm.membership_status,
+        avatar: accountForm.avatar,
         is_approved: accountForm.is_approved,
         system_roles: accountForm.system_roles,
       })
@@ -463,7 +491,6 @@ async function handleCreateStudentArchive(user: CurrentUser) {
       name: displayUser(user),
       degree_type: studentDegreeType(user),
       grade: '',
-      visibility: 'members',
     })
     ElMessage.success(`已生成“${profile.name}”的学生档案。`)
     await reload()
@@ -520,7 +547,7 @@ async function reload() {
     studentProfiles.value = []
     errorMessage.value =
       error?.response?.status === 403
-        ? '当前账号没有成员管理权限，请使用系统管理员或硕博导师账号访问。'
+        ? '当前账号没有成员管理权限，请使用系统管理员账号访问。'
         : '成员数据加载失败，请稍后重试。'
   } finally {
     loading.value = false
@@ -535,9 +562,8 @@ function clampMemberPage() {
 async function handleApprove(user: CurrentUser) {
   savingId.value = user.id
   try {
-    const identity = schoolIdentityForms[user.id] || 'member'
-    await approveUser(user.id, { is_approved: true, role_type: identity })
-    await assignUserRole(user.id, identity)
+    const identity = schoolIdentityForms[user.id] || 'other'
+    await approveUser(user.id, { is_approved: true, school_identity: identity })
     ElMessage.success('账号已通过审核，学校身份已保存。')
     await reload()
   } catch (error: any) {
@@ -550,7 +576,7 @@ async function handleApprove(user: CurrentUser) {
 async function handleReject(user: CurrentUser) {
   savingId.value = user.id
   try {
-    await approveUser(user.id, { is_approved: false, role_type: schoolIdentityForms[user.id] || 'member' })
+    await approveUser(user.id, { is_approved: false, school_identity: schoolIdentityForms[user.id] || 'other' })
     ElMessage.success('账号已标记为暂不通过。')
     await reload()
   } catch (error: any) {
@@ -560,77 +586,9 @@ async function handleReject(user: CurrentUser) {
   }
 }
 
-async function saveSchoolIdentity(user: CurrentUser) {
-  savingId.value = user.id
-  try {
-    const nextIdentity = schoolIdentityForms[user.id] || 'member'
-    const previousIdentity = schoolIdentity(user)
-    await approveUser(user.id, { is_approved: Boolean(user.profile?.is_approved), role_type: nextIdentity })
-    if (previousIdentity !== nextIdentity && user.roles.includes(previousIdentity)) {
-      await removeUserRole(user.id, previousIdentity)
-    }
-    await assignUserRole(user.id, nextIdentity)
-    ElMessage.success('学校身份已保存。')
-    await reload()
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '学校身份保存失败。')
-  } finally {
-    savingId.value = null
-  }
-}
-
-async function handleAssign(user: CurrentUser) {
-  const role = assignRoles[user.id]
-  if (!role) {
-    ElMessage.warning('请选择要添加的系统权限。')
-    return
-  }
-  savingId.value = user.id
-  try {
-    await assignUserRole(user.id, role)
-    assignRoles[user.id] = ''
-    ElMessage.success('系统权限已添加。')
-    await reload()
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '系统权限添加失败，请稍后重试。')
-  } finally {
-    savingId.value = null
-  }
-}
-
-async function handleRemoveRole(user: CurrentUser, role: string) {
-  if (user.is_superuser) {
-    ElMessage.warning('超级管理员权限由系统账号授予，不能在这里移除。')
-    return
-  }
-  if (user.id === session.user?.id && role === 'admin') {
-    ElMessage.warning('不能移除自己的系统管理员角色。')
-    return
-  }
-  savingId.value = user.id
-  try {
-    await removeUserRole(user.id, role)
-    ElMessage.success('系统权限已移除。')
-    await reload()
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '系统权限移除失败。')
-  } finally {
-    savingId.value = null
-  }
-}
-
 onMounted(reload)
 
-watch(
-  () => accountForm.role_type,
-  (roleType) => {
-    if (!syncingAccountForm.value && editingUserId.value && roleType === 'alumni') {
-      accountForm.is_active = false
-    }
-  },
-)
-
-watch([keyword, statusFilter, schoolFilter, permissionFilter], () => {
+watch([keyword, statusFilter, membershipFilter, schoolFilter, permissionFilter], () => {
   memberPage.value = 1
 })
 
@@ -798,6 +756,55 @@ watch(memberTotalPages, clampMemberPage)
 .member-cell strong,
 .member-cell small {
   display: block;
+}
+
+.member-cell,
+.avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.account-avatar {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(0, 135, 60, 0.16);
+  border-radius: 50%;
+  background: var(--color-eco-green);
+  color: var(--color-deep-green);
+  font-weight: 700;
+}
+
+.account-avatar.large {
+  flex-basis: 66px;
+  width: 66px;
+  height: 66px;
+  font-size: 20px;
+}
+
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload {
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avatar-upload input {
+  display: none;
 }
 
 .account-panel {

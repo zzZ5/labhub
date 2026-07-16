@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+import { beginNetworkRequest, finishNetworkRequest } from '../stores/networkActivity'
+
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
@@ -41,6 +43,7 @@ function normalizeResponseMediaUrls<T>(data: T): T {
 }
 
 http.interceptors.request.use(async (config) => {
+  beginNetworkRequest()
   const method = config.method?.toUpperCase() || 'GET'
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     await ensureCsrfToken()
@@ -50,10 +53,12 @@ http.interceptors.request.use(async (config) => {
 
 http.interceptors.response.use(
   (response) => {
+    finishNetworkRequest()
     response.data = normalizeResponseMediaUrls(response.data)
     return response
   },
   (error) => {
+    finishNetworkRequest()
     const status = error?.response?.status
     const detail = String(error?.response?.data?.detail || '')
     const isInternalRoute = ['/dashboard', '/documents', '/instruments', '/students', '/members', '/cms', '/pending'].some((path) =>

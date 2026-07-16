@@ -5,11 +5,12 @@ from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.documents.responses import protected_file_response
 from apps.documents.views import docx_to_html, is_docx_file
+from apps.accounts.permissions import ApprovedMemberAccess
 
 from .models import StudentArchiveFile, StudentProfile
 from .preview import is_office_preview_candidate, refresh_archive_preview_pdf
@@ -29,7 +30,8 @@ from .services import (
 
 class StudentProfileViewSet(viewsets.ModelViewSet):
     serializer_class = StudentProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get_queryset(self):
         queryset = StudentProfile.objects.select_related("user", "supervisor", "supervisor__profile").prefetch_related("advisors", "advisors__profile", "archive_files")
@@ -63,7 +65,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
 class StudentArchiveFileViewSet(viewsets.ModelViewSet):
     serializer_class = StudentArchiveFileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
 
     def get_queryset(self):
         students = visible_students_for_user(self.request.user, StudentProfile.objects.all())

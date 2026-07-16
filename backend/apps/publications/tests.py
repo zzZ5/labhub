@@ -13,7 +13,7 @@ def test_public_publications_only(client):
 
     response = client.get(reverse("public-publication-list"))
 
-    titles = [item["title"] for item in response.json()]
+    titles = [item["title"] for item in response.json()["results"]]
     assert "公开论文" in titles
     assert "内部论文" not in titles
 

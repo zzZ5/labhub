@@ -18,9 +18,11 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
+from apps.accounts.permissions import ApprovedMemberAccess
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus, DocumentTag, DocumentVersion
 from .responses import protected_file_response
@@ -266,24 +268,29 @@ def docx_to_html(file_obj, title):
 class DocumentCategoryViewSet(ReadOnlyModelViewSet):
     queryset = DocumentCategory.objects.all()
     serializer_class = DocumentCategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
     lookup_field = "slug"
 
 
 class DocumentTagViewSet(ReadOnlyModelViewSet):
     queryset = DocumentTag.objects.all()
     serializer_class = DocumentTagSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
     lookup_field = "slug"
 
 
 class DocumentViewSet(ModelViewSet):
     serializer_class = DocumentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [ApprovedMemberAccess]
     parser_classes = [MultiPartParser, FormParser]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["category__slug", "visibility", "status"]
     search_fields = ["title", "description", "tags__name"]
+
+    def get_permissions(self):
+        if self.action in {"preview", "download"}:
+            return [AllowAny()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action in {"create", "update", "partial_update"}:
@@ -436,7 +443,7 @@ class DocumentViewSet(ModelViewSet):
 
 class DocumentDownloadLogViewSet(ReadOnlyModelViewSet):
     serializer_class = DocumentDownloadLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ApprovedMemberAccess]
 
     def get_queryset(self):
         if self.request.user.is_superuser:

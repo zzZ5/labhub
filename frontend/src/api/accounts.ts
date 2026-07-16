@@ -2,8 +2,13 @@ import { http } from './http'
 
 export interface UserProfile {
   real_name: string
+  avatar: string
+  avatar_size?: number
   phone: string
-  role_type: string
+  school_identity: string
+  school_identity_label: string
+  membership_status: string
+  membership_status_label: string
   bio: string
   is_approved: boolean
 }
@@ -36,7 +41,9 @@ export interface AdminUserCreatePayload {
   password: string
   real_name?: string
   phone?: string
-  role_type: string
+  avatar?: File
+  school_identity: string
+  membership_status: string
   is_approved: boolean
   system_roles: string[]
 }
@@ -46,7 +53,9 @@ export interface AdminUserUpdatePayload {
   email?: string
   real_name?: string
   phone?: string
-  role_type?: string
+  avatar?: File
+  school_identity?: string
+  membership_status?: string
   is_approved?: boolean
   is_active?: boolean
 }
@@ -62,6 +71,26 @@ export async function logout() {
 
 export async function fetchCurrentUser() {
   const response = await http.get<CurrentUser>('/accounts/auth/me/')
+  return response.data
+}
+
+export async function updateCurrentUserProfile(payload: {
+  username?: string
+  real_name?: string
+  phone?: string
+  bio?: string
+  avatar?: File
+}) {
+  const response = await http.patch<CurrentUser>('/accounts/auth/me/', userPayloadBody(payload))
+  return response.data
+}
+
+export async function changeCurrentUserPassword(payload: {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}) {
+  const response = await http.post<{ detail: string }>('/accounts/auth/password/', payload)
   return response.data
 }
 
@@ -86,13 +115,27 @@ export async function fetchPendingUsers() {
 }
 
 export async function createUser(payload: AdminUserCreatePayload) {
-  const response = await http.post<CurrentUser>('/accounts/users/create/', payload)
+  const response = await http.post<CurrentUser>('/accounts/users/create/', userPayloadBody(payload))
   return response.data
 }
 
 export async function updateUser(id: number, payload: AdminUserUpdatePayload) {
-  const response = await http.patch<CurrentUser>(`/accounts/users/${id}/update/`, payload)
+  const response = await http.patch<CurrentUser>(`/accounts/users/${id}/update/`, userPayloadBody(payload))
   return response.data
+}
+
+function userPayloadBody(payload: AdminUserCreatePayload | AdminUserUpdatePayload | { username?: string; real_name?: string; phone?: string; bio?: string; avatar?: File }) {
+  if (!payload.avatar) return payload
+  const formData = new FormData()
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return
+    if (key === 'system_roles' && Array.isArray(value)) {
+      value.forEach((role) => formData.append('system_roles', role))
+      return
+    }
+    formData.append(key, value instanceof File ? value : String(value))
+  })
+  return formData
 }
 
 export async function deleteUser(id: number) {
@@ -104,7 +147,7 @@ export async function resetUserPassword(id: number, password: string) {
   return response.data
 }
 
-export async function approveUser(id: number, payload: { is_approved: boolean; role_type?: string }) {
+export async function approveUser(id: number, payload: { is_approved: boolean; school_identity?: string }) {
   const response = await http.post<CurrentUser>(`/accounts/users/${id}/approve/`, payload)
   return response.data
 }

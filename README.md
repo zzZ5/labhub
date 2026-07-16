@@ -41,6 +41,8 @@ bash deploy/scripts/init.sh
 
 For a simple GitHub-based server deployment, see `docs/github-deploy.md`.
 
+The staged cleanup and refactoring roadmap is maintained in `docs/TODO.md`.
+
 ## Common Commands
 
 ```bash

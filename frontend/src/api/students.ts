@@ -13,11 +13,8 @@ export interface StudentArchiveFile {
   preview_status: string
   preview_error: string
   original_filename: string
-  visibility: string
-  visibility_label: string
   uploaded_at: string
   description: string
-  can_view: boolean
   can_delete: boolean
 }
 
@@ -27,6 +24,8 @@ export interface StudentProfile {
   user_display_name: string
   user_email: string
   user_username: string
+  avatar: string
+  avatar_size?: number
   name: string
   degree_type: string
   degree_label: string
@@ -42,8 +41,6 @@ export interface StudentProfile {
   enrollment_date?: string | null
   graduation_date?: string | null
   destination?: string
-  visibility: string
-  visibility_label: string
   archive_files: StudentArchiveFile[]
   can_edit: boolean
   can_delete: boolean
@@ -61,7 +58,13 @@ export interface StudentProfilePayload {
   enrollment_date?: string | null
   graduation_date?: string | null
   destination?: string
-  visibility?: string
+  avatar_upload?: File
+}
+
+function studentAvatarBody(file: File) {
+  const formData = new FormData()
+  formData.append('avatar_upload', file)
+  return formData
 }
 
 export async function fetchStudentProfiles() {
@@ -75,13 +78,22 @@ export async function fetchMyStudentProfile() {
 }
 
 export async function createStudentProfile(payload: StudentProfilePayload) {
-  const response = await http.post<StudentProfile>('/students/profiles/', payload)
-  return response.data
+  const { avatar_upload, ...profileData } = payload
+  const response = await http.post<StudentProfile>('/students/profiles/', profileData)
+  if (!avatar_upload) return response.data
+  const avatarResponse = await http.patch<StudentProfile>(
+    `/students/profiles/${response.data.id}/`,
+    studentAvatarBody(avatar_upload),
+  )
+  return avatarResponse.data
 }
 
 export async function updateStudentProfile(id: number, payload: StudentProfilePayload) {
-  const response = await http.put<StudentProfile>(`/students/profiles/${id}/`, payload)
-  return response.data
+  const { avatar_upload, ...profileData } = payload
+  const response = await http.put<StudentProfile>(`/students/profiles/${id}/`, profileData)
+  if (!avatar_upload) return response.data
+  const avatarResponse = await http.patch<StudentProfile>(`/students/profiles/${id}/`, studentAvatarBody(avatar_upload))
+  return avatarResponse.data
 }
 
 export async function deleteStudentProfile(id: number) {
@@ -93,7 +105,6 @@ export async function uploadStudentArchiveFile(payload: {
   file_type: string
   title: string
   file: File
-  visibility?: string
   description?: string
 }, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()

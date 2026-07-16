@@ -18,14 +18,17 @@ export const useSessionStore = defineStore('session', {
     },
   },
   actions: {
+    setUser(user: CurrentUser) {
+      this.user = user
+      this.isAuthenticated = true
+      this.displayName = user.profile?.real_name || user.username
+      this.initialized = true
+    },
     async login(username: string, password: string) {
       this.loading = true
       try {
         const user = await login(username.trim(), password)
-        this.user = user
-        this.isAuthenticated = true
-        this.displayName = user.profile?.real_name || user.username
-        this.initialized = true
+        this.setUser(user)
       } finally {
         this.loading = false
       }
@@ -34,9 +37,7 @@ export const useSessionStore = defineStore('session', {
       this.loading = true
       try {
         const user = await fetchCurrentUser()
-        this.user = user
-        this.isAuthenticated = true
-        this.displayName = user.profile?.real_name || user.username
+        this.setUser(user)
       } catch {
         this.user = null
         this.isAuthenticated = false

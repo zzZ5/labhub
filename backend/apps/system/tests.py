@@ -35,7 +35,7 @@ def test_dashboard_summary_returns_workspace_snapshot(client):
     user = get_user_model().objects.create_user(username="member@example.com", password="pass12345")
     user.profile.is_approved = True
     user.profile.save(update_fields=["is_approved"])
-    category = DocumentCategory.objects.create(name="实验 SOP", slug="sop")
+    category, _ = DocumentCategory.objects.get_or_create(slug="sop", defaults={"name": "实验 SOP"})
     Document.objects.create(
         title="堆肥反应器操作 SOP",
         category=category,

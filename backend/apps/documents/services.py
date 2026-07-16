@@ -1,7 +1,7 @@
 from django.utils import timezone
 
 from apps.accounts.models import RoleCode
-from apps.accounts.services import is_approved_member, user_has_min_role, user_has_role, user_role_codes
+from apps.accounts.services import can_write_internal_data, is_approved_member, user_has_min_role, user_has_role, user_role_codes
 
 from .models import Document, DocumentPermission, DocumentVisibility
 
@@ -54,19 +54,15 @@ def can_manage_documents(user) -> bool:
         return False
     if user.is_superuser:
         return True
-    return user_has_role(user, RoleCode.ADMIN, RoleCode.PI, RoleCode.DOCUMENT_MANAGER)
+    return can_write_internal_data(user) and user_has_role(user, RoleCode.ADMIN, RoleCode.DOCUMENT_MANAGER)
 
 
 def can_upload_document(user) -> bool:
-    return is_approved_member(user)
+    return can_manage_documents(user)
 
 
 def can_edit_document(user, document: Document) -> bool:
-    if can_manage_documents(user):
-        return True
-    if not is_approved_member(user):
-        return False
-    return document.owner_id == user.id or document.maintainer_id == user.id
+    return can_manage_documents(user)
 
 
 def can_delete_document(user, document: Document) -> bool:

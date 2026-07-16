@@ -1,5 +1,5 @@
 from apps.accounts.models import RoleCode
-from apps.accounts.services import user_has_role
+from apps.accounts.services import can_write_internal_data, user_has_role
 
 from .models import Instrument, InstrumentTrainingRecord
 
@@ -9,9 +9,11 @@ def user_can_manage_instrument(user, instrument: Instrument | None = None) -> bo
         return False
     if user.is_superuser:
         return True
+    if not can_write_internal_data(user):
+        return False
     if instrument and instrument.manager_id == user.id:
         return True
-    return user_has_role(user, RoleCode.ADMIN, RoleCode.PI, RoleCode.INSTRUMENT_MANAGER)
+    return user_has_role(user, RoleCode.ADMIN, RoleCode.INSTRUMENT_MANAGER)
 
 
 def user_has_training(user, instrument: Instrument) -> bool:

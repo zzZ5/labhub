@@ -7,13 +7,6 @@ from apps.documents.storage import ProtectedMediaStorage
 protected_storage = ProtectedMediaStorage()
 
 
-class StudentVisibility(models.TextChoices):
-    PRIVATE = "private", "本人可见"
-    SUPERVISOR = "supervisor", "本人/导师可见"
-    PI = "pi", "硕博导师/管理员可见"
-    MEMBERS = "members", "成员可见"
-
-
 class StudentProfile(models.Model):
     class DegreeType(models.TextChoices):
         UNDERGRADUATE = "undergraduate", "本科"
@@ -31,7 +24,6 @@ class StudentProfile(models.Model):
     enrollment_date = models.DateField("入学日期", null=True, blank=True)
     graduation_date = models.DateField("毕业日期", null=True, blank=True)
     destination = models.CharField("毕业去向", max_length=200, blank=True)
-    visibility = models.CharField("可见性", max_length=20, choices=StudentVisibility.choices, default=StudentVisibility.MEMBERS)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 
@@ -77,7 +69,6 @@ class StudentArchiveFile(models.Model):
     )
     preview_error = models.CharField("预览错误", max_length=240, blank=True)
     original_filename = models.CharField("原始文件名", max_length=255, blank=True)
-    visibility = models.CharField("可见性", max_length=20, choices=StudentVisibility.choices, default=StudentVisibility.MEMBERS)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="uploaded_student_files", verbose_name="上传人", null=True, blank=True)
     uploaded_at = models.DateTimeField("上传时间", auto_now_add=True)
     description = models.TextField("说明", blank=True)

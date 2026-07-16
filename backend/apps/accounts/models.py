@@ -10,35 +10,43 @@ class RoleCode(models.TextChoices):
     UNDERGRADUATE = "undergraduate", "本科生"
     ALUMNI = "alumni", "已毕业学生"
     POSTDOC = "postdoc", "博士后"
-    OTHER = "other", "其他"
     INSTRUMENT_MANAGER = "instrument_manager", "仪器管理员"
     DOCUMENT_MANAGER = "document_manager", "资料管理员"
     EDITOR = "editor", "网站编辑"
     PI = "pi", "硕博导师"
     ADMIN = "admin", "系统管理员"
+    OTHER = "other", "其他"
 
 
 class UserProfile(models.Model):
-    class RoleType(models.TextChoices):
-        PENDING = "pending", "注册待审核用户"
-        MEMBER = "member", "课题组成员"
-        MASTER = "master", "硕士生"
-        PHD = "phd", "博士生"
-        UNDERGRADUATE = "undergraduate", "本科生"
-        ALUMNI = "alumni", "已毕业学生"
-        POSTDOC = "postdoc", "博士后"
-        OTHER = "other", "其他"
-        INSTRUMENT_MANAGER = "instrument_manager", "仪器管理员"
-        DOCUMENT_MANAGER = "document_manager", "资料管理员"
-        EDITOR = "editor", "网站编辑"
+    class SchoolIdentity(models.TextChoices):
         PI = "pi", "硕博导师"
-        ADMIN = "admin", "系统管理员"
+        POSTDOC = "postdoc", "博士后"
+        PHD = "phd", "博士生"
+        MASTER = "master", "硕士生"
+        UNDERGRADUATE = "undergraduate", "本科生"
+        OTHER = "other", "其他成员"
+
+    class MembershipStatus(models.TextChoices):
+        ACTIVE = "active", "在组"
+        FORMER = "former", "已毕业/离组"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile", verbose_name="用户")
     real_name = models.CharField("真实姓名", max_length=80, blank=True)
     avatar = models.ImageField("头像", upload_to="avatars/", blank=True)
     phone = models.CharField("手机号", max_length=30, blank=True)
-    role_type = models.CharField("主角色", max_length=32, choices=RoleType.choices, default=RoleType.PENDING)
+    school_identity = models.CharField(
+        "学校身份",
+        max_length=32,
+        choices=SchoolIdentity.choices,
+        default=SchoolIdentity.OTHER,
+    )
+    membership_status = models.CharField(
+        "成员状态",
+        max_length=20,
+        choices=MembershipStatus.choices,
+        default=MembershipStatus.ACTIVE,
+    )
     bio = models.TextField("个人简介", blank=True)
     is_approved = models.BooleanField("是否审核通过", default=False)
     approved_by = models.ForeignKey(

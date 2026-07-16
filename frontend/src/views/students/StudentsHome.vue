@@ -29,9 +29,8 @@
             :class="{ active: selectedStudent?.id === student.id }"
             @click="selectStudent(student.id)"
           >
-            <strong>{{ student.name }}</strong>
-            <span>{{ student.degree_label }} · {{ student.grade || '未填写年级' }}</span>
-            <small>{{ student.user_email || student.user_username || '未绑定账号' }}</small>
+            <span class="student-list-avatar"><img v-if="student.avatar" :src="student.avatar" :alt="student.name" /><template v-else>{{ student.name.slice(0, 1) }}</template></span>
+            <span class="student-list-copy"><strong>{{ student.name }}</strong><span>{{ student.degree_label }} · {{ student.grade || '未填写年级' }}</span><small>{{ student.user_email || student.user_username || '未绑定账号' }}</small></span>
           </button>
           <div v-if="!filteredStudents.length" class="empty-note">{{ students.length ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
           <div v-if="filteredStudents.length > 12" class="student-pager">
@@ -46,7 +45,8 @@
         <main class="archive-panel">
           <section v-if="selectedStudent" class="card profile-card">
             <div class="profile-heading">
-              <div>
+              <div class="student-profile-avatar"><img v-if="selectedStudent.avatar" :src="selectedStudent.avatar" :alt="selectedStudent.name" /><span v-else>{{ selectedStudent.name.slice(0, 1) }}</span></div>
+              <div class="profile-copy">
                 <h1>{{ selectedStudent.name }}</h1>
                 <p>{{ selectedStudent.research_direction || selectedStudent.research_topic || '研究方向待补充' }}</p>
               </div>
@@ -71,16 +71,8 @@
                 <dd>{{ selectedStudent.research_topic || '-' }}</dd>
               </div>
               <div>
-                <dt>可见范围</dt>
-                <dd>{{ selectedStudent.visibility_label }}</dd>
-              </div>
-              <div>
                 <dt>登录账号</dt>
                 <dd>{{ selectedStudent.user_email || selectedStudent.user_username || '-' }}</dd>
-              </div>
-              <div>
-                <dt>账号权限</dt>
-                <dd>在成员管理中维护</dd>
               </div>
             </dl>
           </section>
@@ -106,13 +98,12 @@
                   <div class="file-meta">
                     <span>{{ file.file_type_label }}</span>
                     <span>{{ archiveFileSizeLabel(file) }}</span>
-                    <span v-if="file.visibility_label">{{ file.visibility_label }}</span>
                   </div>
                   <p>{{ file.description || file.original_filename || '未记录原始文件名' }}</p>
                 </div>
                 <div class="file-actions">
                   <a
-                    v-if="file.can_view && canPreviewArchive(file)"
+                    v-if="canPreviewArchive(file)"
                     class="file-primary-action"
                     :href="previewStudentArchiveFileUrl(file)"
                     target="_blank"
@@ -121,13 +112,12 @@
                     <el-icon><View /></el-icon>
                     {{ archivePreviewLabel(file) }}
                   </a>
-                  <span v-else-if="file.can_view" class="file-preview-note">{{ archivePreviewStatus(file) }}</span>
-                  <a v-if="file.can_view" class="file-secondary-action" :href="downloadStudentArchiveFileUrl(file)">
+                  <span v-else class="file-preview-note">{{ archivePreviewStatus(file) }}</span>
+                  <a class="file-secondary-action" :href="downloadStudentArchiveFileUrl(file)">
                     <el-icon><Download /></el-icon>
                     下载原文件
                   </a>
                   <el-button v-if="file.can_delete" size="small" plain type="danger" @click="confirmDeleteArchiveFile(file)">删除</el-button>
-                  <el-button v-else-if="!file.can_view" disabled>无权限</el-button>
                 </div>
               </article>
             </div>
@@ -144,6 +134,12 @@
           </div>
 
           <el-form v-if="formVisible" label-position="top" class="profile-form">
+            <el-form-item label="头像">
+              <div class="student-avatar-editor">
+                <div class="student-profile-avatar small"><img v-if="profileAvatarPreview" :src="profileAvatarPreview" alt="头像预览" /><span v-else>{{ profileForm.name.slice(0, 1) || '学' }}</span></div>
+                <label class="student-avatar-upload">选择图片<input type="file" accept="image/*" @change="handleProfileAvatar" /></label>
+              </div>
+            </el-form-item>
             <el-form-item label="关联成员账号">
               <el-select v-model="profileForm.user" filterable placeholder="选择学生登录账号" :disabled="!canManageStudents && Boolean(editingId)">
                 <el-option
@@ -185,14 +181,6 @@
             <el-form-item label="研究题目">
               <el-input v-model="profileForm.research_topic" type="textarea" :rows="3" />
             </el-form-item>
-            <el-form-item label="可见范围">
-              <el-select v-model="profileForm.visibility">
-                <el-option label="成员可见" value="members" />
-                <el-option label="本人/导师可见" value="supervisor" />
-                <el-option label="硕博导师/管理员可见" value="pi" />
-                <el-option label="本人可见" value="private" />
-              </el-select>
-            </el-form-item>
             <div class="form-actions">
               <el-button @click="cancelEdit">取消</el-button>
               <el-button type="primary" :loading="savingProfile" @click="saveProfile">保存档案</el-button>
@@ -227,14 +215,6 @@
           <el-form-item label="说明">
             <el-input v-model="uploadForm.description" type="textarea" :rows="3" />
           </el-form-item>
-          <el-form-item label="可见范围">
-            <el-select v-model="uploadForm.visibility">
-              <el-option label="组内成员可见" value="members" />
-              <el-option label="仅本人可见" value="private" />
-              <el-option label="本人和导师可见" value="supervisor" />
-              <el-option label="硕博导师和管理员可见" value="pi" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="文件">
             <input class="file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="handleFileChange" />
             <small v-if="uploadForm.file" class="upload-file-note">{{ uploadForm.file.name }}（{{ formatFileSize(uploadForm.file.size) }}）</small>
@@ -255,6 +235,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Download, Document, Files, PictureFilled, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -277,6 +258,7 @@ import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()
+const route = useRoute()
 const students = ref<StudentProfile[]>([])
 const users = ref<CurrentUser[]>([])
 const selectedId = ref<number | null>(null)
@@ -290,6 +272,7 @@ const studentKeyword = ref('')
 const degreeFilter = ref('')
 const studentPage = ref(1)
 const studentPageSize = ref(12)
+const profileAvatarPreview = ref('')
 
 const profileForm = reactive<StudentProfilePayload>({
   user: 0,
@@ -303,13 +286,12 @@ const profileForm = reactive<StudentProfilePayload>({
   enrollment_date: null,
   graduation_date: null,
   destination: '',
-  visibility: 'members',
+  avatar_upload: undefined,
 })
 
 const uploadForm = reactive({
   file_type: 'proposal_report',
   title: '',
-  visibility: 'members',
   description: '',
   file: undefined as File | undefined,
 })
@@ -326,7 +308,7 @@ const studentTotalPages = computed(() => Math.max(1, Math.ceil(filteredStudents.
 const pagedStudents = computed(() => filteredStudents.value.slice((studentPage.value - 1) * studentPageSize.value, studentPage.value * studentPageSize.value))
 const selectedStudent = computed(() => students.value.find((item) => item.id === selectedId.value) || filteredStudents.value[0] || students.value[0])
 const displayFiles = computed<StudentArchiveFile[]>(() => selectedStudent.value?.archive_files || [])
-const canManageStudents = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
+const canManageStudents = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin'])))
 const usedUserIds = computed(() => new Set(students.value.filter((item) => item.id !== editingId.value).map((item) => item.user)))
 const studentUserOptions = computed(() => {
   const candidates = canManageStudents.value
@@ -335,11 +317,11 @@ const studentUserOptions = computed(() => {
   return candidates.filter((user) => !usedUserIds.value.has(user.id) || user.id === profileForm.user)
 })
 const supervisorOptions = computed(() =>
-  users.value.filter((user) => user.is_superuser || user.roles.includes('admin') || user.roles.includes('pi')),
+  users.value.filter((user) => user.is_superuser || user.roles.includes('admin') || user.profile?.school_identity === 'pi'),
 )
 
 function isStudentAccount(user: CurrentUser) {
-  const identity = user.profile?.role_type
+  const identity = user.profile?.school_identity
   return user.roles.includes('undergraduate') || user.roles.includes('master') || user.roles.includes('phd') || identity === 'undergraduate' || identity === 'master' || identity === 'phd'
 }
 
@@ -426,7 +408,16 @@ function fillProfileForm(student?: StudentProfile) {
   profileForm.enrollment_date = student?.enrollment_date || null
   profileForm.graduation_date = student?.graduation_date || null
   profileForm.destination = student?.destination || ''
-  profileForm.visibility = student?.visibility || 'members'
+  profileForm.avatar_upload = undefined
+  profileAvatarPreview.value = student?.avatar || ''
+}
+
+function handleProfileAvatar(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  profileForm.avatar_upload = file
+  profileAvatarPreview.value = URL.createObjectURL(file)
 }
 
 function startCreate() {
@@ -513,7 +504,6 @@ async function submitArchiveFile() {
       file_type: uploadForm.file_type,
       title: uploadForm.title.trim(),
       file: uploadForm.file,
-      visibility: uploadForm.visibility,
       description: uploadForm.description,
     }, (event) => {
       if (!event.total) return
@@ -523,7 +513,6 @@ async function submitArchiveFile() {
     ElMessage.success('学生资料已上传。')
     uploadVisible.value = false
     uploadForm.title = ''
-    uploadForm.visibility = 'members'
     uploadForm.description = ''
     uploadForm.file = undefined
     await loadStudents(selectedStudent.value.id)
@@ -582,7 +571,8 @@ async function confirmDeleteArchiveFile(file: StudentArchiveFile) {
 
 async function loadStudents(preferredId?: number) {
   students.value = await fetchStudentProfiles()
-  selectedId.value = preferredId || selectedStudent.value?.id || filteredStudents.value[0]?.id || students.value[0]?.id || null
+  const ownStudent = route.query.mine === '1' ? students.value.find((student) => student.user === session.user?.id) : undefined
+  selectedId.value = preferredId || ownStudent?.id || selectedStudent.value?.id || filteredStudents.value[0]?.id || students.value[0]?.id || null
 }
 
 async function loadUsers() {
@@ -612,6 +602,12 @@ watch(studentPageSize, () => {
 
 watch(studentTotalPages, (total) => {
   if (studentPage.value > total) studentPage.value = total
+})
+
+watch(() => route.query.mine, (mine) => {
+  if (mine !== '1') return
+  const ownStudent = students.value.find((student) => student.user === session.user?.id)
+  if (ownStudent) selectStudent(ownStudent.id)
 })
 </script>
 
@@ -735,7 +731,9 @@ watch(studentTotalPages, (total) => {
 
 .student-list button {
   display: grid;
-  gap: 3px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -745,6 +743,81 @@ watch(studentTotalPages, (total) => {
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+}
+
+.student-list-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.student-list-avatar,
+.student-profile-avatar {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(0, 135, 60, 0.16);
+  border-radius: 50%;
+  background: var(--color-eco-green);
+  color: var(--color-deep-green);
+  font-weight: 700;
+}
+
+.student-list-avatar {
+  width: 32px;
+  height: 32px;
+  border-color: rgba(0, 135, 60, 0.12);
+  background: rgba(234, 245, 238, 0.8);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.student-profile-avatar {
+  flex: 0 0 58px;
+  width: 58px;
+  height: 58px;
+  font-size: 19px;
+}
+
+.student-profile-avatar.small {
+  flex-basis: 52px;
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+
+.student-list-avatar img,
+.student-profile-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.profile-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.student-avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.student-avatar-upload {
+  border: 1px solid rgba(0, 135, 60, 0.24);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.student-avatar-upload input {
+  display: none;
 }
 
 .student-list button.active,
@@ -757,9 +830,9 @@ watch(studentTotalPages, (total) => {
   color: var(--color-cau-green);
 }
 
-.student-list strong,
-.student-list span,
-.student-list small {
+.student-list-copy strong,
+.student-list-copy span,
+.student-list-copy small {
   display: block;
   min-width: 0;
   overflow: hidden;
@@ -767,13 +840,13 @@ watch(studentTotalPages, (total) => {
   white-space: nowrap;
 }
 
-.student-list strong {
+.student-list-copy strong {
   color: var(--color-deep-green);
   font-size: 14px;
   line-height: 1.35;
 }
 
-.student-list span {
+.student-list-copy span {
   color: var(--color-muted);
   font-size: 12px;
   line-height: 1.35;

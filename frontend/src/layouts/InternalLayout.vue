@@ -26,8 +26,23 @@
           <strong>{{ title }}</strong>
         </div>
         <div class="topbar-actions">
-          <div class="user-chip">{{ session.displayName || '未登录用户' }}</div>
-          <el-button v-if="session.isAuthenticated" :loading="session.loading" @click="handleLogout">退出</el-button>
+          <el-dropdown v-if="session.isAuthenticated" trigger="click" placement="bottom-end" @command="handleAccountCommand">
+            <button class="account-trigger" type="button">
+              <span class="topbar-avatar">
+                <img v-if="session.user?.profile?.avatar" :src="session.user.profile.avatar" :alt="session.displayName" />
+                <span v-else>{{ (session.displayName || '我').slice(0, 1) }}</span>
+              </span>
+              <span class="account-trigger-copy"><strong>{{ session.displayName || '未登录用户' }}</strong><small>{{ session.user?.profile?.school_identity_label || '组内成员' }}</small></span>
+              <el-icon class="account-arrow"><ArrowDown /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu class="account-dropdown">
+                <el-dropdown-item command="profile" :icon="User">个人信息</el-dropdown-item>
+                <el-dropdown-item v-if="isStudentIdentity" command="student" :icon="Notebook">我的学生档案</el-dropdown-item>
+                <el-dropdown-item divided command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <RouterLink v-else class="login-link" to="/login">登录</RouterLink>
         </div>
       </header>
@@ -47,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, UserFilled } from '@element-plus/icons-vue'
+import { ArrowDown, Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
 
 import { useSessionStore } from '../stores/session'
 import { useSiteBrandStore } from '../stores/siteBrand'
@@ -59,19 +74,21 @@ defineProps<{
 }>()
 
 const menuOpen = ref(false)
-const menu = [
+const baseMenu = [
   { label: '工作台', path: '/dashboard', icon: Odometer },
   { label: '内部资料', path: '/documents', icon: Files },
   { label: '仪器平台', path: '/instruments', icon: Calendar },
   { label: '学生档案', path: '/students', icon: Notebook },
-  { label: '门户内容', path: '/cms', icon: EditPen },
-  { label: '成员管理', path: '/members', icon: UserFilled },
+  { label: '门户内容', path: '/cms', icon: EditPen, roles: ['admin', 'editor'] },
+  { label: '成员管理', path: '/members', icon: UserFilled, roles: ['admin'] },
   { label: '返回官网', path: '/', icon: HomeFilled },
 ]
 
 const router = useRouter()
 const session = useSessionStore()
 const brand = useSiteBrandStore()
+const menu = computed(() => baseMenu.filter((item) => !item.roles || session.hasAnyRole(item.roles)))
+const isStudentIdentity = computed(() => ['undergraduate', 'master', 'phd'].includes(session.user?.profile?.school_identity || ''))
 
 onMounted(() => {
   if (!session.isAuthenticated) {
@@ -83,6 +100,18 @@ onMounted(() => {
 async function handleLogout() {
   await session.logout()
   await router.replace('/login')
+}
+
+async function handleAccountCommand(command: string) {
+  if (command === 'logout') {
+    await handleLogout()
+    return
+  }
+  if (command === 'student') {
+    await router.push({ path: '/students', query: { mine: '1' } })
+    return
+  }
+  await router.push('/account')
 }
 </script>
 
@@ -237,19 +266,15 @@ async function handleLogout() {
   gap: 10px;
 }
 
-.user-chip {
-  max-width: 180px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 135, 60, 0.14);
-  border-radius: 999px;
-  padding: 7px 12px;
-  background: var(--color-eco-green);
-  color: var(--color-deep-green);
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.account-trigger { display: flex; align-items: center; gap: 9px; min-height: 46px; border: 0; border-left: 1px solid var(--color-line); padding: 4px 0 4px 16px; background: transparent; color: var(--color-text); cursor: pointer; }
+.topbar-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; overflow: hidden; border: 1px solid rgba(0, 135, 60, .16); border-radius: 50%; background: var(--color-eco-green); color: var(--color-deep-green); font-size: 14px; font-weight: 700; }
+.topbar-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.account-trigger-copy { display: grid; min-width: 0; row-gap: 3px; text-align: left; }
+.account-trigger-copy strong, .account-trigger-copy small { display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-trigger-copy strong { color: var(--color-deep-green); font-size: 14px; font-weight: 650; line-height: 1.15; }
+.account-trigger-copy small { color: var(--color-muted); font-size: 11px; line-height: 1.15; }
+.account-arrow { color: var(--color-muted); transition: transform 160ms ease; }
+.account-trigger:hover .account-arrow { transform: translateY(2px); }
 
 .login-link,
 .mobile-menu-button {
@@ -324,11 +349,9 @@ async function handleLogout() {
     gap: 8px;
   }
 
-  .user-chip {
-    max-width: 96px;
-    padding: 5px 9px;
-    font-size: 12px;
-  }
+  .account-trigger { min-height: 40px; border-left: 0; padding-left: 0; }
+  .account-trigger-copy small { display: none; }
+  .account-trigger-copy strong { max-width: 86px; font-size: 12px; }
 
   .topbar-actions :deep(.el-button) {
     min-height: 32px;
@@ -369,9 +392,7 @@ async function handleLogout() {
 }
 
 @media (max-width: 420px) {
-  .user-chip {
-    display: none;
-  }
+  .account-trigger-copy, .account-arrow { display: none; }
 
   .mobile-menu.open {
     grid-template-columns: 1fr;

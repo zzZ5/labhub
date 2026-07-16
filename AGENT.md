@@ -142,10 +142,14 @@ Internal platform style:
 
 User account identity and school/lab identity are separate:
 
-- System permissions: admin/member-like operational permissions.
-- School/lab identity: professor, supervisor, postdoc, PhD student, master student, undergraduate, alumni, other, etc.
+- `UserProfile.school_identity`: supervisor, postdoc, PhD student, master student, undergraduate, or other.
+- `UserProfile.membership_status`: active or former (graduated/left); this does not control login.
+- System permissions in `UserRole`: admin, editor, document manager, and instrument manager only.
 - A user may be both supervisor and admin.
+- A supervisor is not automatically an administrator and does not automatically receive portal, document, instrument, or account-management permissions.
 - Login should allow username or email.
+- Graduation or departure preserves the account, student archive, and historical files. `User.is_active` separately controls whether login is allowed.
+- Approved users without system permissions can browse internal content and maintain their own student archive, but cannot manage portal content, instruments, documents, or accounts.
 
 Students:
 
@@ -278,4 +282,3 @@ docker compose exec frontend npm run build
 ```
 
 Rollup may warn about large chunks or comments in dependencies; those warnings are not currently blocking.
-

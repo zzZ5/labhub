@@ -5,8 +5,8 @@ from .models import Role, UserProfile, UserRole
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "real_name", "role_type", "is_approved", "approved_by", "approved_at", "updated_at")
-    list_filter = ("role_type", "is_approved")
+    list_display = ("user", "real_name", "school_identity", "membership_status", "is_approved", "updated_at")
+    list_filter = ("school_identity", "membership_status", "is_approved")
     search_fields = ("user__username", "user__email", "real_name", "phone")
     readonly_fields = ("created_at", "updated_at", "approved_at")
 

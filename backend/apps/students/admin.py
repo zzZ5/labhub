@@ -11,8 +11,8 @@ class StudentArchiveFileInline(admin.TabularInline):
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("name", "degree_type", "grade", "supervisor", "research_topic", "visibility", "updated_at")
-    list_filter = ("degree_type", "grade", "visibility")
+    list_display = ("name", "degree_type", "grade", "supervisor", "research_topic", "updated_at")
+    list_filter = ("degree_type", "grade")
     search_fields = ("name", "research_topic", "research_direction", "user__username")
     filter_horizontal = ("advisors",)
     inlines = [StudentArchiveFileInline]
