@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 
-from apps.documents.models import Document, DocumentCategory, DocumentStatus, DocumentVersion, DocumentVisibility
+from apps.documents.models import Document, DocumentCategory, DocumentStatus
 from apps.instruments.models import Instrument, InstrumentCategory
 from apps.members.models import Member
 from apps.news.models import NewsArticle, NewsCategory, Visibility
@@ -607,7 +607,6 @@ class Command(BaseCommand):
                     "name": name,
                     "description": description,
                     "sort_order": sort_order,
-                    "visibility": DocumentVisibility.MEMBERS,
                 },
             )
         sop_category = document_categories["sop"]
@@ -622,31 +621,27 @@ class Command(BaseCommand):
                 defaults={
                     "category": category,
                     "description": description,
-                    "visibility": DocumentVisibility.MEMBERS,
                     "status": DocumentStatus.ACTIVE,
                     "allow_download": True,
                 },
             )
-            if not document.versions.exists():
-                DocumentVersion.objects.create(
-                    document=document,
-                    version=version,
-                    file=ContentFile(f"{title}\n{description}\n".encode("utf-8"), name=f"{document.id}_{version}.txt"),
-                    original_filename=f"{title}.txt",
-                    change_log="示例资料初始化版本。",
-                    is_current=True,
-                    file_type="text/plain",
-                )
+            if not document.file:
+                content = f"{title}\n{description}\n".encode("utf-8")
+                document.file.save(f"{document.id}_{version}.txt", ContentFile(content), save=False)
+                document.original_filename = f"{title}.txt"
+                document.file_size = len(content)
+                document.file_type = "text/plain"
+                document.save()
 
         instrument_category, _ = InstrumentCategory.objects.get_or_create(
             slug="compost-platform",
             defaults={"name": "堆肥与环境分析平台", "sort_order": 1},
         )
-        for index, (name, room, need_training, status) in enumerate(
+        for index, (name, location_detail, status) in enumerate(
             [
-                ("智能堆肥反应器", "生态过程实验室 A201", False, Instrument.Status.NORMAL),
-                ("总有机碳分析仪", "环境样品分析室 B112", True, Instrument.Status.NORMAL),
-                ("气体采样与监测系统", "田间试验平台", True, Instrument.Status.MAINTENANCE),
+                ("智能堆肥反应器", "生态过程实验室 A201", Instrument.Status.NORMAL),
+                ("总有机碳分析仪", "环境样品分析室 B112", Instrument.Status.NORMAL),
+                ("气体采样与监测系统", "田间试验平台", Instrument.Status.MAINTENANCE),
             ],
             start=1,
         ):
@@ -654,9 +649,8 @@ class Command(BaseCommand):
                 name=name,
                 defaults={
                     "category": instrument_category,
-                    "room": room,
+                    "location_detail": location_detail,
                     "status": status,
-                    "need_training": need_training,
                     "sort_order": index,
                 },
             )

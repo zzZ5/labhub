@@ -9,19 +9,17 @@ export interface DashboardSummaryItem {
 export interface DashboardInstrumentStatus {
   id: number
   name: string
-  room: string
   location_detail: string
   status: string
   status_label: string
-  need_training: boolean
 }
 
 export interface DashboardDocument {
   id: number
   title: string
   category_name: string
-  current_version: string
-  visibility: string
+  original_filename: string
+  file_size: number
   updated_at: string
 }
 
@@ -46,7 +44,6 @@ export interface DashboardStudentArchive {
 export interface DashboardDownload {
   id: number
   document_title: string
-  version_label: string
   downloaded_at: string
 }
 

@@ -21,7 +21,12 @@
 
           <section class="info-section">
             <h2>位置</h2>
-            <p>{{ instrument.location_detail || instrument.room || '未填写位置' }}</p>
+            <p>{{ instrument.location_detail || '未填写位置' }}</p>
+          </section>
+
+          <section v-if="instrument.manager_name" class="info-section">
+            <h2>负责人</h2>
+            <p>{{ instrument.manager_name }}</p>
           </section>
 
           <section class="info-section">
@@ -107,7 +112,7 @@ const instrument = computed(() => {
   const id = Number(route.params.id)
   return displayInstruments.value.find((item) => item.id === id) || null
 })
-const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'instrument_manager'])))
+const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'instrument_manager'])))
 
 async function loadInstruments() {
   try {
@@ -140,7 +145,7 @@ function openEdit() {
   Object.assign(instrumentForm, {
     name: instrument.value.name || '',
     model: instrument.value.model || '',
-    location_detail: instrument.value.location_detail || instrument.value.room || '',
+    location_detail: instrument.value.location_detail || '',
     status: instrument.value.status || 'normal',
     notes: instrument.value.notes || '',
     image: undefined,

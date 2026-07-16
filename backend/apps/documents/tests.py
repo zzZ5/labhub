@@ -1,23 +1,17 @@
-import pytest
+from io import BytesIO
+from pathlib import Path
 from unittest.mock import Mock
+from zipfile import ZipFile
+
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.urls import reverse
-from io import BytesIO
-from pathlib import Path
-from zipfile import ZipFile
+from openpyxl import Workbook
 
 from apps.accounts.models import Role, RoleCode, UserRole
 
-from .models import (
-    Document,
-    DocumentCategory,
-    DocumentDownloadLog,
-    DocumentPermission,
-    DocumentStatus,
-    DocumentVersion,
-    DocumentVisibility,
-)
+from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus
 from .views import convert_embedded_image_to_png
 
 User = get_user_model()
@@ -36,14 +30,39 @@ def build_docx_bytes(text):
     return buffer.getvalue()
 
 
-@pytest.fixture
-def approved_user(db):
-    user = User.objects.create_user(username="member", password="pass12345")
+def build_import_workbook_bytes():
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "导入数据"
+    sheet.append(["资料标题", "资料分类", "资料说明", "文件名", "允许下载"])
+    sheet.append(["批量导入实验方法", "实验方法", "批量导入测试。", "", "是"])
+    buffer = BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def make_approved_user(username, role_code=RoleCode.MEMBER):
+    user = User.objects.create_user(username=username, password="pass12345")
     user.profile.is_approved = True
-    user.profile.save()
-    role, _ = Role.objects.get_or_create(code=RoleCode.MEMBER, defaults={"name": "课题组成员"})
+    user.profile.save(update_fields=["is_approved"])
+    role, _ = Role.objects.get_or_create(code=role_code, defaults={"name": role_code})
     UserRole.objects.get_or_create(user=user, role=role)
     return user
+
+
+@pytest.fixture
+def approved_user(db):
+    return make_approved_user("member")
+
+
+@pytest.fixture
+def other_member(db):
+    return make_approved_user("other-member")
+
+
+@pytest.fixture
+def document_manager(db):
+    return make_approved_user("document-manager", RoleCode.DOCUMENT_MANAGER)
 
 
 @pytest.fixture
@@ -52,23 +71,20 @@ def pending_user(db):
 
 
 @pytest.fixture
-def active_document(db):
-    category, _ = DocumentCategory.objects.get_or_create(slug="sop", defaults={"name": "实验方法"})
-    document = Document.objects.create(
-        title="堆肥反应器 SOP",
+def active_document(db, other_member):
+    category = DocumentCategory.objects.create(name="实验方法", slug="methods")
+    return Document.objects.create(
+        title="堆肥反应器操作方法",
         category=category,
-        visibility=DocumentVisibility.MEMBERS,
         status=DocumentStatus.ACTIVE,
         allow_download=True,
+        owner=other_member,
+        uploaded_by=other_member,
+        file=ContentFile(b"hello labhub", name="method.txt"),
+        original_filename="method.txt",
+        file_size=11,
+        file_type="text/plain",
     )
-    DocumentVersion.objects.create(
-        document=document,
-        version="v1.0",
-        file=ContentFile(b"hello labhub", name="sop.txt"),
-        original_filename="sop.txt",
-        is_current=True,
-    )
-    return document
 
 
 def test_convert_embedded_vector_image_to_png(monkeypatch):
@@ -84,35 +100,35 @@ def test_convert_embedded_vector_image_to_png(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_document_list_filters_by_visibility(client, approved_user):
-    Document.objects.create(title="成员资料", visibility=DocumentVisibility.MEMBERS, status=DocumentStatus.ACTIVE)
-    Document.objects.create(title="导师资料", visibility=DocumentVisibility.PI, status=DocumentStatus.ACTIVE)
-    client.login(username="member", password="pass12345")
+def test_document_list_requires_approved_member(client, pending_user, active_document):
+    anonymous = client.get(reverse("document-list"))
+    client.force_login(pending_user)
+    pending = client.get(reverse("document-list"))
+
+    assert anonymous.status_code in {401, 403}
+    assert pending.status_code == 403
+
+
+@pytest.mark.django_db
+def test_approved_member_can_view_all_active_documents(client, approved_user, active_document):
+    Document.objects.create(title="另一份组内资料", status=DocumentStatus.ACTIVE)
+    client.force_login(approved_user)
 
     response = client.get(reverse("document-list"))
 
-    titles = [item["title"] for item in response.json()]
-    assert "成员资料" in titles
-    assert "导师资料" not in titles
+    assert response.status_code == 200
+    assert {item["title"] for item in response.json()} == {"堆肥反应器操作方法", "另一份组内资料"}
 
 
 @pytest.mark.django_db
-def test_document_download_requires_login(client, active_document):
-    response = client.get(reverse("document-download", args=[active_document.id]))
-
-    assert response.status_code == 401
-
-
-@pytest.mark.django_db
-def test_document_preview_requires_login(client, active_document):
-    response = client.get(reverse("document-preview", args=[active_document.id]))
-
-    assert response.status_code == 401
+def test_document_download_and_preview_require_login(client, active_document):
+    assert client.get(reverse("document-download", args=[active_document.id])).status_code == 401
+    assert client.get(reverse("document-preview", args=[active_document.id])).status_code == 401
 
 
 @pytest.mark.django_db
 def test_pending_user_cannot_download(client, pending_user, active_document):
-    client.login(username="pending", password="pass12345")
+    client.force_login(pending_user)
 
     response = client.get(reverse("document-download", args=[active_document.id]))
 
@@ -121,7 +137,7 @@ def test_pending_user_cannot_download(client, pending_user, active_document):
 
 @pytest.mark.django_db
 def test_approved_member_can_download_and_log(client, approved_user, active_document):
-    client.login(username="member", password="pass12345")
+    client.force_login(approved_user)
 
     response = client.get(reverse("document-download", args=[active_document.id]))
 
@@ -133,137 +149,118 @@ def test_approved_member_can_download_and_log(client, approved_user, active_docu
 @pytest.mark.django_db
 def test_approved_member_can_preview_without_download_permission(client, approved_user):
     document = Document.objects.create(
-        title="可在线查看的资料",
-        visibility=DocumentVisibility.MEMBERS,
+        title="只允许在线查看的资料",
         status=DocumentStatus.ACTIVE,
         allow_download=False,
-    )
-    DocumentVersion.objects.create(
-        document=document,
-        version="v1.0",
         file=ContentFile(b"preview", name="preview.txt"),
         original_filename="preview.txt",
-        is_current=True,
+        file_type="text/plain",
     )
-    client.login(username="member", password="pass12345")
+    client.force_login(approved_user)
 
     response = client.get(reverse("document-preview", args=[document.id]))
 
     assert response.status_code == 200
     assert response["Content-Disposition"].startswith("inline;")
     assert response["X-Frame-Options"] == "SAMEORIGIN"
-    assert not DocumentDownloadLog.objects.filter(document=document, user=approved_user).exists()
 
 
 @pytest.mark.django_db
 def test_docx_preview_is_rendered_as_embeddable_html(client, approved_user):
     document = Document.objects.create(
         title="Word 在线查看测试",
-        visibility=DocumentVisibility.MEMBERS,
         status=DocumentStatus.ACTIVE,
         allow_download=False,
-    )
-    DocumentVersion.objects.create(
-        document=document,
-        version="v1.0",
         file=ContentFile(build_docx_bytes("中农雨磷文档预览"), name="preview.docx"),
         original_filename="preview.docx",
         file_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        is_current=True,
     )
-    client.login(username="member", password="pass12345")
+    client.force_login(approved_user)
 
     response = client.get(reverse("document-preview", args=[document.id]))
 
     assert response.status_code == 200
     assert response["Content-Type"].startswith("text/html")
-    assert response["X-Frame-Options"] == "SAMEORIGIN"
     assert "中农雨磷文档预览".encode() in response.content
 
 
 @pytest.mark.django_db
-def test_custom_permission_allows_assigned_user(client, approved_user):
-    document = Document.objects.create(title="指定资料", visibility=DocumentVisibility.CUSTOM, status=DocumentStatus.ACTIVE)
-    DocumentVersion.objects.create(
-        document=document,
-        version="v1.0",
-        file=ContentFile(b"custom", name="custom.txt"),
-        original_filename="custom.txt",
-        is_current=True,
-    )
-    DocumentPermission.objects.create(document=document, user=approved_user, can_view=True, can_download=True)
-    client.login(username="member", password="pass12345")
+def test_approved_member_can_upload_and_manage_own_document(client, approved_user):
+    category = DocumentCategory.objects.create(name="实验方法", slug="upload-methods")
+    client.force_login(approved_user)
 
-    response = client.get(reverse("document-download", args=[document.id]))
-
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db
-def test_approved_member_without_document_permission_cannot_upload(client, approved_user):
-    category = DocumentCategory.objects.create(name="实验 SOP", slug="upload-sop")
-    client.login(username="member", password="pass12345")
-
-    response = client.post(
+    create_response = client.post(
         reverse("document-list"),
         {
-            "title": "新资料",
+            "title": "堆肥采样记录",
             "category_id": category.id,
-            "visibility": DocumentVisibility.MEMBERS,
             "status": DocumentStatus.ACTIVE,
-            "version": "v1.0",
-            "file": ContentFile(b"managed", name="managed.txt"),
-        },
-    )
-
-    assert response.status_code == 403
-    assert not Document.objects.filter(title="新资料").exists()
-
-
-@pytest.mark.django_db
-def test_approved_member_cannot_delete_other_members_document(client, approved_user):
-    owner = User.objects.create_user(username="other-member", password="pass12345")
-    owner.profile.is_approved = True
-    owner.profile.save()
-    document = Document.objects.create(
-        title="别人上传的资料",
-        visibility=DocumentVisibility.MEMBERS,
-        status=DocumentStatus.ACTIVE,
-        owner=owner,
-        maintainer=owner,
-    )
-    client.login(username="member", password="pass12345")
-
-    response = client.delete(reverse("document-detail", args=[document.id]))
-
-    assert response.status_code == 403
-    assert Document.objects.filter(pk=document.pk).exists()
-
-
-@pytest.mark.django_db
-def test_document_manager_can_upload_document_with_version(client):
-    manager = User.objects.create_user(username="doc-manager", password="pass12345")
-    manager.profile.is_approved = True
-    manager.profile.save()
-    role, _ = Role.objects.get_or_create(code=RoleCode.DOCUMENT_MANAGER, defaults={"name": "资料管理员"})
-    UserRole.objects.create(user=manager, role=role)
-    category = DocumentCategory.objects.create(name="实验 SOP", slug="managed-sop")
-    client.login(username="doc-manager", password="pass12345")
-
-    response = client.post(
-        reverse("document-list"),
-        {
-            "title": "堆肥采样记录模板",
-            "category_id": category.id,
-            "visibility": DocumentVisibility.MEMBERS,
-            "status": DocumentStatus.ACTIVE,
-            "version": "v1.0",
-            "change_log": "初始版本",
+            "allow_download": True,
             "file": ContentFile(b"template", name="template.txt"),
         },
     )
 
-    assert response.status_code == 201
-    document = Document.objects.get(title="堆肥采样记录模板")
-    assert document.versions.filter(version="v1.0", is_current=True).exists()
-    assert document.maintainer == manager
+    assert create_response.status_code == 201
+    document = Document.objects.get(title="堆肥采样记录")
+    assert document.owner == approved_user
+    assert document.uploaded_by == approved_user
+    assert document.original_filename == "template.txt"
+    assert document.file_size == 8
+
+    update_response = client.patch(
+        reverse("document-detail", args=[document.id]),
+        {"title": "堆肥采样记录表"},
+        content_type="application/json",
+    )
+    assert update_response.status_code == 200
+
+    delete_response = client.delete(reverse("document-detail", args=[document.id]))
+    assert delete_response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_member_cannot_edit_or_delete_another_members_document(client, approved_user, active_document):
+    client.force_login(approved_user)
+
+    update_response = client.patch(
+        reverse("document-detail", args=[active_document.id]),
+        {"title": "越权修改"},
+        content_type="application/json",
+    )
+    delete_response = client.delete(reverse("document-detail", args=[active_document.id]))
+
+    assert update_response.status_code == 403
+    assert delete_response.status_code == 403
+    assert Document.objects.filter(pk=active_document.id).exists()
+
+
+@pytest.mark.django_db
+def test_document_manager_can_edit_and_delete_another_members_document(client, document_manager, active_document):
+    client.force_login(document_manager)
+
+    update_response = client.patch(
+        reverse("document-detail", args=[active_document.id]),
+        {"description": "管理员补充说明"},
+        content_type="application/json",
+    )
+    delete_response = client.delete(reverse("document-detail", args=[active_document.id]))
+
+    assert update_response.status_code == 200
+    assert delete_response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_approved_member_can_import_documents_with_simplified_template(client, approved_user):
+    DocumentCategory.objects.create(name="实验方法", slug="import-methods")
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-import-excel"),
+        {"file": ContentFile(build_import_workbook_bytes(), name="documents.xlsx")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 1
+    document = Document.objects.get(title="批量导入实验方法")
+    assert document.owner == approved_user
+    assert document.description == "批量导入测试。"

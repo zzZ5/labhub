@@ -40,7 +40,6 @@
                 <strong>{{ doc.title }}</strong>
                 <span>{{ doc.category_name || '未分类' }} · {{ formatDate(doc.updated_at) }}</span>
               </div>
-              <span class="status-tag normal">{{ visibilityText(doc.visibility) }}</span>
             </div>
           </div>
           <div v-else class="empty-note">暂无可查阅资料。</div>
@@ -58,7 +57,7 @@
             <div v-for="item in dashboard.instrument_status" :key="item.id" class="list-row">
               <div>
                 <strong>{{ item.name }}</strong>
-                <span>{{ item.location_detail || item.room || '未填写位置' }}</span>
+                <span>{{ item.location_detail || '未填写位置' }}</span>
               </div>
               <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
             </div>
@@ -112,8 +111,8 @@ const dashboard = reactive<DashboardData>({
   recent_downloads: [],
 })
 
-const canEditPortal = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'editor'])))
-const canManageMembers = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi'])))
+const canEditPortal = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'editor'])))
+const canManageMembers = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin'])))
 const pendingUserCount = computed(() => dashboard.summary.find((item) => item.label === '待审核账号')?.value || 0)
 const quickLinks = computed(() => {
   const links = [
@@ -162,18 +161,6 @@ function instrumentStatusText(status: string) {
       maintenance: '维护中',
       disabled: '停用',
     }[status] || '待确认'
-  )
-}
-
-function visibilityText(visibility: string) {
-  return (
-    {
-      public: '公开',
-      members: '成员可见',
-      phd: '博士可见',
-      pi: '导师可见',
-      custom: '指定可见',
-    }[visibility] || '内部资料'
   )
 }
 

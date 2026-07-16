@@ -7,14 +7,8 @@ from rest_framework.response import Response
 from apps.accounts.permissions import ApprovedMemberAccess
 
 from .importers import import_instruments_from_excel
-from .models import Instrument, InstrumentCategory, InstrumentFaultReport, InstrumentMaintenanceRecord, InstrumentTrainingRecord
-from .serializers import (
-    InstrumentCategorySerializer,
-    InstrumentFaultReportSerializer,
-    InstrumentMaintenanceRecordSerializer,
-    InstrumentSerializer,
-    InstrumentTrainingRecordSerializer,
-)
+from .models import Instrument, InstrumentCategory
+from .serializers import InstrumentCategorySerializer, InstrumentSerializer
 
 
 class InstrumentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -31,7 +25,7 @@ def can_manage_instruments(user):
 
 
 class InstrumentViewSet(viewsets.ModelViewSet):
-    queryset = Instrument.objects.select_related("category", "manager", "manager__profile").prefetch_related("training_records")
+    queryset = Instrument.objects.select_related("category", "manager", "manager__profile")
     serializer_class = InstrumentSerializer
     permission_classes = [ApprovedMemberAccess]
     parser_classes = [JSONParser, FormParser, MultiPartParser]
@@ -71,32 +65,3 @@ class InstrumentViewSet(viewsets.ModelViewSet):
         except Exception:
             return Response({"detail": "Excel 解析失败，请确认包含“仪器名称、状态、详细位置、设备图片、使用说明”等列。"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)
-
-
-class InstrumentTrainingRecordViewSet(viewsets.ModelViewSet):
-    queryset = InstrumentTrainingRecord.objects.select_related("instrument", "user", "user__profile", "trainer")
-    serializer_class = InstrumentTrainingRecordSerializer
-    permission_classes = [ApprovedMemberAccess]
-
-    def perform_create(self, serializer):
-        serializer.save(trainer=self.request.user)
-
-
-class InstrumentMaintenanceRecordViewSet(viewsets.ModelViewSet):
-    queryset = InstrumentMaintenanceRecord.objects.select_related("instrument", "maintainer")
-    serializer_class = InstrumentMaintenanceRecordSerializer
-    permission_classes = [ApprovedMemberAccess]
-
-    def perform_create(self, serializer):
-        serializer.save(maintainer=self.request.user)
-
-
-class InstrumentFaultReportViewSet(viewsets.ModelViewSet):
-    serializer_class = InstrumentFaultReportSerializer
-    permission_classes = [ApprovedMemberAccess]
-
-    def get_queryset(self):
-        return InstrumentFaultReport.objects.select_related("instrument", "reporter", "handled_by")
-
-    def perform_create(self, serializer):
-        serializer.save(reporter=self.request.user)

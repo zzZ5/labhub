@@ -39,10 +39,9 @@ def test_dashboard_summary_returns_workspace_snapshot(client):
     Document.objects.create(
         title="堆肥反应器操作 SOP",
         category=category,
-        current_version="v1.0",
         status=DocumentStatus.ACTIVE,
     )
-    Instrument.objects.create(name="总有机碳分析仪", status=Instrument.Status.MAINTENANCE, room="B112")
+    Instrument.objects.create(name="总有机碳分析仪", status=Instrument.Status.MAINTENANCE, location_detail="B112")
 
     client.force_login(user)
     response = client.get(reverse("dashboard-summary"))

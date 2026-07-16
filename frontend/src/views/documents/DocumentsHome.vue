@@ -3,7 +3,7 @@
     <section class="library-hero">
       <div>
         <h1>内部资料库</h1>
-        <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读、权限查看和资料维护。</p>
+        <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读、下载和资料维护。</p>
       </div>
       <dl>
         <div>
@@ -94,7 +94,7 @@
           </header>
           <dl class="reader-meta">
             <div><dt>分类</dt><dd>{{ categoryName(previewDocument.category) }}</dd></div>
-            <div><dt>权限</dt><dd>{{ previewDocument.visibility_label }}</dd></div>
+            <div><dt>上传人</dt><dd>{{ previewDocument.uploaded_by_name || '组内成员' }}</dd></div>
             <div><dt>更新</dt><dd>{{ formatDate(previewDocument.updated_at) }}</dd></div>
             <div v-if="previewDocument.description"><dt>说明</dt><dd>{{ previewDocument.description }}</dd></div>
           </dl>
@@ -113,7 +113,7 @@
           v-else-if="!displayDocuments.length"
           :icon="Files"
           title="暂无可见资料"
-          description="当前分类下没有资料，或你的账号尚未获得访问权限。"
+          description="当前分类下还没有资料。"
         />
         <div v-else class="document-grid">
           <article
@@ -123,7 +123,6 @@
             @click="handlePreview(doc)"
           >
             <div class="document-topline">
-              <span :class="['status-tag', visibilityClass(doc.visibility)]">{{ doc.visibility_label }}</span>
               <span class="file-type">{{ fileTypeLabel(doc) }}</span>
             </div>
             <div>
@@ -172,14 +171,6 @@
             <el-option v-for="item in displayCategories" :key="item.id" :label="categoryName(item)" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="可见范围">
-          <el-select v-model="uploadForm.visibility">
-            <el-option label="成员可见" value="members" />
-            <el-option label="博士 / 管理员可见" value="phd" />
-            <el-option label="硕博导师 / 管理员可见" value="pi" />
-            <el-option label="公开" value="public" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="资料说明">
           <el-input v-model="uploadForm.description" type="textarea" :rows="3" />
         </el-form-item>
@@ -203,7 +194,7 @@
       <div class="import-panel">
         <div class="import-note">
           <strong>按模板填写资料清单</strong>
-          <p>第二张表填写资料标题、分类、权限、说明和文件名。需要带文件时，把所有文件打包成 zip，表格里的文件名要和 zip 内文件名一致。</p>
+          <p>第二张表填写资料标题、分类、说明和文件名。需要带文件时，把所有文件打包成 zip，表格里的文件名要和 zip 内文件名一致。</p>
           <a href="/templates/documents-import-template.xlsx" download>下载内部资料导入模板</a>
         </div>
         <el-form label-position="top">
@@ -281,7 +272,6 @@ const uploadForm = reactive({
   title: '',
   category_id: undefined as number | undefined,
   description: '',
-  visibility: 'members',
   file: undefined as File | undefined,
 })
 
@@ -358,7 +348,6 @@ function resetUploadForm() {
   uploadForm.title = ''
   uploadForm.category_id = undefined
   uploadForm.description = ''
-  uploadForm.visibility = 'members'
   uploadForm.file = undefined
 }
 
@@ -391,7 +380,6 @@ function openEdit(doc: LabDocument) {
   uploadForm.title = doc.title
   uploadForm.category_id = doc.category?.id
   uploadForm.description = doc.description || ''
-  uploadForm.visibility = doc.visibility || 'members'
   uploadForm.file = undefined
   uploadProgress.value = 0
   uploadVisible.value = true
@@ -544,34 +532,22 @@ function closePreview() {
   previewDocument.value = null
 }
 
-function visibilityClass(visibility: string) {
-  if (visibility === 'members' || visibility === 'public') return 'normal'
-  if (visibility === 'phd') return 'pending'
-  if (visibility === 'pi') return 'maintenance'
-  return 'archived'
-}
-
-function currentVersion(doc: LabDocument) {
-  return doc.versions.find((item) => item.is_current) || doc.versions[0]
-}
-
 function currentFilename(doc: LabDocument) {
-  return currentVersion(doc)?.original_filename || doc.title
+  return doc.original_filename || doc.title
 }
 
 function currentFileSizeLabel(doc: LabDocument) {
-  const size = currentVersion(doc)?.file_size || 0
+  const size = doc.file_size || 0
   return size ? formatFileSize(size) : '-'
 }
 
 function currentFileLabel(doc: LabDocument) {
-  const size = currentVersion(doc)?.file_size || 0
+  const size = doc.file_size || 0
   return size ? `${currentFilename(doc)}（${formatFileSize(size)}）` : currentFilename(doc)
 }
 
 function isDocxDocument(doc: LabDocument) {
-  const version = currentVersion(doc)
-  const type = version?.file_type?.toLowerCase() || ''
+  const type = doc.file_type?.toLowerCase() || ''
   const filename = currentFilename(doc).toLowerCase()
   return type.includes('wordprocessingml') || filename.endsWith('.docx')
 }
@@ -594,10 +570,9 @@ function isOfficeDocument(doc: LabDocument) {
 }
 
 function canEmbedPreview(doc: LabDocument) {
-  const version = currentVersion(doc)
-  const type = version?.file_type?.toLowerCase() || ''
+  const type = doc.file_type?.toLowerCase() || ''
   const filename = currentFilename(doc).toLowerCase()
-  if (version?.preview_status === 'ready') return true
+  if (doc.preview_status === 'ready') return true
   if (isDocxDocument(doc)) return true
   if (isLegacyDocDocument(doc)) return false
   if (isOfficeDocument(doc)) return false

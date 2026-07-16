@@ -4,39 +4,23 @@ from zipfile import BadZipFile, ZipFile
 
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.students.preview import refresh_file_preview_pdf
 from apps.system.uploads import validate_upload_size
 
-from .models import Document, DocumentCategory, DocumentStatus, DocumentVersion, DocumentVisibility
+from .models import Document, DocumentCategory, DocumentStatus
 from .services import can_edit_document
 
 
 HEADER_ALIASES = {
     "title": ["资料标题", "标题", "名称"],
     "category": ["资料分类", "分类", "分类名称"],
-    "visibility": ["可见范围", "权限", "可见性"],
     "description": ["资料说明", "说明", "简介", "备注"],
     "filename": ["文件名", "附件文件名", "zip内文件名", "ZIP内文件名"],
     "allow_download": ["允许下载", "是否允许下载", "下载"],
 }
-
-VISIBILITY_LABELS = {
-    "公开": DocumentVisibility.PUBLIC,
-    "public": DocumentVisibility.PUBLIC,
-    "组内成员可见": DocumentVisibility.MEMBERS,
-    "成员可见": DocumentVisibility.MEMBERS,
-    "members": DocumentVisibility.MEMBERS,
-    "博士/管理员可见": DocumentVisibility.PHD,
-    "博士可见": DocumentVisibility.PHD,
-    "phd": DocumentVisibility.PHD,
-    "导师/管理员可见": DocumentVisibility.PI,
-    "硕博导师/管理员可见": DocumentVisibility.PI,
-    "导师可见": DocumentVisibility.PI,
-    "pi": DocumentVisibility.PI,
-}
-
 
 def cell_text(value):
     if value is None:
@@ -100,13 +84,6 @@ def resolve_category(value, by_name, by_slug):
     return by_slug.get(text) or by_name.get(text)
 
 
-def resolve_visibility(value):
-    text = cell_text(value)
-    if not text:
-        return DocumentVisibility.MEMBERS
-    return VISIBILITY_LABELS.get(text) or VISIBILITY_LABELS.get(normalize_key(text)) or DocumentVisibility.MEMBERS
-
-
 def archive_files(archive_file):
     if not archive_file:
         return {}
@@ -149,10 +126,8 @@ def create_or_update_document(row, mapping, *, categories_by_name, categories_by
     defaults = {
         "category": category,
         "description": row_value(row, mapping, "description"),
-        "visibility": resolve_visibility(row_value(row, mapping, "visibility")),
         "allow_download": truthy(row_value(row, mapping, "allow_download"), default=True),
         "status": DocumentStatus.ACTIVE,
-        "maintainer": user,
     }
     document = Document.objects.filter(title=title).first()
     created = document is None
@@ -160,7 +135,7 @@ def create_or_update_document(row, mapping, *, categories_by_name, categories_by
         return "error", "已有同名资料，但当前账号无权更新。"
 
     if created:
-        document = Document.objects.create(title=title, owner=user, **defaults)
+        document = Document.objects.create(title=title, owner=user, uploaded_by=user, **defaults)
 
     if not created:
         for field, value in defaults.items():
@@ -168,23 +143,26 @@ def create_or_update_document(row, mapping, *, categories_by_name, categories_by
         document.save()
 
     if file_bytes is not None:
-        DocumentVersion.objects.filter(document=document).delete()
+        old_file = document.file.name if document.file else ""
+        old_preview = document.preview_pdf.name if document.preview_pdf else ""
         content_type = mimetypes.guess_type(filename)[0] or ""
         file_content = ContentFile(file_bytes, name=filename)
         validate_upload_size(file_content)
-        version = DocumentVersion.objects.create(
-            document=document,
-            version="",
-            file=file_content,
-            original_filename=filename,
-            uploaded_by=user,
-            file_size=len(file_bytes),
-            file_type=content_type,
-            is_current=True,
-        )
-        refresh_file_preview_pdf(version)
-        document.current_version = ""
-        document.save(update_fields=["current_version", "updated_at"])
+        document.file.save(filename, file_content, save=False)
+        document.preview_pdf = ""
+        document.preview_status = "none"
+        document.preview_error = ""
+        document.original_filename = filename
+        document.uploaded_by = user
+        document.uploaded_at = timezone.now()
+        document.file_size = len(file_bytes)
+        document.file_type = content_type
+        document.save()
+        if old_file and old_file != document.file.name:
+            document.file.storage.delete(old_file)
+        if old_preview:
+            document.preview_pdf.storage.delete(old_preview)
+        refresh_file_preview_pdf(document)
 
     return ("created" if created else "updated"), ""
 

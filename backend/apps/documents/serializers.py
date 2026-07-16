@@ -1,16 +1,19 @@
+import mimetypes
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.students.preview import refresh_file_preview_pdf
 from apps.system.uploads import validate_upload_size
 
-from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentTag, DocumentVersion
+from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentTag
 from .services import can_delete_document, can_download_document, can_edit_document, can_view_document
 
 
 class DocumentCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentCategory
-        fields = ["id", "name", "parent", "slug", "description", "sort_order", "visibility"]
+        fields = ["id", "name", "parent", "slug", "description", "sort_order"]
 
 
 class DocumentTagSerializer(serializers.ModelSerializer):
@@ -19,29 +22,11 @@ class DocumentTagSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug"]
 
 
-class DocumentVersionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DocumentVersion
-        fields = [
-            "id",
-            "version",
-            "original_filename",
-            "change_log",
-            "uploaded_at",
-            "file_size",
-            "file_type",
-            "is_current",
-            "preview_status",
-            "preview_error",
-        ]
-
-
 class DocumentSerializer(serializers.ModelSerializer):
     category = DocumentCategorySerializer(read_only=True)
     tags = DocumentTagSerializer(many=True, read_only=True)
-    versions = DocumentVersionSerializer(many=True, read_only=True)
-    visibility_label = serializers.CharField(source="get_visibility_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    uploaded_by_name = serializers.CharField(source="uploaded_by.profile.real_name", read_only=True)
     can_view = serializers.SerializerMethodField()
     can_preview = serializers.SerializerMethodField()
     can_download = serializers.SerializerMethodField()
@@ -56,15 +41,18 @@ class DocumentSerializer(serializers.ModelSerializer):
             "category",
             "tags",
             "description",
-            "current_version",
-            "visibility",
-            "visibility_label",
             "allow_download",
             "status",
             "status_label",
             "created_at",
             "updated_at",
-            "versions",
+            "original_filename",
+            "uploaded_by_name",
+            "uploaded_at",
+            "file_size",
+            "file_type",
+            "preview_status",
+            "preview_error",
             "can_view",
             "can_preview",
             "can_download",
@@ -81,7 +69,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return can_download_document(getattr(request, "user", None), obj)
 
     def get_can_preview(self, obj):
-        return bool(obj.current_file and self.get_can_view(obj))
+        return bool(obj.file and self.get_can_view(obj))
 
     def get_can_edit(self, obj):
         request = self.context.get("request")
@@ -100,8 +88,6 @@ class DocumentWriteSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
     file = serializers.FileField(write_only=True, required=False)
-    version = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    change_log = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Document
@@ -110,64 +96,57 @@ class DocumentWriteSerializer(serializers.ModelSerializer):
             "title",
             "category_id",
             "description",
-            "visibility",
             "allow_download",
             "status",
             "file",
-            "version",
-            "change_log",
         ]
-
-    def _create_version(self, document, validated_data):
-        file = validated_data.pop("file", None)
-        version = validated_data.pop("version", "") or document.current_version or "v1.0"
-        change_log = validated_data.pop("change_log", "")
-        if file:
-            version_obj = DocumentVersion.objects.create(
-                document=document,
-                version=version,
-                file=file,
-                change_log=change_log,
-                uploaded_by=self.context["request"].user,
-                is_current=True,
-            )
-            refresh_file_preview_pdf(version_obj)
 
     def validate_file(self, file_obj):
         return validate_upload_size(file_obj)
 
-    def create(self, validated_data):
-        file_data = {
-            "file": validated_data.pop("file", None),
-            "version": validated_data.pop("version", "") or "v1.0",
-            "change_log": validated_data.pop("change_log", ""),
-        }
-        document = Document.objects.create(
-            owner=self.context["request"].user,
-            maintainer=self.context["request"].user,
-            current_version=file_data["version"],
-            **validated_data,
-        )
-        self._create_version(document, file_data)
+    def _replace_file(self, document, file_obj):
+        if not file_obj:
+            return document
+        old_file = document.file.name if document.file else ""
+        old_preview = document.preview_pdf.name if document.preview_pdf else ""
+        document.file = file_obj
+        document.original_filename = file_obj.name
+        document.file_size = file_obj.size
+        document.file_type = getattr(file_obj, "content_type", "") or mimetypes.guess_type(file_obj.name)[0] or ""
+        document.uploaded_by = self.context["request"].user
+        document.uploaded_at = timezone.now()
+        document.preview_pdf = ""
+        document.preview_status = "none"
+        document.preview_error = ""
+        document.save()
+        if old_file and old_file != document.file.name:
+            document.file.storage.delete(old_file)
+        if old_preview:
+            document.preview_pdf.storage.delete(old_preview)
+        refresh_file_preview_pdf(document)
         return document
 
+    def create(self, validated_data):
+        file_obj = validated_data.pop("file", None)
+        user = self.context["request"].user
+        document = Document.objects.create(
+            owner=user,
+            uploaded_by=user,
+            **validated_data,
+        )
+        return self._replace_file(document, file_obj)
+
     def update(self, instance, validated_data):
-        file_data = {
-            "file": validated_data.pop("file", None),
-            "version": validated_data.pop("version", "") or instance.current_version or "v1.0",
-            "change_log": validated_data.pop("change_log", ""),
-        }
+        file_obj = validated_data.pop("file", None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        self._create_version(instance, file_data)
-        return instance
+        return self._replace_file(instance, file_obj)
 
 
 class DocumentDownloadLogSerializer(serializers.ModelSerializer):
     document_title = serializers.CharField(source="document.title", read_only=True)
-    version_label = serializers.CharField(source="version.version", read_only=True)
 
     class Meta:
         model = DocumentDownloadLog
-        fields = ["id", "document", "document_title", "version", "version_label", "ip_address", "user_agent", "downloaded_at"]
+        fields = ["id", "document", "document_title", "ip_address", "user_agent", "downloaded_at"]

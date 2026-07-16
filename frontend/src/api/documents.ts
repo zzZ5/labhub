@@ -8,20 +8,6 @@ export interface DocumentCategory {
   slug: string
   description: string
   sort_order: number
-  visibility: string
-}
-
-export interface DocumentVersion {
-  id: number
-  version: string
-  original_filename: string
-  change_log: string
-  uploaded_at: string
-  file_size: number
-  file_type: string
-  is_current: boolean
-  preview_status: string
-  preview_error: string
 }
 
 export interface LabDocument {
@@ -29,14 +15,17 @@ export interface LabDocument {
   title: string
   category: DocumentCategory | null
   description: string
-  current_version: string
-  visibility: string
-  visibility_label: string
   allow_download: boolean
   status: string
   status_label: string
   updated_at: string
-  versions: DocumentVersion[]
+  original_filename: string
+  uploaded_by_name: string
+  uploaded_at: string | null
+  file_size: number
+  file_type: string
+  preview_status: string
+  preview_error: string
   can_view: boolean
   can_preview: boolean
   can_download: boolean
@@ -65,22 +54,16 @@ export async function createDocument(payload: {
   title: string
   category_id?: number
   description?: string
-  visibility: string
   allow_download: boolean
   status: string
-  version?: string
-  change_log?: string
   file?: File
 }, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
   formData.append('title', payload.title)
-  formData.append('visibility', payload.visibility)
   formData.append('status', payload.status)
   formData.append('allow_download', String(payload.allow_download))
-  if (payload.version) formData.append('version', payload.version)
   if (payload.category_id) formData.append('category_id', String(payload.category_id))
   if (payload.description) formData.append('description', payload.description)
-  if (payload.change_log) formData.append('change_log', payload.change_log)
   if (payload.file) formData.append('file', payload.file)
 
   const response = await http.post<LabDocument>('/documents/documents/', formData, {
@@ -95,22 +78,16 @@ export async function updateDocument(documentId: number, payload: {
   title: string
   category_id?: number
   description?: string
-  visibility: string
   allow_download: boolean
   status: string
-  version?: string
-  change_log?: string
   file?: File
 }, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const formData = new FormData()
   formData.append('title', payload.title)
-  formData.append('visibility', payload.visibility)
   formData.append('status', payload.status)
   formData.append('allow_download', String(payload.allow_download))
-  if (payload.version) formData.append('version', payload.version)
   if (payload.category_id) formData.append('category_id', String(payload.category_id))
   if (payload.description) formData.append('description', payload.description)
-  if (payload.change_log) formData.append('change_log', payload.change_log)
   if (payload.file) formData.append('file', payload.file)
 
   const response = await http.patch<LabDocument>(`/documents/documents/${documentId}/`, formData, {

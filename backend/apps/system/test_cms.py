@@ -166,13 +166,12 @@ def test_editor_can_create_instrument_content(client):
         {
             "name": "Compost reactor",
             "model": "Pilot platform",
-            "room": "A201",
+            "location_detail": "A201",
             "status": Instrument.Status.NORMAL,
-            "need_training": False,
             "notes": "Use offline ledger for usage records.",
         },
         content_type="application/json",
     )
 
     assert response.status_code == 201
-    assert Instrument.objects.filter(name="Compost reactor", room="A201").exists()
+    assert Instrument.objects.filter(name="Compost reactor", location_detail="A201").exists()

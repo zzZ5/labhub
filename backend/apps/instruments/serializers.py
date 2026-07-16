@@ -2,32 +2,13 @@ from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
 
-from .models import (
-    Instrument,
-    InstrumentCategory,
-    InstrumentFaultReport,
-    InstrumentImage,
-    InstrumentMaintenanceRecord,
-    InstrumentTrainingRecord,
-)
-from .services import user_has_training
+from .models import Instrument, InstrumentCategory
 
 
 class InstrumentCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = InstrumentCategory
         fields = ["id", "name", "slug", "description", "sort_order"]
-
-
-class InstrumentImageSerializer(serializers.ModelSerializer):
-    image_size = serializers.SerializerMethodField()
-
-    class Meta:
-        model = InstrumentImage
-        fields = ["id", "image", "image_size", "caption", "sort_order"]
-
-    def get_image_size(self, obj):
-        return file_field_size(obj.image)
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -41,7 +22,6 @@ class InstrumentSerializer(serializers.ModelSerializer):
     )
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     manager_name = serializers.CharField(source="manager.profile.real_name", read_only=True)
-    training_passed = serializers.SerializerMethodField()
     image_size = serializers.SerializerMethodField()
 
     class Meta:
@@ -50,48 +30,18 @@ class InstrumentSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "model",
-            "serial_number",
             "category",
             "category_id",
-            "room",
             "location_detail",
+            "manager",
             "manager_name",
             "image",
             "image_size",
             "status",
             "status_label",
-            "need_training",
             "notes",
             "sort_order",
-            "training_passed",
         ]
-
-    def get_training_passed(self, obj):
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        return user_has_training(user, obj) if user and user.is_authenticated else False
 
     def get_image_size(self, obj):
         return file_field_size(obj.image)
-
-
-class InstrumentTrainingRecordSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source="user.profile.real_name", read_only=True)
-    instrument_name = serializers.CharField(source="instrument.name", read_only=True)
-
-    class Meta:
-        model = InstrumentTrainingRecord
-        fields = "__all__"
-
-
-class InstrumentMaintenanceRecordSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InstrumentMaintenanceRecord
-        fields = "__all__"
-
-
-class InstrumentFaultReportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InstrumentFaultReport
-        fields = "__all__"
-        read_only_fields = ["reporter", "handled_by", "handled_at", "result", "created_at"]

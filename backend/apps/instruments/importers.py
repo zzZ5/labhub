@@ -15,7 +15,6 @@ from .models import Instrument, InstrumentCategory
 
 DEFAULT_CATEGORY_NAME = "实验室设备"
 DEFAULT_CATEGORY_SLUG = "lab-equipment"
-IMPORT_SERIAL_PREFIX = "labhub-xlsx-"
 
 
 @dataclass(frozen=True)
@@ -25,7 +24,6 @@ class InstrumentImportRow:
     model: str
     owner: str
     is_asset: str
-    room: str
     location_detail: str
     remark: str
     manager_name: str
@@ -89,8 +87,7 @@ def parse_assignment_rows(workbook) -> list[InstrumentImportRow]:
                 model=data.get("型号", "") or data.get("设备型号", "") or data.get("仪器型号", ""),
                 owner=data.get("设备归属", ""),
                 is_asset=data.get("是否国资", ""),
-                room=data.get("房间", "") or data.get("存放位置", ""),
-                location_detail=data.get("详细位置", "") or data.get("存放位置", ""),
+                location_detail=data.get("详细位置", "") or data.get("存放位置", "") or data.get("房间", ""),
                 remark=data.get("厂家/年限/备注", "") or data.get("备注", ""),
                 manager_name=data.get("管理员", "") or data.get("负责人", ""),
                 notes=data.get("使用说明", "") or data.get("说明", ""),
@@ -186,23 +183,33 @@ def import_instruments_from_excel(file_obj: BinaryIO, *, uploaded_by=None) -> di
     created = 0
     updated = 0
     image_count = 0
+    existing_by_name: dict[str, list[Instrument]] = defaultdict(list)
+    for instrument in Instrument.objects.all().order_by("sort_order", "id"):
+        existing_by_name[instrument.name].append(instrument)
 
     for row in rows:
-        serial_number = f"{IMPORT_SERIAL_PREFIX}{row.index:03d}"
         manager = find_manager(row.manager_name)
         defaults = {
             "name": row.name,
             "model": row.model,
             "category": category,
-            "room": row.room,
             "location_detail": row.location_detail,
             "manager": manager,
             "status": row.status,
-            "need_training": False,
             "notes": instrument_notes(row),
             "sort_order": row.index,
         }
-        instrument, was_created = Instrument.objects.update_or_create(serial_number=serial_number, defaults=defaults)
+        matches = existing_by_name[row.name]
+        if row.occurrence <= len(matches):
+            instrument = matches[row.occurrence - 1]
+            for field, value in defaults.items():
+                setattr(instrument, field, value)
+            instrument.save()
+            was_created = False
+        else:
+            instrument = Instrument.objects.create(**defaults)
+            matches.append(instrument)
+            was_created = True
         created += int(was_created)
         updated += int(not was_created)
 

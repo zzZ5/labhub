@@ -82,8 +82,8 @@ def _document_payload(document):
         "id": document.id,
         "title": document.title,
         "category_name": document.category.name if document.category else "未分类",
-        "current_version": document.current_version or "v1.0",
-        "visibility": document.visibility,
+        "original_filename": document.original_filename,
+        "file_size": document.file_size,
         "updated_at": document.updated_at,
     }
 
@@ -103,11 +103,9 @@ def _student_archive_payload(student):
 
 
 def _download_payload(log):
-    version_label = log.version.version if log.version else log.document.current_version
     return {
         "id": log.id,
         "document_title": log.document.title,
-        "version_label": version_label or "当前版本",
         "downloaded_at": log.downloaded_at,
     }
 
@@ -116,11 +114,9 @@ def _instrument_payload(instrument):
     return {
         "id": instrument.id,
         "name": instrument.name,
-        "room": instrument.room,
         "location_detail": instrument.location_detail,
         "status": instrument.status,
         "status_label": instrument.get_status_display(),
-        "need_training": instrument.need_training,
     }
 
 
@@ -183,7 +179,7 @@ def dashboard_summary(request):
             "student_archives": [_student_archive_payload(item) for item in student_queryset[:5]],
             "recent_downloads": [
                 _download_payload(item)
-                for item in DocumentDownloadLog.objects.select_related("document", "version")
+                for item in DocumentDownloadLog.objects.select_related("document")
                 .filter(user=user)
                 .order_by("-downloaded_at")[:5]
             ],

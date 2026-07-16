@@ -59,7 +59,11 @@
               <dl>
                 <div>
                   <dt>位置</dt>
-                  <dd>{{ instrument.location_detail || instrument.room || '未填写位置' }}</dd>
+                  <dd>{{ instrument.location_detail || '未填写位置' }}</dd>
+                </div>
+                <div v-if="instrument.manager_name">
+                  <dt>负责人</dt>
+                  <dd>{{ instrument.manager_name }}</dd>
                 </div>
                 <div>
                   <dt>说明</dt>
@@ -161,11 +165,11 @@ const instrumentForm = reactive({
 })
 
 const displayInstruments = computed(() => instruments.value)
-const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'pi', 'instrument_manager'])))
+const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'instrument_manager'])))
 const filteredInstruments = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return displayInstruments.value.filter((item) => {
-    const haystack = `${item.name} ${item.model || ''} ${item.room || ''} ${item.location_detail || ''} ${item.notes || ''}`.toLowerCase()
+    const haystack = `${item.name} ${item.model || ''} ${item.location_detail || ''} ${item.manager_name || ''} ${item.notes || ''}`.toLowerCase()
     return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
   })
 })
@@ -211,7 +215,7 @@ function openEdit(instrument: Instrument) {
   Object.assign(instrumentForm, {
     name: instrument.name || '',
     model: instrument.model || '',
-    location_detail: instrument.location_detail || instrument.room || '',
+    location_detail: instrument.location_detail || '',
     status: instrument.status || 'normal',
     notes: instrument.notes || '',
     image: undefined,
