@@ -8,10 +8,10 @@
       </div>
       <el-form label-position="top">
         <el-form-item label="资料清单（.xlsx）">
-          <UploadFileField v-model="form.file" :disabled="saving" accept=".xlsx" hint="请选择内部资料导入模板，单个文件不超过 200 MB" />
+          <UploadFileField v-model="form.file" :disabled="saving" accept=".xlsx" :max-size-mb="50" hint="请选择内部资料导入模板，单个文件不超过 50 MB" />
         </el-form-item>
         <el-form-item label="资料文件包（.zip，可选）">
-          <UploadFileField v-model="form.archive" :disabled="saving" accept=".zip" hint="文件名需与清单一致，压缩包不超过 200 MB" />
+          <UploadFileField v-model="form.archive" :disabled="saving" accept=".zip" :max-size-mb="200" hint="文件名需与清单一致，压缩包不超过 200 MB" />
         </el-form-item>
       </el-form>
       <div v-if="result" class="import-result">

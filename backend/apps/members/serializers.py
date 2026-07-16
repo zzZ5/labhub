@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.uploads import validate_avatar_upload
 
 from .models import Member, MemberEducation, MemberExperience
 
@@ -38,6 +39,9 @@ class MemberSerializer(serializers.ModelSerializer):
 
     def get_avatar_size(self, obj):
         return file_field_size(obj.avatar)
+
+    def validate_avatar(self, value):
+        return validate_avatar_upload(value)
 
     class Meta:
         model = Member

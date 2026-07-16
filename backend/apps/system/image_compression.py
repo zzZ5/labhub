@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from io import BytesIO
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -8,87 +10,144 @@ from django.dispatch import receiver
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 
-MAX_EDGE = getattr(settings, "IMAGE_COMPRESSION_MAX_EDGE", 2000)
-QUALITY = getattr(settings, "IMAGE_COMPRESSION_QUALITY", 82)
-MIN_BYTES = getattr(settings, "IMAGE_COMPRESSION_MIN_BYTES", 320 * 1024)
+@dataclass(frozen=True)
+class CompressionProfile:
+    max_edge: int
+    quality: int
+    min_bytes: int
+    prefer_webp: bool = True
+
+
+DEFAULT_PROFILE = CompressionProfile(
+    max_edge=getattr(settings, "IMAGE_COMPRESSION_MAX_EDGE", 1600),
+    quality=getattr(settings, "IMAGE_COMPRESSION_QUALITY", 80),
+    min_bytes=getattr(settings, "IMAGE_COMPRESSION_MIN_BYTES", 200 * 1024),
+)
+
+PROFILE_RULES = (
+    (("avatars/", "members/avatars/"), CompressionProfile(640, 78, 80 * 1024)),
+    (("portal/favicons/",), CompressionProfile(256, 88, 24 * 1024, prefer_webp=False)),
+    (("portal/logos/",), CompressionProfile(1200, 88, 100 * 1024, prefer_webp=False)),
+    (("portal/banners/", "portal/hero/"), CompressionProfile(1920, 82, 240 * 1024)),
+    (("news/", "portal/research/", "publications/awards/"), CompressionProfile(1600, 80, 180 * 1024)),
+    (("instruments/",), CompressionProfile(1400, 78, 150 * 1024)),
+)
 
 
 def image_fields(model):
     return [field for field in model._meta.fields if isinstance(field, ImageField)]
 
 
-def should_process(width, height, size):
-    return max(width, height) > MAX_EDGE or size > MIN_BYTES
+def profile_for_name(name):
+    normalized = (name or "").replace("\\", "/").lower()
+    for prefixes, profile in PROFILE_RULES:
+        if normalized.startswith(prefixes):
+            return profile
+    return DEFAULT_PROFILE
 
 
-def output_format(image, original_format):
-    fmt = (original_format or "JPEG").upper()
-    if fmt == "JPG":
-        return "JPEG"
-    if fmt in {"JPEG", "PNG", "WEBP"}:
-        return fmt
-    return "JPEG"
+def should_process(width, height, size, profile, force=False):
+    return force or max(width, height) > profile.max_edge or size > profile.min_bytes
 
 
-def resize_image(image):
+def output_format(image, profile):
+    original = (image.format or "JPEG").upper()
+    if not profile.prefer_webp:
+        if original == "JPG":
+            return "JPEG"
+        return original if original in {"JPEG", "PNG", "WEBP"} else "PNG"
+    return "WEBP"
+
+
+def resize_image(image, profile):
     image = ImageOps.exif_transpose(image)
-    if max(image.size) <= MAX_EDGE:
-        return image
-    image.thumbnail((MAX_EDGE, MAX_EDGE), Image.Resampling.LANCZOS)
+    if max(image.size) > profile.max_edge:
+        image.thumbnail((profile.max_edge, profile.max_edge), Image.Resampling.LANCZOS)
     return image
 
 
-def encode_image(image, fmt):
+def encode_image(image, fmt, profile):
     output = BytesIO()
     if fmt == "PNG":
-        image.save(output, format="PNG", optimize=True)
+        image.save(output, format="PNG", optimize=True, compress_level=9)
     elif fmt == "WEBP":
-        image.save(output, format="WEBP", quality=QUALITY, method=6)
+        image.save(output, format="WEBP", quality=profile.quality, method=6)
     else:
         if image.mode not in {"RGB", "L"}:
             image = image.convert("RGB")
-        image.save(output, format="JPEG", quality=QUALITY, optimize=True, progressive=True)
+        image.save(output, format="JPEG", quality=profile.quality, optimize=True, progressive=True)
     return output.getvalue()
 
 
-def compress_field_file(field_file):
+def optimized_name(name, fmt):
+    path = PurePosixPath(name)
+    suffix = {"WEBP": ".webp", "JPEG": ".jpg", "PNG": ".png"}[fmt]
+    return str(path.with_name(f"{path.stem}-optimized{suffix}"))
+
+
+def compress_field_file(field_file, *, force=False):
     if not field_file or not getattr(field_file, "name", ""):
-        return
+        return None
 
     storage = field_file.storage
-    name = field_file.name
+    original_name = field_file.name
+    profile = profile_for_name(original_name)
     try:
-        size = storage.size(name)
-    except OSError:
-        return
-
-    try:
-        with storage.open(name, "rb") as source:
+        original_size = storage.size(original_name)
+        with storage.open(original_name, "rb") as source:
             with Image.open(source) as image:
                 image.load()
-                resize_needed = max(image.width, image.height) > MAX_EDGE
-                if not should_process(image.width, image.height, size):
-                    return
-                fmt = output_format(image, image.format)
-                optimized = encode_image(resize_image(image), fmt)
+                original_dimensions = image.size
+                already_optimized = "-optimized" in PurePosixPath(original_name).stem
+                if already_optimized and max(image.size) <= profile.max_edge:
+                    return None
+                if not should_process(*image.size, original_size, profile, force=force):
+                    return None
+                resized = resize_image(image, profile)
+                fmt = output_format(image, profile)
+                optimized = encode_image(resized, fmt, profile)
+                optimized_dimensions = resized.size
     except (OSError, UnidentifiedImageError, ValueError):
-        return
+        return None
 
-    if len(optimized) >= size and not resize_needed:
-        return
+    resized_image = optimized_dimensions != original_dimensions
+    if len(optimized) >= original_size and not resized_image:
+        return None
 
     try:
-        storage.delete(name)
-        storage.save(name, ContentFile(optimized))
+        saved_name = storage.save(optimized_name(original_name, fmt), ContentFile(optimized))
+        field_file.name = saved_name
+        if saved_name != original_name:
+            storage.delete(original_name)
     except OSError:
-        return
+        return None
+
+    return {
+        "original_name": original_name,
+        "name": saved_name,
+        "original_size": original_size,
+        "size": len(optimized),
+        "width": optimized_dimensions[0],
+        "height": optimized_dimensions[1],
+    }
+
+
+def compress_instance_images(instance, *, force=False):
+    changes = []
+    for field in image_fields(instance.__class__):
+        field_file = getattr(instance, field.name, None)
+        result = compress_field_file(field_file, force=force)
+        if not result:
+            continue
+        instance.__class__._default_manager.filter(pk=instance.pk).update(**{field.name: field_file.name})
+        changes.append({"field": field.name, **result})
+    return changes
 
 
 @receiver(post_save, dispatch_uid="labhub_compress_uploaded_images")
 def compress_uploaded_images(sender, instance, **kwargs):
     if not getattr(settings, "IMAGE_COMPRESSION_ENABLED", True):
         return
-    if not hasattr(instance, "_meta"):
+    if not hasattr(instance, "_meta") or instance.pk is None:
         return
-    for field in image_fields(sender):
-        compress_field_file(getattr(instance, field.name, None))
+    compress_instance_images(instance)

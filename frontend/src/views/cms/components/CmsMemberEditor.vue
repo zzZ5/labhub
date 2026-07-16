@@ -22,18 +22,7 @@
         </div>
         <el-form-item label="研究方向"><el-input v-model="form.research_direction" /></el-form-item>
         <el-form-item label="头像">
-          <div class="member-avatar-field">
-            <div class="member-avatar-preview">
-              <img v-if="avatarPreview && !avatarLoadFailed" :src="avatarPreview" :alt="String(form.name || '成员头像')" @error="avatarLoadFailed = true" />
-              <span v-else>{{ form.name ? String(form.name).slice(0, 1) : '头像' }}</span>
-            </div>
-            <div class="member-avatar-control">
-              <input :key="avatarInputKey" class="file-input" type="file" accept="image/*" @change="$emit('file', $event)" />
-              <small v-if="selectedAvatar">待上传：{{ selectedAvatar.name }}（{{ formatFileSize(selectedAvatar.size) }}）</small>
-              <small v-else-if="currentAvatar">当前头像：{{ displayFileLabel(currentAvatar) }}</small>
-              <small v-else>建议使用清晰的正方形或竖版照片。</small>
-            </div>
-          </div>
+          <ImageCropField v-model="form.avatar" :existing-url="currentAvatar" :aspect-ratio="4 / 5" :output-width="800" :output-height="1000" :max-size-mb="10" hint="按团队成员照片比例裁剪，人物面部尽量居中" />
         </el-form-item>
         <el-form-item label="简介"><el-input v-model="form.profile" type="textarea" :rows="4" /></el-form-item>
         <el-form-item label="展示排序">
@@ -47,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
@@ -56,16 +45,11 @@ const props = defineProps<{
   rows: Array<any>
   editingId: number | null
   form: Record<string, any>
-  avatarPreview: string
-  selectedAvatar?: File | null
   currentAvatar: string
-  avatarInputKey: number
   saving: boolean
   progress: number
   importing: boolean
   importProgress: number
-  displayFileLabel: (value: string) => string
-  formatFileSize: (size: number) => string
 }>()
 
 defineEmits<{
@@ -73,10 +57,6 @@ defineEmits<{
   edit: [row: any]
   save: []
   delete: []
-  file: [event: Event]
   import: [file: File]
 }>()
-
-const avatarLoadFailed = ref(false)
-watch(() => props.avatarPreview, () => { avatarLoadFailed.value = false })
 </script>

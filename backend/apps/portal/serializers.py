@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.uploads import validate_favicon_upload, validate_image_upload, validate_logo_upload
 
 from .models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
 
@@ -23,6 +24,15 @@ class SiteSettingSerializer(serializers.ModelSerializer):
     def get_hero_image_size(self, obj):
         return file_field_size(obj.hero_image)
 
+    def validate_logo(self, value):
+        return validate_logo_upload(value)
+
+    def validate_favicon(self, value):
+        return validate_favicon_upload(value)
+
+    def validate_hero_image(self, value):
+        return validate_image_upload(value)
+
 
 class ResearchDirectionSerializer(serializers.ModelSerializer):
     cover_image_size = serializers.SerializerMethodField()
@@ -34,6 +44,9 @@ class ResearchDirectionSerializer(serializers.ModelSerializer):
     def get_cover_image_size(self, obj):
         return file_field_size(obj.cover_image)
 
+    def validate_cover_image(self, value):
+        return validate_image_upload(value)
+
 
 class HomeBannerSerializer(serializers.ModelSerializer):
     image_size = serializers.SerializerMethodField()
@@ -44,6 +57,9 @@ class HomeBannerSerializer(serializers.ModelSerializer):
 
     def get_image_size(self, obj):
         return file_field_size(obj.image)
+
+    def validate_image(self, value):
+        return validate_image_upload(value)
 
 
 class ContactInfoSerializer(serializers.ModelSerializer):

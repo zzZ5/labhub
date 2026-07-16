@@ -16,14 +16,14 @@
           </div>
           <div class="form-two-col">
             <el-form-item label="Logo">
-              <UploadFileField v-model="siteForm.logo" :disabled="saving" accept="image/*" :existing-label="logo ? displayFileLabel(logo) : ''" />
+              <ImageCropField v-model="siteForm.logo" :disabled="saving" :existing-url="logo" :aspect-ratio="1" :output-width="1000" :output-height="1000" :max-size-mb="5" preview-shape="circle" hint="按正方形裁剪，支持透明背景" />
             </el-form-item>
             <el-form-item label="网站图标">
-              <UploadFileField v-model="siteForm.favicon" :disabled="saving" accept="image/*" :existing-label="favicon ? displayFileLabel(favicon) : ''" />
+              <ImageCropField v-model="siteForm.favicon" :disabled="saving" :existing-url="favicon" :aspect-ratio="1" :output-width="512" :output-height="512" :max-size-mb="2" preview-shape="circle" hint="按正方形裁剪，用于浏览器图标" />
             </el-form-item>
           </div>
           <el-form-item label="默认横幅图">
-            <UploadFileField v-model="siteForm.hero_image" :disabled="saving" accept="image/*" :existing-label="heroImage ? displayFileLabel(heroImage) : ''" hint="没有轮播横幅时首页使用此图，文件不超过 200 MB" />
+            <ImageCropField v-model="siteForm.hero_image" :disabled="saving" :existing-url="heroImage" :aspect-ratio="12 / 5" :output-width="1920" :output-height="800" :max-size-mb="20" hint="没有轮播横幅时首页使用此图" />
           </el-form-item>
         </div>
         <div class="form-section">
@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import CmsFormActions from './CmsFormActions.vue'
-import UploadFileField from '../../../components/UploadFileField.vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 
 defineProps<{
   siteForm: Record<string, any>

@@ -13,7 +13,7 @@
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="详细内容"><el-input v-model="form.content" type="textarea" :rows="5" /></el-form-item>
         <el-form-item label="封面图">
-          <UploadFileField v-model="form.cover_image" :disabled="saving" accept="image/*" :existing-label="currentCover ? displayFileLabel(currentCover) : ''" />
+          <ImageCropField v-model="form.cover_image" :disabled="saving" :existing-url="currentCover" :aspect-ratio="4 / 3" :output-width="1600" :output-height="1200" :max-size-mb="20" />
         </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>
@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
-import UploadFileField from '../../../components/UploadFileField.vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 
 defineProps<{
   rows: Array<any>

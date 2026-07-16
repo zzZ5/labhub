@@ -14,8 +14,8 @@
         <div class="form-two-col"><el-form-item label="奖项等级"><el-input v-model="form.award_level" /></el-form-item><el-form-item label="获奖日期"><el-date-picker v-model="form.award_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item></div>
         <el-form-item label="参与人员"><el-input v-model="form.participants" type="textarea" :rows="2" /></el-form-item>
         <div class="form-two-col">
-          <el-form-item label="获奖图片"><UploadFileField v-model="form.image" :disabled="saving" accept="image/*" :existing-label="currentImage ? displayFileLabel(currentImage) : ''" /></el-form-item>
-          <el-form-item label="附件"><UploadFileField v-model="form.attachment" :disabled="saving" accept="application/pdf,image/*,.pdf" :existing-label="currentAttachment ? displayFileLabel(currentAttachment) : ''" /></el-form-item>
+          <el-form-item label="获奖图片"><ImageCropField v-model="form.image" :disabled="saving" :existing-url="currentImage" :aspect-ratio="4 / 3" :output-width="1600" :output-height="1200" :max-size-mb="20" /></el-form-item>
+          <el-form-item label="附件"><UploadFileField v-model="form.attachment" :disabled="saving" accept="application/pdf,image/*,.pdf" :max-size-mb="200" :existing-label="currentAttachment ? displayFileLabel(currentAttachment) : ''" /></el-form-item>
         </div>
         <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
         <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
@@ -31,6 +31,7 @@ import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 defineProps<{ rows: Array<any>; editingId: number | null; form: Record<string, any>; currentImage: string; currentAttachment: string; saving: boolean; progress: number; importing: boolean; importProgress: number; displayFileLabel: (value: string) => string }>()
 defineEmits<{ create: []; edit: [row: any]; save: []; delete: []; import: [file: File] }>()
 </script>

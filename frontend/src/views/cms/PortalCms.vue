@@ -69,11 +69,9 @@
         <el-tab-pane label="团队成员" name="members">
           <CmsMemberEditor
             :rows="memberRows" :editing-id="editingMemberId" :form="memberForm"
-            :avatar-preview="memberAvatarPreviewUrl" :selected-avatar="selectedMemberAvatar" :current-avatar="editingMemberAvatar"
-            :avatar-input-key="memberAvatarInputKey" :saving="saving" :progress="cmsUploadProgress"
+            :current-avatar="editingMemberAvatar" :saving="saving" :progress="cmsUploadProgress"
             :importing="importingKind === 'members'" :import-progress="importProgress"
-            :display-file-label="displayFileLabel" :format-file-size="formatFileSize"
-            @create="resetMember" @edit="editMember" @file="setFile($event, memberForm, 'avatar')"
+            @create="resetMember" @edit="editMember"
             @import="importCmsFile($event, 'members')" @save="saveMember" @delete="deleteMember"
           />
         </el-tab-pane>
@@ -135,14 +133,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle } from '../../api/cms'
 import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
-import { formatFileSize, validateUploadFile } from '../../utils/files'
+import { UPLOAD_LIMIT, formatFileSize, validateUploadFile } from '../../utils/files'
 import CmsBannerEditor from './components/CmsBannerEditor.vue'
 import CmsAwardEditor from './components/CmsAwardEditor.vue'
 import CmsFooterEditor from './components/CmsFooterEditor.vue'
@@ -155,7 +153,6 @@ import CmsResearchEditor from './components/CmsResearchEditor.vue'
 import CmsSiteEditor from './components/CmsSiteEditor.vue'
 import { useCmsImport } from './composables/useCmsImport'
 
-type FileField = 'cover_image' | 'avatar' | 'pdf_file' | 'image' | 'attachment' | 'word_file' | 'logo' | 'favicon' | 'hero_image'
 type CmsForm = Record<string, unknown>
 type Row<T> = {
   key: string | number
@@ -183,8 +180,6 @@ const cmsUploadProgress = ref(0)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
 const newsEditorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)
-const memberAvatarInputKey = ref(0)
-const memberAvatarObjectUrl = ref('')
 const { importProgress, importingKind, importFile: importCmsFile } = useCmsImport(loadAll)
 
 const researchItems = ref<ResearchDirection[]>([])
@@ -389,8 +384,6 @@ const newsContent = computed({
     newsForm.content = value
   },
 })
-const selectedMemberAvatar = computed(() => (memberForm.avatar instanceof File ? memberForm.avatar : null))
-const memberAvatarPreviewUrl = computed(() => memberAvatarObjectUrl.value || editingMemberAvatar.value)
 const publicationRows = computed<Row<Publication>[]>(() =>
   publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
 )
@@ -539,31 +532,6 @@ async function saveFooterContent() {
   await siteBrand.load(true)
 }
 
-function setFile(event: Event, form: CmsForm, field: FileField) {
-  const input = event.target as HTMLInputElement
-  const selected = input.files?.[0]
-  if (selected) {
-    const message = validateUploadFile(selected)
-    if (message) {
-      input.value = ''
-      ElMessage.warning(message)
-      return
-    }
-  }
-  form[field] = selected
-  if (form === memberForm && field === 'avatar') {
-    releaseMemberAvatarPreview()
-    const file = input.files?.[0]
-    if (file) memberAvatarObjectUrl.value = URL.createObjectURL(file)
-  }
-  if (form === newsForm && (field === 'word_file' || field === 'cover_image')) newsUploadProgress.value = 0
-}
-
-function releaseMemberAvatarPreview() {
-  if (memberAvatarObjectUrl.value) URL.revokeObjectURL(memberAvatarObjectUrl.value)
-  memberAvatarObjectUrl.value = ''
-}
-
 function displayFileName(value?: string | null) {
   if (!value) return ''
   const withoutQuery = value.split('?')[0]
@@ -704,10 +672,8 @@ async function deleteResearch() {
 }
 
 function resetMember() {
-  releaseMemberAvatarPreview()
   editingMemberId.value = null
   editingMemberAvatar.value = ''
-  memberAvatarInputKey.value += 1
   Object.assign(memberForm, {
     name: '',
     role_type: '',
@@ -720,10 +686,8 @@ function resetMember() {
 }
 
 function editMember(item: Member) {
-  releaseMemberAvatarPreview()
   editingMemberId.value = item.id
   editingMemberAvatar.value = item.avatar || ''
-  memberAvatarInputKey.value += 1
   Object.assign(memberForm, {
     name: item.name,
     role_type: item.role_label || item.role_type || '',
@@ -842,6 +806,11 @@ async function ensureNewsDraft() {
 }
 
 async function insertNewsBodyImage(file: File) {
+  const validationMessage = validateUploadFile(file, UPLOAD_LIMIT.image)
+  if (validationMessage) {
+    ElMessage.warning(validationMessage)
+    return
+  }
   uploadingNewsImage.value = true
   newsImageUploadProgress.value = 0
   try {
@@ -1191,7 +1160,6 @@ function visibilityText(visibility?: string) {
 }
 
 onMounted(loadAll)
-onBeforeUnmount(releaseMemberAvatarPreview)
 </script>
 
 <style>

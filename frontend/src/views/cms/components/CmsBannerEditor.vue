@@ -23,7 +23,7 @@
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="副标题"><el-input v-model="form.subtitle" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="横幅图片">
-          <UploadFileField v-model="form.image" :disabled="saving" accept="image/*" :existing-label="currentImage ? displayFileLabel(currentImage) : ''" hint="建议上传主体居中的横向照片，文件不超过 200 MB" />
+          <ImageCropField v-model="form.image" :disabled="saving" :existing-url="currentImage" :aspect-ratio="12 / 5" :output-width="1920" :output-height="800" :max-size-mb="20" hint="按首页横幅比例裁剪，主体尽量居中" />
         </el-form-item>
         <el-form-item label="跳转链接"><el-input v-model="form.link" placeholder="可选，https://..." /></el-form-item>
         <div class="form-two-col">
@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
-import UploadFileField from '../../../components/UploadFileField.vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 
 defineProps<{
   rows: Array<any>

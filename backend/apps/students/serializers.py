@@ -2,7 +2,8 @@
 
 from apps.accounts.models import RoleCode
 from apps.system.serializer_fields import file_field_size
-from apps.system.uploads import validate_upload_size
+from apps.system.uploads import validate_avatar_upload as validate_avatar_size
+from apps.system.uploads import validate_document_upload
 
 from .models import StudentArchiveFile, StudentProfile
 from .services import can_delete_archive_file, can_delete_student_profile, can_edit_student_profile
@@ -42,7 +43,7 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
         return can_delete_archive_file(getattr(request, "user", None), obj)
 
     def validate_file(self, file_obj):
-        return validate_upload_size(file_obj)
+        return validate_document_upload(file_obj)
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -117,7 +118,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return avatar.url if avatar else ""
 
     def validate_avatar_upload(self, file_obj):
-        return validate_upload_size(file_obj)
+        return validate_avatar_size(file_obj)
 
     def validate_user(self, user):
         profile = getattr(user, "profile", None)

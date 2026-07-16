@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<{
   hint?: string
   maxSizeMb?: number
   disabled?: boolean
-}>(), { accept: '', existingLabel: '', hint: '', maxSizeMb: 200, disabled: false })
+}>(), { accept: '', existingLabel: '', hint: '', maxSizeMb: 20, disabled: false })
 const emit = defineEmits<{ 'update:modelValue': [file: File | undefined]; error: [message: string] }>()
 const inputRef = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)

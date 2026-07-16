@@ -8,7 +8,7 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.students.preview import refresh_file_preview_pdf
-from apps.system.uploads import validate_upload_size
+from apps.system.uploads import validate_document_upload, validate_spreadsheet_upload
 
 from .models import Document, DocumentCategory, DocumentStatus
 from .services import can_edit_document
@@ -87,7 +87,7 @@ def resolve_category(value, by_name, by_slug):
 def archive_files(archive_file):
     if not archive_file:
         return {}
-    validate_upload_size(archive_file)
+    validate_document_upload(archive_file)
     files = {}
     try:
         with ZipFile(archive_file) as archive:
@@ -147,7 +147,7 @@ def create_or_update_document(row, mapping, *, categories_by_name, categories_by
         old_preview = document.preview_pdf.name if document.preview_pdf else ""
         content_type = mimetypes.guess_type(filename)[0] or ""
         file_content = ContentFile(file_bytes, name=filename)
-        validate_upload_size(file_content)
+        validate_document_upload(file_content)
         document.file.save(filename, file_content, save=False)
         document.preview_pdf = ""
         document.preview_status = "none"
@@ -171,7 +171,7 @@ def create_or_update_document(row, mapping, *, categories_by_name, categories_by
 def import_documents_excel(excel_file, *, archive_file=None, user=None):
     if not excel_file.name.lower().endswith(".xlsx"):
         raise ValueError("请上传 .xlsx 格式的资料清单。")
-    validate_upload_size(excel_file)
+    validate_spreadsheet_upload(excel_file)
 
     workbook = load_workbook(excel_file, data_only=True)
     sheet = get_data_sheet(workbook)

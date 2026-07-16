@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.uploads import validate_image_upload
 
 from .models import Instrument, InstrumentCategory
 
@@ -45,3 +46,6 @@ class InstrumentSerializer(serializers.ModelSerializer):
 
     def get_image_size(self, obj):
         return file_field_size(obj.image)
+
+    def validate_image(self, value):
+        return validate_image_upload(value)

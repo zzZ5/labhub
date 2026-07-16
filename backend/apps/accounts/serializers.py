@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
-from apps.system.uploads import validate_upload_size
+from apps.system.uploads import validate_avatar_upload as validate_avatar_size
 
 from .models import Role, UserProfile, UserRole
 from .services import SYSTEM_PERMISSION_CODES, user_role_codes
@@ -74,7 +74,7 @@ class CurrentUserProfileUpdateSerializer(serializers.Serializer):
     avatar = serializers.ImageField(required=False)
 
     def validate_avatar(self, value):
-        return validate_upload_size(value)
+        return validate_avatar_size(value)
 
     def validate_username(self, value):
         username = value.strip()
@@ -185,7 +185,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
         return value
 
     def validate_avatar(self, value):
-        return validate_upload_size(value)
+        return validate_avatar_size(value)
 
     def validate_system_roles(self, value):
         invalid = [role for role in value if role not in SYSTEM_PERMISSION_CODES]
@@ -262,7 +262,7 @@ class AdminUserUpdateSerializer(serializers.Serializer):
         return value
 
     def validate_avatar(self, value):
-        return validate_upload_size(value)
+        return validate_avatar_size(value)
 
     def update(self, instance, validated_data):
         profile_data = {

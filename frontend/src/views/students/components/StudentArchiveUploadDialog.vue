@@ -16,7 +16,7 @@
       <el-form-item label="标题"><el-input v-model="form.title" placeholder="例如：硕士毕业论文终稿" /></el-form-item>
       <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
       <el-form-item label="文件">
-        <UploadFileField v-model="form.file" :disabled="saving" accept=".pdf,.doc,.docx,.ppt,.pptx" hint="支持 PDF、Word 和 PowerPoint，单个文件不超过 200 MB" />
+        <UploadFileField v-model="form.file" :disabled="saving" accept=".pdf,.doc,.docx,.ppt,.pptx" :max-size-mb="200" hint="支持 PDF、Word 和 PowerPoint，单个文件不超过 200 MB" />
       </el-form-item>
     </el-form>
     <template #footer>

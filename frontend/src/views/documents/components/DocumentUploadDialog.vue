@@ -14,7 +14,7 @@
       </el-form-item>
       <el-form-item label="资料说明"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
       <el-form-item :label="document ? '替换文件（可选）' : '文件'">
-        <UploadFileField v-model="form.file" :disabled="saving" :existing-label="document ? currentFileLabel(document) : ''" />
+        <UploadFileField v-model="form.file" :disabled="saving" :max-size-mb="200" :existing-label="document ? currentFileLabel(document) : ''" />
       </el-form-item>
     </el-form>
     <template #footer>

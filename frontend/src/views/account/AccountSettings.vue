@@ -34,11 +34,7 @@
             </div>
             <el-form label-position="top" class="settings-form">
               <el-form-item label="头像">
-                <div class="avatar-editor">
-                  <div class="profile-avatar"><img v-if="avatarPreview" :src="avatarPreview" alt="头像预览" /><span v-else>{{ initials }}</span></div>
-                  <label class="avatar-picker">选择图片<input type="file" accept="image/*" @change="handleAvatar" /></label>
-                  <span class="field-note">未上传照片时使用姓名首字</span>
-                </div>
+                <ImageCropField v-model="avatarFile" :existing-url="avatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" hint="未上传时使用姓名首字" @preview="avatarPreview = $event" />
               </el-form-item>
               <el-form-item label="账号名">
                 <el-input v-model="profileForm.username" maxlength="150" placeholder="用于登录，不能与其他成员重复" />
@@ -77,6 +73,7 @@ import { Notebook } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 import { changeCurrentUserPassword, updateCurrentUserProfile } from '../../api/accounts'
+import ImageCropField from '../../components/ImageCropField.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
@@ -97,13 +94,6 @@ function fillProfile() {
   profileForm.phone = session.user?.profile?.phone || ''
   profileForm.bio = session.user?.profile?.bio || ''
   avatarPreview.value = session.user?.profile?.avatar || ''
-}
-
-function handleAvatar(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  avatarFile.value = file
-  avatarPreview.value = URL.createObjectURL(file)
 }
 
 function errorMessage(error: any, fallback: string) {

@@ -28,7 +28,7 @@
           <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
         </div>
         <el-form-item label="摘要"><el-input v-model="form.abstract" type="textarea" :rows="4" /></el-form-item>
-        <el-form-item label="PDF 附件"><UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" /></el-form-item>
+        <el-form-item label="PDF 附件"><UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :max-size-mb="200" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" /></el-form-item>
       </el-form>
       <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="$emit('save')" @delete="$emit('delete')" />
     </article>

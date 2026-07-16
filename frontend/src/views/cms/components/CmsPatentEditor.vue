@@ -14,7 +14,7 @@
         <div class="form-two-col"><el-form-item label="专利号"><el-input v-model="form.patent_number" /></el-form-item><el-form-item label="状态"><el-input v-model="form.status" /></el-form-item></div>
         <el-form-item label="发明人"><el-input v-model="form.inventors" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="PDF 附件">
-          <UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" />
+          <UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :max-size-mb="200" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" />
         </el-form-item>
         <div class="form-two-col"><el-form-item label="申请日期"><el-date-picker v-model="form.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item><el-form-item label="授权日期"><el-date-picker v-model="form.authorization_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item></div>
         <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>

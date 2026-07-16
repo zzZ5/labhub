@@ -1,7 +1,7 @@
 <template>
   <div class="cms-import-block">
     <div class="import-strip">
-      <span>{{ description }}</span>
+      <span>{{ description }}，Excel 不超过 50 MB</span>
       <a :href="templateUrl" download>下载模板</a>
       <button type="button" :disabled="loading" @click="inputRef?.click()">
         {{ loading ? '正在导入' : '导入 Excel' }}
@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
-import { validateUploadFile } from '../../../utils/files'
+import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
 import { ElMessage } from 'element-plus'
 
 defineProps<{
@@ -37,7 +37,7 @@ function handleFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (file) {
-    const message = validateUploadFile(file)
+    const message = validateUploadFile(file, UPLOAD_LIMIT.spreadsheet)
     if (message) ElMessage.warning(message)
     else emit('import', file)
   }

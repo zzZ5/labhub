@@ -23,7 +23,7 @@ from apps.news.serializers import (
     render_docx_blocks,
     sanitize_news_html,
 )
-from apps.system.uploads import validate_upload_size
+from apps.system.uploads import validate_document_upload, validate_image_upload, validate_spreadsheet_upload
 from apps.portal.models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
 from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer, ResearchDirectionSerializer, SiteSettingSerializer
 from apps.publications.models import Award, Patent, Project, Publication
@@ -103,6 +103,7 @@ class CmsMemberViewSet(CmsParserMixin, viewsets.ModelViewSet):
         if not upload:
             return Response({"detail": "请上传团队成员导入文件。"}, status=status.HTTP_400_BAD_REQUEST)
         try:
+            validate_spreadsheet_upload(upload)
             result = import_rows(upload, upload.name, "members")
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
@@ -161,6 +162,9 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
     def validate_content(self, value):
         return sanitize_news_html(value)
 
+    def validate_cover_image(self, value):
+        return validate_image_upload(value)
+
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
         validated_data["slug"] = unique_slug(NewsArticle, validated_data.get("title"), prefix="news")
@@ -188,7 +192,7 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
         word_file = validated_data.get("word_file")
         if not word_file:
             return
-        validate_upload_size(word_file)
+        validate_document_upload(word_file)
         filename = getattr(word_file, "name", "")
         if not filename.lower().endswith(".docx"):
             raise serializers.ValidationError({"word_file": "请上传 .docx 格式的 Word 文档。"})
@@ -243,7 +247,7 @@ class CmsNewsImageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "article"]
 
     def validate_image(self, image):
-        return validate_upload_size(image)
+        return validate_image_upload(image)
 
 
 class CmsNewsImageViewSet(CmsParserMixin, viewsets.ModelViewSet):
@@ -306,6 +310,7 @@ def import_cms_file(request, kind: str, missing_message: str):
     if not upload:
         return Response({"detail": missing_message}, status=status.HTTP_400_BAD_REQUEST)
     try:
+        validate_spreadsheet_upload(upload)
         result = import_rows(upload, upload.name, kind)
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

@@ -21,7 +21,7 @@
       </template>
     </div>
     <p v-if="canManage" class="import-tip">
-      模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入。
+      模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入，Excel 不超过 50 MB。
     </p>
     <UploadProgress :active="importing" :progress="progress" uploading-text="正在上传设备表，请不要关闭页面。" processing-text="上传完成，正在解析仪器和图片。" />
   </div>
@@ -31,7 +31,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import UploadProgress from '../../../components/UploadProgress.vue'
-import { validateUploadFile } from '../../../utils/files'
+import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
 
 defineProps<{
   keyword: string
@@ -55,7 +55,7 @@ function selectExcel(event: Event) {
   const file = input.files?.[0]
   input.value = ''
   if (file) {
-    const message = validateUploadFile(file)
+    const message = validateUploadFile(file, UPLOAD_LIMIT.spreadsheet)
     if (message) ElMessage.warning(message)
     else emit('import', file)
   }

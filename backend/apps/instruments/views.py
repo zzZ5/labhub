@@ -5,6 +5,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.permissions import ApprovedMemberAccess
+from apps.system.uploads import validate_spreadsheet_upload
 
 from .importers import import_instruments_from_excel
 from .models import Instrument, InstrumentCategory
@@ -61,6 +62,7 @@ class InstrumentViewSet(viewsets.ModelViewSet):
         if not upload.name.lower().endswith(".xlsx"):
             return Response({"detail": "仅支持 .xlsx 文件。"}, status=status.HTTP_400_BAD_REQUEST)
         try:
+            validate_spreadsheet_upload(upload)
             result = import_instruments_from_excel(upload, uploaded_by=request.user)
         except Exception:
             return Response({"detail": "Excel 解析失败，请确认包含“仪器名称、状态、详细位置、设备图片、使用说明”等列。"}, status=status.HTTP_400_BAD_REQUEST)

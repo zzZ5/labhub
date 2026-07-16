@@ -9,13 +9,7 @@
 
     <el-form v-if="open" label-position="top" class="profile-form">
       <el-form-item label="头像">
-        <div class="student-avatar-editor">
-          <div class="student-profile-avatar">
-            <img v-if="avatarPreview" :src="avatarPreview" alt="头像预览" />
-            <span v-else>{{ form.name.slice(0, 1) || '学' }}</span>
-          </div>
-          <label class="student-avatar-upload">选择图片<input :key="fileInputKey" type="file" accept="image/*" @change="selectAvatar" /></label>
-        </div>
+        <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
       </el-form-item>
       <el-form-item label="关联成员账号">
         <el-select v-model="form.user" filterable placeholder="选择学生登录账号" :disabled="!canManage && Boolean(student)">
@@ -59,6 +53,7 @@ import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { CurrentUser } from '../../../api/accounts'
 import type { StudentProfile, StudentProfilePayload } from '../../../api/students'
+import ImageCropField from '../../../components/ImageCropField.vue'
 
 const props = defineProps<{
   open: boolean
@@ -79,7 +74,6 @@ const emit = defineEmits<{
 }>()
 
 const avatarPreview = ref('')
-const fileInputKey = ref(0)
 const form = reactive<StudentProfilePayload>({ user: 0, name: '', degree_type: 'master', grade: '', supervisor: null, advisors: [], research_topic: '', research_direction: '' })
 
 function resetForm() {
@@ -99,19 +93,11 @@ function resetForm() {
     avatar_upload: undefined,
   })
   avatarPreview.value = student?.avatar || ''
-  fileInputKey.value += 1
 }
 
 function userOptionLabel(user: CurrentUser) {
   const name = user.profile?.real_name || user.first_name || user.username
   return `${name}（${user.email || user.username}）`
-}
-
-function selectAvatar(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  form.avatar_upload = file
-  avatarPreview.value = URL.createObjectURL(file)
 }
 
 function submit() {
@@ -200,6 +186,11 @@ watch(() => props.open, (open) => {
 
 .student-avatar-upload input {
   display: none;
+}
+
+.avatar-note {
+  color: var(--color-muted);
+  font-size: 12px;
 }
 
 .form-pair {

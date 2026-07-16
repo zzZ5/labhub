@@ -101,10 +101,7 @@
         <el-form label-position="top" class="create-form">
           <el-form-item label="姓名"><el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" /></el-form-item>
           <el-form-item label="头像">
-            <div class="avatar-editor">
-              <div class="account-avatar large"><img v-if="accountAvatarPreview" :src="accountAvatarPreview" alt="头像预览" /><span v-else>{{ initials(accountForm.real_name) }}</span></div>
-              <label class="avatar-upload">选择图片<input type="file" accept="image/*" @change="handleAccountAvatar" /></label>
-            </div>
+            <ImageCropField v-model="accountForm.avatar" :existing-url="accountAvatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="accountAvatarPreview = $event" />
           </el-form-item>
           <el-form-item label="邮箱"><el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" /></el-form-item>
           <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
@@ -147,6 +144,7 @@ import {
 } from '../../api/accounts'
 import { createStudentProfile, fetchStudentProfiles, type StudentProfile } from '../../api/students'
 import AppPagination from '../../components/AppPagination.vue'
+import ImageCropField from '../../components/ImageCropField.vue'
 import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
@@ -375,14 +373,6 @@ function openPasswordDialog(user: CurrentUser) {
   passwordTarget.value = user
   passwordForm.password = ''
   passwordVisible.value = true
-}
-
-function handleAccountAvatar(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  accountForm.avatar = file
-  accountAvatarPreview.value = URL.createObjectURL(file)
 }
 
 async function submitAccountForm() {
@@ -788,6 +778,11 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 
 .avatar-upload input {
   display: none;
+}
+
+.field-note {
+  color: var(--color-muted);
+  font-size: 12px;
 }
 
 .account-panel {

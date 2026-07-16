@@ -18,11 +18,11 @@
         <div class="news-assets-grid">
           <div class="news-asset-field">
             <strong>Word 稿件</strong>
-            <UploadFileField v-model="form.word_file" :disabled="saving" accept=".docx" :existing-label="currentWordFile ? displayFileLabel(currentWordFile) : ''" hint="可选，支持 .docx 正文和内嵌图片，文件不超过 200 MB" />
+            <UploadFileField v-model="form.word_file" :disabled="saving" accept=".docx" :max-size-mb="200" :existing-label="currentWordFile ? displayFileLabel(currentWordFile) : ''" hint="可选，支持 .docx 正文和内嵌图片，文件不超过 200 MB" />
           </div>
           <div class="news-asset-field">
             <strong>封面图</strong>
-            <UploadFileField v-model="form.cover_image" :disabled="saving" accept="image/*" :existing-label="currentCover ? displayFileLabel(currentCover) : ''" hint="用于新闻列表；未上传时使用正文首图" />
+            <ImageCropField v-model="form.cover_image" :disabled="saving" :existing-url="currentCover" :aspect-ratio="32 / 17" :output-width="1600" :output-height="850" :max-size-mb="20" hint="用于新闻列表；未上传时使用正文首图" />
           </div>
         </div>
         <UploadProgress :active="saving" :progress="uploadProgress" uploading-text="正在上传并保存…" processing-text="上传完成，正在处理正文。" />
@@ -40,6 +40,7 @@
 import { ref } from 'vue'
 import RichTextEditor from '../../../components/RichTextEditor.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
+import ImageCropField from '../../../components/ImageCropField.vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
