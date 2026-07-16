@@ -40,6 +40,18 @@ export interface DocumentImportResult {
   errors: string[]
 }
 
+export interface DocumentFormPayload {
+  title: string
+  category_id?: number
+  description?: string
+  file?: File
+}
+
+export interface DocumentImportPayload {
+  file: File
+  archive?: File
+}
+
 export async function fetchDocumentCategories() {
   const response = await http.get<DocumentCategory[]>('/documents/categories/')
   return response.data
@@ -50,14 +62,15 @@ export async function fetchDocuments(params: { search?: string; category__slug?:
   return response.data
 }
 
-export async function createDocument(payload: {
-  title: string
-  category_id?: number
-  description?: string
-  allow_download: boolean
-  status: string
-  file?: File
-}, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+export async function fetchDocument(documentId: number) {
+  const response = await http.get<LabDocument>(`/documents/documents/${documentId}/`)
+  return response.data
+}
+
+export async function createDocument(
+  payload: DocumentFormPayload & { allow_download: boolean; status: string },
+  onUploadProgress?: (event: AxiosProgressEvent) => void,
+) {
   const formData = new FormData()
   formData.append('title', payload.title)
   formData.append('status', payload.status)
@@ -74,14 +87,11 @@ export async function createDocument(payload: {
   return response.data
 }
 
-export async function updateDocument(documentId: number, payload: {
-  title: string
-  category_id?: number
-  description?: string
-  allow_download: boolean
-  status: string
-  file?: File
-}, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+export async function updateDocument(
+  documentId: number,
+  payload: DocumentFormPayload & { allow_download: boolean; status: string },
+  onUploadProgress?: (event: AxiosProgressEvent) => void,
+) {
   const formData = new FormData()
   formData.append('title', payload.title)
   formData.append('status', payload.status)

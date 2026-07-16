@@ -15,547 +15,122 @@
 
       <el-tabs v-model="activeTab" class="cms-tabs">
         <el-tab-pane label="站点首页" name="site">
-          <section class="editor-single">
-            <article class="card form-panel site-form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>站点首页</span>
-                  <h2>{{ siteForm.site_name || '中农雨磷' }}</h2>
-                  <p>维护首页基础文案、课题组简介和加入我们；网站标识与页脚内容请到“页脚设置”维护。</p>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <div class="form-section">
-                  <div class="subsection-heading">
-                    <strong>基础信息</strong>
-                    <span>用于导航栏、页脚和默认横幅文字。</span>
-                  </div>
-                  <div class="form-two-col">
-                    <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
-                    <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
-                  </div>
-                  <el-form-item label="副标题"><el-input v-model="siteForm.keywords" /></el-form-item>
-                  <el-form-item label="横幅切换间隔">
-                    <el-input-number v-model="siteForm.banner_interval_seconds" :min="3" :max="30" />
-                    <small>单位：秒。仅首页横幅有多张图片时生效。</small>
-                  </el-form-item>
-                </div>
-
-                <div class="form-section">
-                  <div class="subsection-heading">
-                    <strong>课题组简介</strong>
-                    <span>这里会直接显示在首页“课题组简介”模块中。</span>
-                  </div>
-                  <el-form-item label="简介正文"><el-input v-model="siteForm.description" type="textarea" :rows="4" /></el-form-item>
-                </div>
-
-                <div class="form-section">
-                  <div class="subsection-heading">
-                    <strong>加入我们</strong>
-                    <span>用于首页底部“加入我们”模块。</span>
-                  </div>
-                  <el-form-item label="说明"><el-input v-model="contactForm.content" type="textarea" :rows="3" /></el-form-item>
-                  <el-form-item label="联系邮箱"><el-input v-model="contactForm.email" /></el-form-item>
-                </div>
-              </el-form>
-              <FormActions :saving="saving" @save="saveHomeContent" />
-            </article>
-          </section>
+          <CmsSiteEditor :site-form="siteForm" :contact-form="contactForm" :saving="saving" :progress="cmsUploadProgress" @save="saveHomeContent" />
         </el-tab-pane>
 
         <el-tab-pane label="页脚设置" name="footer">
-          <section class="editor-single">
-            <article class="card form-panel site-form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>页脚设置</span>
-                  <h2>网站标识与页脚内容</h2>
-                  <p>维护课题组网站的标识图片、底部地址和相关链接。</p>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <div class="form-section">
-                  <div class="subsection-heading">
-                    <strong>网站标识</strong>
-                    <span>用于导航栏、浏览器图标和没有轮播图时的默认横幅。</span>
-                  </div>
-                  <div class="form-two-col">
-                    <el-form-item label="Logo">
-                      <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'logo')" />
-                      <small v-if="editingSiteLogo">当前 Logo：{{ displayFileLabel(editingSiteLogo) }}</small>
-                    </el-form-item>
-                    <el-form-item label="网站图标">
-                      <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'favicon')" />
-                      <small v-if="editingSiteFavicon">当前图标：{{ displayFileLabel(editingSiteFavicon) }}</small>
-                    </el-form-item>
-                  </div>
-                  <el-form-item label="默认横幅图">
-                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, siteForm, 'hero_image')" />
-                    <small v-if="editingSiteHeroImage">当前默认横幅：{{ displayFileLabel(editingSiteHeroImage) }}</small>
-                    <small>没有单独配置“首页横幅”轮播图时，首页会使用这张图。</small>
-                  </el-form-item>
-                </div>
-
-                <div class="form-section">
-                  <div class="subsection-heading">
-                    <strong>页脚信息</strong>
-                    <span>用于公开网站底部展示。</span>
-                  </div>
-                  <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
-                </div>
-
-                <div class="external-link-editor">
-                  <div class="subsection-heading">
-                    <strong>相关链接</strong>
-                    <span>用于网站底部跳转入口，可放学校、学院或相关平台链接。</span>
-                  </div>
-                  <div v-for="(link, index) in externalLinks" :key="index" class="form-two-col">
-                    <el-form-item :label="`链接 ${index + 1} 名称`"><el-input v-model="link.label" placeholder="如：中国农业大学" /></el-form-item>
-                    <el-form-item :label="`链接 ${index + 1} 地址`"><el-input v-model="link.url" placeholder="https://..." /></el-form-item>
-                  </div>
-                </div>
-              </el-form>
-              <FormActions :saving="saving" @save="saveFooterContent" />
-            </article>
-          </section>
+          <CmsFooterEditor
+            :site-form="siteForm"
+            :external-links="externalLinks"
+            :logo="editingSiteLogo"
+            :favicon="editingSiteFavicon"
+            :hero-image="editingSiteHeroImage"
+            :saving="saving"
+            :progress="cmsUploadProgress"
+            :display-file-label="displayFileLabel"
+            @file="(event, field) => setFile(event, siteForm, field)"
+            @save="saveFooterContent"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="首页横幅" name="banners">
-          <section class="editor-grid">
-            <ContentList title="首页横幅" action-label="新增横幅" :items="bannerRows" :active-key="editingBannerId || ''" @create="resetBanner" @edit="editBanner" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingBannerId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ bannerForm.title || '首页横幅' }}</h2>
-                  <p>这里的标题、副标题会直接显示在对应横幅图片上；留空时首页会使用站点名称和副标题。</p>
-                </div>
-              </div>
-              <div v-if="editingSiteHeroImage" class="legacy-banner-note">
-                <img :src="editingSiteHeroImage" alt="默认横幅预览" />
-                <div>
-                  <strong>默认横幅</strong>
-                  <span>{{ siteForm.site_name || '中农雨磷' }}</span>
-                  <small v-if="siteForm.keywords">{{ siteForm.keywords }}</small>
-                  <small>{{ displayFileLabel(editingSiteHeroImage) }}</small>
-                  <small>没有新增轮播横幅时，首页会显示这张默认横幅；新增横幅后会优先显示下方列表中的横幅。</small>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="标题"><el-input v-model="bannerForm.title" /></el-form-item>
-                <el-form-item label="副标题"><el-input v-model="bannerForm.subtitle" type="textarea" :rows="2" /></el-form-item>
-                <el-form-item label="横幅图片">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, bannerForm, 'image')" />
-                  <small v-if="editingBannerImage">当前图片：{{ displayFileLabel(editingBannerImage) }}</small>
-                  <small>建议上传横向照片，常见 16:9 或 16:8 均可；主体尽量放在画面中间。</small>
-                </el-form-item>
-                <el-form-item label="跳转链接">
-                  <el-input v-model="bannerForm.link" placeholder="可选，https://..." />
-                </el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="排序"><el-input-number v-model="bannerForm.sort_order" :min="0" /></el-form-item>
-                  <el-form-item label="启用"><el-switch v-model="bannerForm.is_active" /></el-form-item>
-                </div>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingBannerId)" @save="saveBanner" @delete="deleteBanner" />
-            </article>
-          </section>
+          <CmsBannerEditor
+            :rows="bannerRows"
+            :editing-id="editingBannerId"
+            :form="bannerForm"
+            :site-form="siteForm"
+            :default-hero="editingSiteHeroImage"
+            :current-image="editingBannerImage"
+            :saving="saving"
+            :progress="cmsUploadProgress"
+            :display-file-label="displayFileLabel"
+            @create="resetBanner"
+            @edit="editBanner"
+            @file="setFile($event, bannerForm, 'image')"
+            @save="saveBanner"
+            @delete="deleteBanner"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="研究方向" name="research">
-          <section class="editor-grid">
-            <ContentList title="研究方向" action-label="新增方向" :items="researchRows" :active-key="editingResearchSlug" @create="resetResearch" @edit="editResearch" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingResearchSlug ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ researchForm.title || '研究方向' }}</h2>
-                </div>
-              </div>
-                <el-form label-position="top">
-                  <el-form-item label="标题"><el-input v-model="researchForm.title" /></el-form-item>
-                  <el-form-item label="摘要"><el-input v-model="researchForm.summary" type="textarea" :rows="3" /></el-form-item>
-                  <el-form-item label="详细内容"><el-input v-model="researchForm.content" type="textarea" :rows="5" /></el-form-item>
-                <el-form-item label="封面图">
-                  <input class="file-input" type="file" accept="image/*" @change="setFile($event, researchForm, 'cover_image')" />
-                  <small v-if="editingResearchCover">当前图片：{{ displayFileLabel(editingResearchCover) }}</small>
-                </el-form-item>
-                <el-form-item label="排序"><el-input-number v-model="researchForm.sort_order" :min="0" /></el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingResearchSlug)" @save="saveResearch" @delete="deleteResearch" />
-            </article>
-          </section>
+          <CmsResearchEditor
+            :rows="researchRows"
+            :editing-slug="editingResearchSlug"
+            :form="researchForm"
+            :current-cover="editingResearchCover"
+            :saving="saving"
+            :progress="cmsUploadProgress"
+            :display-file-label="displayFileLabel"
+            @create="resetResearch"
+            @edit="editResearch"
+            @file="setFile($event, researchForm, 'cover_image')"
+            @save="saveResearch"
+            @delete="deleteResearch"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="团队成员" name="members">
-          <section class="editor-grid">
-            <div class="import-strip">
-              <span>批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。</span>
-              <a href="/templates/members-import-template.xlsx" download>下载模板</a>
-              <button type="button" @click="chooseImportFile('members')">导入 Excel</button>
-              <input ref="memberImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'members')" />
-            </div>
-            <div v-if="importingKind === 'members'" class="upload-progress import-progress">
-              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
-              <span>{{ importProgress < 100 ? '正在上传团队成员表，请不要关闭页面。' : '上传完成，正在写入团队成员。' }}</span>
-            </div>
-            <ContentList title="团队成员" action-label="新增成员" :items="memberRows" :active-key="editingMemberId || ''" @create="resetMember" @edit="editMember" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingMemberId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ memberForm.name || '团队成员' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="姓名"><el-input v-model="memberForm.name" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="身份头衔">
-                    <el-input v-model="memberForm.role_type" placeholder="如：副教授 / 博士生导师、博士研究生、硕士研究生" />
-                  </el-form-item>
-                  <el-form-item label="邮箱"><el-input v-model="memberForm.email" /></el-form-item>
-                </div>
-                <el-form-item label="研究方向"><el-input v-model="memberForm.research_direction" /></el-form-item>
-                <el-form-item label="头像">
-                  <div class="member-avatar-field">
-                    <div class="member-avatar-preview">
-                      <img
-                        v-if="memberAvatarPreviewUrl && !memberAvatarLoadFailed"
-                        :src="memberAvatarPreviewUrl"
-                        :alt="String(memberForm.name || '成员头像')"
-                        @error="memberAvatarLoadFailed = true"
-                      />
-                      <span v-else>{{ memberForm.name ? String(memberForm.name).slice(0, 1) : '头像' }}</span>
-                    </div>
-                    <div class="member-avatar-control">
-                      <input :key="memberAvatarInputKey" class="file-input" type="file" accept="image/*" @change="setFile($event, memberForm, 'avatar')" />
-                      <small v-if="selectedMemberAvatar">待上传：{{ selectedMemberAvatar.name }}（{{ formatFileSize(selectedMemberAvatar.size) }}）</small>
-                      <small v-else-if="editingMemberAvatar">当前头像：{{ displayFileLabel(editingMemberAvatar) }}</small>
-                      <small v-else>建议使用清晰的正方形或竖版照片。</small>
-                    </div>
-                  </div>
-                </el-form-item>
-                <el-form-item label="简介"><el-input v-model="memberForm.profile" type="textarea" :rows="4" /></el-form-item>
-                <el-form-item label="展示排序">
-                  <el-input-number v-model="memberForm.sort_order" :min="0" />
-                  <small>0 表示不在公开网站展示；大于 0 时按数字从小到大排序。</small>
-                </el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingMemberId)" @save="saveMember" @delete="deleteMember" />
-            </article>
-          </section>
+          <CmsMemberEditor
+            :rows="memberRows" :editing-id="editingMemberId" :form="memberForm"
+            :avatar-preview="memberAvatarPreviewUrl" :selected-avatar="selectedMemberAvatar" :current-avatar="editingMemberAvatar"
+            :avatar-input-key="memberAvatarInputKey" :saving="saving" :progress="cmsUploadProgress"
+            :importing="importingKind === 'members'" :import-progress="importProgress"
+            :display-file-label="displayFileLabel" :format-file-size="formatFileSize"
+            @create="resetMember" @edit="editMember" @file="setFile($event, memberForm, 'avatar')"
+            @import="importCmsFile($event, 'members')" @save="saveMember" @delete="deleteMember"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="新闻活动" name="news">
-          <section class="editor-grid news-editor-grid">
-            <ContentList title="新闻活动" action-label="新增新闻" :items="newsRows" :active-key="editingNewsSlug" @create="resetNews" @edit="editNews" />
-            <article class="card form-panel news-form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingNewsSlug ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ newsForm.title || '新闻活动' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="标题"><el-input v-model="newsForm.title" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="活动日期"><el-date-picker v-model="newsForm.event_date" type="date" value-format="YYYY-MM-DD" /></el-form-item>
-                  <el-form-item label="地点"><el-input v-model="newsForm.location" /></el-form-item>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="分类">
-                    <el-select v-model="newsForm.category_id" clearable placeholder="选择分类">
-                      <el-option v-for="category in newsCategories" :key="category.id" :label="category.name" :value="category.id" />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="状态">
-                    <el-select v-model="newsForm.status">
-                      <el-option label="草稿" value="draft" />
-                      <el-option label="发布" value="published" />
-                      <el-option label="归档" value="archived" />
-                    </el-select>
-                  </el-form-item>
-                </div>
-                <el-form-item label="摘要"><el-input v-model="newsForm.summary" type="textarea" :rows="2" maxlength="260" show-word-limit /></el-form-item>
-                <el-form-item label="正文" class="news-body-field">
-                  <RichTextEditor
-                    ref="newsEditorRef"
-                    v-model="newsContent"
-                    :uploading="uploadingNewsImage"
-                    :upload-progress="newsImageUploadProgress"
-                    @image-selected="insertNewsBodyImage"
-                  />
-                  <small>插图会放在当前光标位置。上传 Word 后保存，内容会转入这里并可继续编辑。</small>
-                </el-form-item>
-                <div class="news-assets-grid">
-                  <div class="news-asset-field">
-                    <strong>Word 稿件</strong>
-                    <input :key="newsFileInputKey" class="file-input" type="file" accept=".docx" @change="setFile($event, newsForm, 'word_file')" />
-                    <small v-if="selectedNewsWordFile">{{ selectedNewsWordFile.name }}（{{ formatFileSize(selectedNewsWordFile.size) }}）</small>
-                    <small v-else-if="editingNewsWordFile">已上传：{{ displayFileLabel(editingNewsWordFile) }}</small>
-                    <small v-else>可选，支持 .docx 正文和内嵌图片。</small>
-                  </div>
-                  <div class="news-asset-field">
-                    <strong>封面图</strong>
-                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, newsForm, 'cover_image')" />
-                    <small v-if="editingNewsCover">已上传：{{ displayFileLabel(editingNewsCover) }}</small>
-                    <small v-else>用于新闻列表，未上传时使用正文首图。</small>
-                  </div>
-                </div>
-                <div v-if="newsUploadProgress > 0 || (saving && activeTab === 'news')" class="upload-progress news-save-progress">
-                  <el-progress :percentage="newsUploadProgress" :status="newsUploadProgress === 100 ? 'success' : undefined" />
-                  <span>{{ newsUploadProgress < 100 ? '正在上传并保存…' : '上传完成，正在处理正文。' }}</span>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="可见范围">
-                    <el-select v-model="newsForm.visibility">
-                      <el-option label="公开" value="public" />
-                      <el-option label="成员可见" value="members" />
-                      <el-option label="管理员可见" value="admins" />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="置顶"><el-switch v-model="newsForm.is_pinned" /></el-form-item>
-                </div>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingNewsSlug)" @save="saveNews" @delete="deleteNews" />
-            </article>
-          </section>
+          <CmsNewsEditor
+            ref="newsEditorRef" :rows="newsRows" :editing-slug="editingNewsSlug" :form="newsForm" :categories="newsCategories"
+            v-model:content="newsContent" :uploading-image="uploadingNewsImage" :image-upload-progress="newsImageUploadProgress"
+            :file-input-key="newsFileInputKey" :selected-word-file="selectedNewsWordFile" :current-word-file="editingNewsWordFile"
+            :current-cover="editingNewsCover" :upload-progress="newsUploadProgress" :saving="saving"
+            :display-file-label="displayFileLabel" :format-file-size="formatFileSize"
+            @create="resetNews" @edit="editNews" @image-selected="insertNewsBodyImage"
+            @word-file="setFile($event, newsForm, 'word_file')" @cover-file="setFile($event, newsForm, 'cover_image')"
+            @save="saveNews" @delete="deleteNews"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="论文成果" name="publications">
-          <section class="editor-grid">
-            <div class="import-strip">
-              <span>批量导入论文成果，优先按 DOI 更新；没有 DOI 时按题目和年份匹配。</span>
-              <a href="/templates/publications-import-template.xlsx" download>下载模板</a>
-              <button type="button" @click="chooseImportFile('publications')">导入 Excel</button>
-              <input ref="publicationImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'publications')" />
-            </div>
-            <div v-if="importingKind === 'publications'" class="upload-progress import-progress">
-              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
-              <span>{{ importProgress < 100 ? '正在上传论文成果表，请不要关闭页面。' : '上传完成，正在写入论文成果。' }}</span>
-            </div>
-            <ContentList title="论文成果" action-label="新增论文" :items="publicationRows" :active-key="editingPublicationId || ''" @create="resetPublication" @edit="editPublication" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingPublicationId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ publicationForm.title || '论文成果' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="GB/T 7714-2025格式引文">
-                  <el-input
-                    v-model="publicationForm.citation_text"
-                    type="textarea"
-                    :rows="4"
-                    placeholder="例：作者. 论文题目. 期刊, 2026, 14(5): 123765. DOI: 10.xxxx/xxxxx"
-                  />
-                </el-form-item>
-                <div class="citation-actions">
-                  <button class="secondary-inline-action" type="button" @click="parsePublicationCitation()">拆分并预览</button>
-                  <span>保存前请确认拆分出的标题、作者和期刊信息。</span>
-                </div>
-                <div v-if="hasPublicationPreview" class="citation-preview">
-                  <div class="citation-preview__title">拆分预览</div>
-                  <dl>
-                    <div>
-                      <dt>题名</dt>
-                      <dd>{{ publicationPreview.title || '未识别' }}</dd>
-                    </div>
-                    <div>
-                      <dt>作者</dt>
-                      <dd>{{ publicationPreview.authors || '未识别' }}</dd>
-                    </div>
-                    <div>
-                      <dt>期刊</dt>
-                      <dd>{{ publicationPreview.journal || '未识别' }}</dd>
-                    </div>
-                    <div>
-                      <dt>年份</dt>
-                      <dd>{{ publicationPreview.year || '未识别' }}</dd>
-                    </div>
-                    <div>
-                      <dt>卷期页</dt>
-                      <dd>{{ publicationVolumePreview || '未识别' }}</dd>
-                    </div>
-                    <div>
-                      <dt>DOI</dt>
-                      <dd>{{ publicationPreview.doi || '未填写' }}</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="可见范围">
-                    <el-select v-model="publicationForm.visibility">
-                      <el-option label="公开" value="public" />
-                      <el-option label="成员可见" value="members" />
-                      <el-option label="管理员可见" value="admins" />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="首页排序"><el-input-number v-model="publicationForm.sort_order" :min="0" /></el-form-item>
-                </div>
-                <el-form-item label="摘要"><el-input v-model="publicationForm.abstract" type="textarea" :rows="4" /></el-form-item>
-                <el-form-item label="PDF 附件">
-                  <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, publicationForm, 'pdf_file')" />
-                  <small v-if="editingPublicationPdf">当前 PDF：{{ displayFileLabel(editingPublicationPdf) }}</small>
-                </el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingPublicationId)" @save="savePublication" @delete="deletePublication" />
-            </article>
-          </section>
+          <CmsPublicationEditor
+            :rows="publicationRows" :editing-id="editingPublicationId" :form="publicationForm" :preview="publicationPreview"
+            :has-preview="hasPublicationPreview" :volume-preview="publicationVolumePreview" :current-pdf="editingPublicationPdf"
+            :saving="saving" :progress="cmsUploadProgress" :importing="importingKind === 'publications'" :import-progress="importProgress"
+            :display-file-label="displayFileLabel" @create="resetPublication" @edit="editPublication" @parse="parsePublicationCitation"
+            @file="setFile($event, publicationForm, 'pdf_file')" @import="importCmsFile($event, 'publications')"
+            @save="savePublication" @delete="deletePublication"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="科研项目" name="projects">
-          <section class="editor-grid">
-            <div class="import-strip">
-              <span>批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。</span>
-              <a href="/templates/projects-import-template.xlsx" download>下载模板</a>
-              <button type="button" @click="chooseImportFile('projects')">导入 Excel</button>
-              <input ref="projectImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'projects')" />
-            </div>
-            <div v-if="importingKind === 'projects'" class="upload-progress import-progress">
-              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
-              <span>{{ importProgress < 100 ? '正在上传科研项目表，请不要关闭页面。' : '上传完成，正在写入科研项目。' }}</span>
-            </div>
-            <ContentList title="科研项目" action-label="新增项目" :items="projectRows" :active-key="editingProjectId || ''" @create="resetProject" @edit="editProject" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingProjectId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ projectForm.title || '科研项目' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="项目名称"><el-input v-model="projectForm.title" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="项目编号"><el-input v-model="projectForm.project_number" /></el-form-item>
-                  <el-form-item label="资助来源"><el-input v-model="projectForm.funding_source" /></el-form-item>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="负责人"><el-input v-model="projectForm.principal_investigator" /></el-form-item>
-                  <el-form-item label="状态"><el-input v-model="projectForm.status" /></el-form-item>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="经费"><el-input v-model="projectForm.amount" placeholder="可留空" /></el-form-item>
-                  <el-form-item label="可见范围">
-                    <el-select v-model="projectForm.visibility">
-                      <el-option label="公开" value="public" />
-                      <el-option label="成员可见" value="members" />
-                      <el-option label="管理员可见" value="admins" />
-                    </el-select>
-                  </el-form-item>
-                </div>
-                <div class="form-two-col">
-                  <el-form-item label="开始日期"><el-date-picker v-model="projectForm.start_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
-                  <el-form-item label="结束日期"><el-date-picker v-model="projectForm.end_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
-                </div>
-                <el-form-item label="说明"><el-input v-model="projectForm.description" type="textarea" :rows="4" /></el-form-item>
-                <el-form-item label="首页排序"><el-input-number v-model="projectForm.sort_order" :min="0" /></el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingProjectId)" @save="saveProject" @delete="deleteProject" />
-            </article>
-          </section>
+          <CmsProjectEditor
+            :rows="projectRows" :editing-id="editingProjectId" :form="projectForm" :saving="saving" :progress="cmsUploadProgress"
+            :importing="importingKind === 'projects'" :import-progress="importProgress"
+            @create="resetProject" @edit="editProject" @import="importCmsFile($event, 'projects')" @save="saveProject" @delete="deleteProject"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="专利成果" name="patents">
-          <section class="editor-grid">
-            <div class="import-strip">
-              <span>批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。</span>
-              <a href="/templates/patents-import-template.xlsx" download>下载模板</a>
-              <button type="button" @click="chooseImportFile('patents')">导入 Excel</button>
-              <input ref="patentImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'patents')" />
-            </div>
-            <div v-if="importingKind === 'patents'" class="upload-progress import-progress">
-              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
-              <span>{{ importProgress < 100 ? '正在上传专利成果表，请不要关闭页面。' : '上传完成，正在写入专利成果。' }}</span>
-            </div>
-            <ContentList title="专利成果" action-label="新增专利" :items="patentRows" :active-key="editingPatentId || ''" @create="resetPatent" @edit="editPatent" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingPatentId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ patentForm.title || '专利成果' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="专利名称"><el-input v-model="patentForm.title" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="专利号"><el-input v-model="patentForm.patent_number" /></el-form-item>
-                  <el-form-item label="状态"><el-input v-model="patentForm.status" /></el-form-item>
-                </div>
-                <el-form-item label="发明人"><el-input v-model="patentForm.inventors" type="textarea" :rows="2" /></el-form-item>
-                <el-form-item label="PDF 附件">
-                  <input class="file-input" type="file" accept="application/pdf" @change="setFile($event, patentForm, 'pdf_file')" />
-                  <small v-if="editingPatentPdf">当前 PDF：{{ displayFileLabel(editingPatentPdf) }}</small>
-                </el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="申请日期"><el-date-picker v-model="patentForm.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
-                  <el-form-item label="授权日期"><el-date-picker v-model="patentForm.authorization_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
-                </div>
-                <el-form-item label="可见范围">
-                  <el-select v-model="patentForm.visibility">
-                    <el-option label="公开" value="public" />
-                    <el-option label="成员可见" value="members" />
-                    <el-option label="管理员可见" value="admins" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="首页排序"><el-input-number v-model="patentForm.sort_order" :min="0" /></el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingPatentId)" @save="savePatent" @delete="deletePatent" />
-            </article>
-          </section>
+          <CmsPatentEditor
+            :rows="patentRows" :editing-id="editingPatentId" :form="patentForm" :current-pdf="editingPatentPdf"
+            :saving="saving" :progress="cmsUploadProgress" :importing="importingKind === 'patents'" :import-progress="importProgress"
+            :display-file-label="displayFileLabel" @create="resetPatent" @edit="editPatent"
+            @file="setFile($event, patentForm, 'pdf_file')" @import="importCmsFile($event, 'patents')" @save="savePatent" @delete="deletePatent"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="获奖成果" name="awards">
-          <section class="editor-grid">
-            <div class="import-strip">
-              <span>批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。</span>
-              <a href="/templates/awards-import-template.xlsx" download>下载模板</a>
-              <button type="button" @click="chooseImportFile('awards')">导入 Excel</button>
-              <input ref="awardImportInputRef" type="file" accept=".xlsx" @change="importCmsFile($event, 'awards')" />
-            </div>
-            <div v-if="importingKind === 'awards'" class="upload-progress import-progress">
-              <el-progress :percentage="importProgress" :status="importProgress === 100 ? 'success' : undefined" />
-              <span>{{ importProgress < 100 ? '正在上传获奖成果表，请不要关闭页面。' : '上传完成，正在写入获奖成果。' }}</span>
-            </div>
-            <ContentList title="获奖成果" action-label="新增获奖" :items="awardRows" :active-key="editingAwardId || ''" @create="resetAward" @edit="editAward" />
-            <article class="card form-panel">
-              <div class="form-heading">
-                <div>
-                  <span>{{ editingAwardId ? '正在编辑' : '新增内容' }}</span>
-                  <h2>{{ awardForm.title || '获奖成果' }}</h2>
-                </div>
-              </div>
-              <el-form label-position="top">
-                <el-form-item label="奖项名称"><el-input v-model="awardForm.title" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="奖项等级"><el-input v-model="awardForm.award_level" /></el-form-item>
-                  <el-form-item label="获奖日期"><el-date-picker v-model="awardForm.award_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
-                </div>
-                <el-form-item label="参与人员"><el-input v-model="awardForm.participants" type="textarea" :rows="2" /></el-form-item>
-                <div class="form-two-col">
-                  <el-form-item label="获奖图片">
-                    <input class="file-input" type="file" accept="image/*" @change="setFile($event, awardForm, 'image')" />
-                    <small v-if="editingAwardImage">当前图片：{{ displayFileLabel(editingAwardImage) }}</small>
-                  </el-form-item>
-                  <el-form-item label="附件 PDF">
-                    <input class="file-input" type="file" accept="application/pdf,image/*" @change="setFile($event, awardForm, 'attachment')" />
-                    <small v-if="editingAwardAttachment">当前附件：{{ displayFileLabel(editingAwardAttachment) }}</small>
-                  </el-form-item>
-                </div>
-                <el-form-item label="可见范围">
-                  <el-select v-model="awardForm.visibility">
-                    <el-option label="公开" value="public" />
-                    <el-option label="成员可见" value="members" />
-                    <el-option label="管理员可见" value="admins" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="说明"><el-input v-model="awardForm.description" type="textarea" :rows="4" /></el-form-item>
-                <el-form-item label="首页排序"><el-input-number v-model="awardForm.sort_order" :min="0" /></el-form-item>
-              </el-form>
-              <FormActions :saving="saving" :deletable="Boolean(editingAwardId)" @save="saveAward" @delete="deleteAward" />
-            </article>
-          </section>
+          <CmsAwardEditor
+            :rows="awardRows" :editing-id="editingAwardId" :form="awardForm" :current-image="editingAwardImage"
+            :current-attachment="editingAwardAttachment" :saving="saving" :progress="cmsUploadProgress"
+            :importing="importingKind === 'awards'" :import-progress="importProgress" :display-file-label="displayFileLabel"
+            @create="resetAward" @edit="editAward" @image-file="setFile($event, awardForm, 'image')"
+            @attachment-file="setFile($event, awardForm, 'attachment')" @import="importCmsFile($event, 'awards')"
+            @save="saveAward" @delete="deleteAward"
+          />
         </el-tab-pane>
 
 
@@ -565,15 +140,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElMessageBox, ElProgress } from 'element-plus'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { cmsApi, type CmsNewsArticle } from '../../api/cms'
 import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
-import PageJump from '../../components/PageJump.vue'
-import RichTextEditor from '../../components/RichTextEditor.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
+import CmsBannerEditor from './components/CmsBannerEditor.vue'
+import CmsAwardEditor from './components/CmsAwardEditor.vue'
+import CmsFooterEditor from './components/CmsFooterEditor.vue'
+import CmsMemberEditor from './components/CmsMemberEditor.vue'
+import CmsNewsEditor from './components/CmsNewsEditor.vue'
+import CmsPatentEditor from './components/CmsPatentEditor.vue'
+import CmsProjectEditor from './components/CmsProjectEditor.vue'
+import CmsPublicationEditor from './components/CmsPublicationEditor.vue'
+import CmsResearchEditor from './components/CmsResearchEditor.vue'
+import CmsSiteEditor from './components/CmsSiteEditor.vue'
+import { useCmsImport } from './composables/useCmsImport'
 
 type FileField = 'cover_image' | 'avatar' | 'pdf_file' | 'image' | 'attachment' | 'word_file' | 'logo' | 'favicon' | 'hero_image'
 type CmsForm = Record<string, unknown>
@@ -594,87 +178,6 @@ type PublicationPreview = {
   doi: string
 }
 
-const ContentList = defineComponent({
-  props: {
-    title: { type: String, required: true },
-    actionLabel: { type: String, required: true },
-    items: { type: Array as () => Row<unknown>[], required: true },
-    activeKey: { type: [String, Number], default: '' },
-  },
-  emits: ['create', 'edit'],
-  setup(props, { emit }) {
-    const keyword = ref('')
-    const page = ref(1)
-    const pageSize = ref(12)
-    const filteredItems = computed(() => {
-      const q = keyword.value.trim().toLowerCase()
-      if (!q) return props.items
-      return props.items.filter((item) => `${item.title} ${item.meta}`.toLowerCase().includes(q))
-    })
-    const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize.value)))
-    const pagedItems = computed(() => filteredItems.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
-    const setPage = (nextPage: number) => {
-      page.value = Math.min(totalPages.value, Math.max(1, nextPage))
-    }
-    watch([filteredItems, totalPages], () => {
-      setPage(page.value)
-    }, { flush: 'sync' })
-    return () =>
-      h('article', { class: 'card list-panel' }, [
-        h('div', { class: 'list-toolbar' }, [
-          h('div', [h('strong', props.title), h('span', `${filteredItems.value.length} / ${props.items.length}`)]),
-          h(ElButton, { type: 'primary', onClick: () => emit('create') }, () => props.actionLabel),
-        ]),
-        h('input', {
-          class: 'list-search',
-          value: keyword.value,
-          placeholder: `搜索${props.title}`,
-          onInput: (event: Event) => {
-            keyword.value = (event.target as HTMLInputElement).value
-            page.value = 1
-          },
-        }),
-        filteredItems.value.length
-          ? h('div', { class: 'content-list-scroll' }, pagedItems.value.map((item) =>
-              h('button', { key: item.key, class: ['content-row', { active: item.key === props.activeKey }], type: 'button', onClick: () => emit('edit', item.source) }, [
-                h('strong', item.title),
-                h('span', item.meta),
-              ]),
-            ))
-          : h('div', { class: 'empty-list' }, keyword.value ? '没有找到匹配内容。' : '暂无内容，点击右上角新增。'),
-        filteredItems.value.length > 12
-          ? h('div', { class: 'list-pager' }, [
-              h('div', { class: 'pager-controls' }, [
-                h('button', { class: 'pager-nav', type: 'button', disabled: page.value === 1, onClick: () => setPage(page.value - 1) }, '上一页'),
-                h(PageJump, { compact: true, inline: true, page: page.value, totalPages: totalPages.value, onChange: setPage }),
-                h('button', { class: 'pager-nav', type: 'button', disabled: page.value === totalPages.value, onClick: () => setPage(page.value + 1) }, '下一页'),
-              ]),
-            ])
-          : null,
-      ])
-  },
-})
-
-const FormActions = defineComponent({
-  props: {
-    saving: { type: Boolean, default: false },
-    deletable: { type: Boolean, default: false },
-  },
-  emits: ['save', 'delete'],
-  setup(props, { emit }) {
-    return () =>
-      h('div', { class: 'form-actions' }, [
-        cmsUploadProgress.value > 0 && activeTab.value !== 'news'
-          ? h('div', { class: 'upload-progress inline-upload-progress' }, [
-              h(ElProgress, { percentage: cmsUploadProgress.value, status: cmsUploadProgress.value === 100 ? 'success' : undefined }),
-              h('span', cmsUploadProgress.value < 100 ? '正在上传附件，请不要关闭页面。' : '上传完成，正在保存内容。'),
-            ])
-          : null,
-        h(ElButton, { type: 'primary', loading: props.saving, onClick: () => emit('save') }, () => '保存'),
-        props.deletable ? h(ElButton, { plain: true, onClick: () => emit('delete') }, () => '删除') : null,
-      ])
-  },
-})
 
 const activeTab = ref('site')
 const saving = ref(false)
@@ -687,14 +190,7 @@ const newsFileInputKey = ref(0)
 const newsEditorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)
 const memberAvatarInputKey = ref(0)
 const memberAvatarObjectUrl = ref('')
-const memberAvatarLoadFailed = ref(false)
-const importProgress = ref(0)
-const importingKind = ref<CmsImportKind | ''>('')
-const memberImportInputRef = ref<HTMLInputElement | null>(null)
-const publicationImportInputRef = ref<HTMLInputElement | null>(null)
-const projectImportInputRef = ref<HTMLInputElement | null>(null)
-const patentImportInputRef = ref<HTMLInputElement | null>(null)
-const awardImportInputRef = ref<HTMLInputElement | null>(null)
+const { importProgress, importingKind, importFile: importCmsFile } = useCmsImport(loadAll)
 
 const researchItems = ref<ResearchDirection[]>([])
 const siteSettings = ref<SiteSetting[]>([])
@@ -1056,7 +552,6 @@ function setFile(event: Event, form: CmsForm, field: FileField) {
     releaseMemberAvatarPreview()
     const file = input.files?.[0]
     if (file) memberAvatarObjectUrl.value = URL.createObjectURL(file)
-    memberAvatarLoadFailed.value = false
   }
   if (form === newsForm && (field === 'word_file' || field === 'cover_image')) newsUploadProgress.value = 0
 }
@@ -1216,7 +711,6 @@ function resetMember() {
   editingMemberId.value = null
   editingMemberAvatar.value = ''
   memberAvatarInputKey.value += 1
-  memberAvatarLoadFailed.value = false
   Object.assign(memberForm, {
     name: '',
     role_type: '',
@@ -1233,7 +727,6 @@ function editMember(item: Member) {
   editingMemberId.value = item.id
   editingMemberAvatar.value = item.avatar || ''
   memberAvatarInputKey.value += 1
-  memberAvatarLoadFailed.value = false
   Object.assign(memberForm, {
     name: item.name,
     role_type: item.role_label || item.role_type || '',
@@ -1653,62 +1146,6 @@ async function deleteAward() {
   await removeAfterConfirm('确定删除这个获奖成果吗？', () => cmsApi.deleteAward(editingAwardId.value as number), resetAward)
 }
 
-type CmsImportKind = 'members' | 'publications' | 'projects' | 'patents' | 'awards'
-
-function chooseImportFile(kind: CmsImportKind) {
-  const inputMap: Record<CmsImportKind, HTMLInputElement | null> = {
-    members: memberImportInputRef.value,
-    publications: publicationImportInputRef.value,
-    projects: projectImportInputRef.value,
-    patents: patentImportInputRef.value,
-    awards: awardImportInputRef.value,
-  }
-  inputMap[kind]?.click()
-}
-
-async function importCmsFile(event: Event, kind: CmsImportKind) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  if (!file.name.toLowerCase().endsWith('.xlsx')) {
-    ElMessage.warning('请上传 .xlsx 文件。')
-    return
-  }
-  importingKind.value = kind
-  importProgress.value = 0
-  try {
-    const progressHandler = (progressEvent: { loaded: number; total?: number }) => {
-      if (!progressEvent.total) return
-      importProgress.value = Math.min(99, Math.round((progressEvent.loaded / progressEvent.total) * 100))
-    }
-    const result = await importAction(kind, file, progressHandler)
-    importProgress.value = 100
-    await loadAll()
-    ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条${result.images ? `，图片 ${result.images} 张` : ''}。`)
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '导入失败，请检查模板列名、日期格式和必填字段。')
-  } finally {
-    setTimeout(() => {
-      if (importingKind.value === kind) {
-        importingKind.value = ''
-        importProgress.value = 0
-      }
-    }, 900)
-  }
-}
-
-function importAction(kind: CmsImportKind, file: File, onUploadProgress: (event: { loaded: number; total?: number }) => void) {
-  const actionMap = {
-    members: cmsApi.importMembers,
-    publications: cmsApi.importPublications,
-    projects: cmsApi.importProjects,
-    patents: cmsApi.importPatents,
-    awards: cmsApi.importAwards,
-  }
-  return actionMap[kind](file, onUploadProgress)
-}
-
 async function save(action: (onUploadProgress?: (event: { loaded: number; total?: number }) => void) => Promise<unknown>) {
   saving.value = true
   cmsUploadProgress.value = 0
@@ -1763,16 +1200,16 @@ onMounted(loadAll)
 onBeforeUnmount(releaseMemberAvatarPreview)
 </script>
 
-<style scoped>
+<style>
 .cms-page {
   display: grid;
   gap: 12px;
 }
 
 .cms-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-md);
@@ -1787,17 +1224,19 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   font-size: 24px;
   font-weight: 650;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .heading-actions {
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
+  min-width: 0;
   gap: 12px;
 }
 
 .cms-stat-strip {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
@@ -1836,11 +1275,11 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   box-shadow: none;
 }
 
-.cms-tabs :deep(.el-tabs__header) {
+.cms-tabs .el-tabs__header {
   margin-bottom: 12px;
 }
 
-.cms-tabs :deep(.el-tabs__nav-wrap::after) {
+.cms-tabs .el-tabs__nav-wrap::after {
   height: 1px;
   background: var(--color-line);
 }
@@ -1907,7 +1346,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   padding-bottom: 10px;
 }
 
-.list-panel :deep(.list-toolbar) {
+.list-panel .list-toolbar {
   align-items: flex-start;
   border-bottom: 1px solid var(--color-line);
   margin-bottom: 12px;
@@ -1915,28 +1354,28 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   padding-bottom: 12px;
 }
 
-.list-panel :deep(.list-toolbar strong),
-.list-panel :deep(.list-toolbar span) {
+.list-panel .list-toolbar strong,
+.list-panel .list-toolbar span {
   display: block;
 }
 
-.list-panel :deep(.list-toolbar > div) {
+.list-panel .list-toolbar > div {
   min-width: 0;
 }
 
-.list-panel :deep(.list-toolbar strong) {
+.list-panel .list-toolbar strong {
   color: var(--color-deep-green);
   font-size: 19px;
   font-weight: 650;
 }
 
-.list-panel :deep(.list-toolbar span) {
+.list-panel .list-toolbar span {
   margin-top: 2px;
   color: var(--color-muted);
   font-size: 12px;
 }
 
-.list-panel :deep(.list-toolbar .el-button) {
+.list-panel .list-toolbar .el-button {
   --el-button-size: 32px;
   flex: 0 0 auto;
   min-height: 32px;
@@ -1944,8 +1383,8 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   color: #fff !important;
 }
 
-.cms-page :deep(.el-button--primary),
-.cms-page :deep(.el-button--primary span) {
+.cms-page .el-button--primary,
+.cms-page .el-button--primary span {
   color: #fff !important;
 }
 
@@ -1956,7 +1395,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   font-weight: 650;
 }
 
-.list-panel :deep(.list-search) {
+.list-panel .list-search {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -1968,20 +1407,20 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   font: inherit;
 }
 
-.list-panel :deep(.list-search:focus) {
+.list-panel .list-search:focus {
   border-color: rgba(0, 135, 60, 0.35);
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 135, 60, 0.08);
 }
 
-.list-panel :deep(.content-list-scroll) {
+.list-panel .content-list-scroll {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 6px;
 }
 
-.list-panel :deep(.content-row) {
+.list-panel .content-row {
   display: block;
   width: 100%;
   border: 1px solid var(--color-line);
@@ -1993,24 +1432,24 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   text-align: left;
 }
 
-.list-panel :deep(.content-row:hover),
-.list-panel :deep(.content-row.active) {
+.list-panel .content-row:hover,
+.list-panel .content-row.active {
   border-color: rgba(0, 135, 60, 0.14);
   background: var(--color-eco-green);
 }
 
-.list-panel :deep(.content-row:hover strong),
-.list-panel :deep(.content-row.active strong) {
+.list-panel .content-row:hover strong,
+.list-panel .content-row.active strong {
   color: var(--color-cau-green);
 }
 
-.list-panel :deep(.content-row strong),
-.list-panel :deep(.content-row span),
+.list-panel .content-row strong,
+.list-panel .content-row span,
 .form-panel small {
   display: block;
 }
 
-.list-panel :deep(.content-row strong) {
+.list-panel .content-row strong {
   display: block;
   overflow: hidden;
   color: var(--color-text);
@@ -2020,14 +1459,14 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   white-space: nowrap;
 }
 
-.list-panel :deep(.content-row span),
+.list-panel .content-row span,
 .form-panel small,
 .empty-list {
   color: var(--color-muted);
   font-size: 13px;
 }
 
-.list-panel :deep(.content-row span) {
+.list-panel .content-row span {
   margin-top: 7px;
   overflow: hidden;
   line-height: 1.4;
@@ -2035,12 +1474,12 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   white-space: nowrap;
 }
 
-.list-panel :deep(.empty-list) {
+.list-panel .empty-list {
   border-top: 1px solid var(--color-line);
   padding-top: 16px;
 }
 
-.list-panel :deep(.list-pager) {
+.list-panel .list-pager {
   display: grid;
   justify-items: center;
   align-items: center;
@@ -2051,7 +1490,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   background: #fff;
 }
 
-.list-panel :deep(.pager-summary) {
+.list-panel .pager-summary {
   flex: 0 0 auto;
   color: var(--color-text);
   font-size: 13px;
@@ -2059,7 +1498,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   white-space: nowrap;
 }
 
-.list-panel :deep(.pager-controls) {
+.list-panel .pager-controls {
   display: grid;
   grid-template-columns: 68px minmax(54px, 1fr) 68px;
   align-items: center;
@@ -2077,7 +1516,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   min-width: 0;
 }
 
-.news-body-field :deep(.el-form-item__content) {
+.news-body-field .el-form-item__content {
   display: block;
 }
 
@@ -2164,7 +1603,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   white-space: nowrap;
 }
 
-.list-panel :deep(.page-size-select) {
+.list-panel .page-size-select {
   flex: 0 0 108px;
   width: 116px;
   border: 1px solid var(--color-border);
@@ -2176,7 +1615,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   font-size: 13px;
 }
 
-.list-panel :deep(.list-pager button) {
+.list-panel .list-pager button {
   border: 1px solid rgba(0, 135, 60, 0.22);
   border-radius: var(--radius-sm);
   min-height: 30px;
@@ -2188,14 +1627,14 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   font-weight: 700;
 }
 
-.list-panel :deep(.list-pager button:disabled) {
+.list-panel .list-pager button:disabled {
   border-color: var(--color-border);
   color: var(--color-muted);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.list-panel :deep(.pager-controls span) {
+.list-panel .pager-controls span {
   color: var(--color-muted);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
@@ -2232,6 +1671,10 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   background: var(--color-panel);
+}
+
+.cms-import-block {
+  grid-column: 1 / -1;
 }
 
 .import-progress {
@@ -2435,11 +1878,11 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   white-space: nowrap;
 }
 
-.form-panel :deep(.el-form-item) {
+.form-panel .el-form-item {
   margin-bottom: 14px;
 }
 
-.form-panel :deep(.el-textarea__inner) {
+.form-panel .el-textarea__inner {
   line-height: 1.7;
 }
 
@@ -2475,7 +1918,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
   background: rgba(0, 135, 60, 0.06);
 }
 
-.list-panel :deep(.list-pager .pager-nav) {
+.list-panel .list-pager .pager-nav {
   display: inline-grid;
   place-items: center;
   width: 68px;
@@ -2631,14 +2074,18 @@ onBeforeUnmount(releaseMemberAvatarPreview)
 
   .cms-heading {
     align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .heading-actions {
+    width: 100%;
   }
 
   .list-panel {
     max-height: none;
   }
 
-  .list-panel :deep(.content-list-scroll) {
+  .list-panel .content-list-scroll {
     max-height: 420px;
   }
 }
@@ -2682,25 +2129,25 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     padding: 6px;
   }
 
-  .cms-tabs :deep(.el-tabs__header) {
+  .cms-tabs .el-tabs__header {
     margin-bottom: 8px;
   }
 
-  .cms-tabs :deep(.el-tabs__nav-wrap) {
+  .cms-tabs .el-tabs__nav-wrap {
     padding: 0;
   }
 
-  .cms-tabs :deep(.el-tabs__nav-prev),
-  .cms-tabs :deep(.el-tabs__nav-next),
-  .cms-tabs :deep(.el-tabs__active-bar) {
+  .cms-tabs .el-tabs__nav-prev,
+  .cms-tabs .el-tabs__nav-next,
+  .cms-tabs .el-tabs__active-bar {
     display: none;
   }
 
-  .cms-tabs :deep(.el-tabs__nav-scroll) {
+  .cms-tabs .el-tabs__nav-scroll {
     overflow: visible;
   }
 
-  .cms-tabs :deep(.el-tabs__nav) {
+  .cms-tabs .el-tabs__nav {
     display: grid;
     width: 100%;
     float: none;
@@ -2710,7 +2157,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     white-space: normal;
   }
 
-  .cms-tabs :deep(.el-tabs__item) {
+  .cms-tabs .el-tabs__item {
     justify-content: center;
     width: 100%;
     height: 36px;
@@ -2721,7 +2168,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     font-size: 13px;
   }
 
-  .cms-tabs :deep(.el-tabs__item.is-active) {
+  .cms-tabs .el-tabs__item.is-active {
     border-color: rgba(0, 135, 60, 0.2);
     background: var(--color-eco-green);
   }
@@ -2743,7 +2190,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     overflow: visible;
   }
 
-  .list-panel :deep(.list-toolbar) {
+  .list-panel .list-toolbar {
     display: grid;
     grid-template-columns: 1fr;
     gap: 9px;
@@ -2752,37 +2199,37 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     padding-bottom: 10px;
   }
 
-  .list-panel :deep(.list-toolbar strong) {
+  .list-panel .list-toolbar strong {
     font-size: 17px;
   }
 
-  .list-panel :deep(.list-toolbar .el-button) {
+  .list-panel .list-toolbar .el-button {
     width: 100%;
     min-height: 36px;
   }
 
-  .list-panel :deep(.list-search) {
+  .list-panel .list-search {
     min-height: 38px;
     margin-bottom: 10px;
   }
 
-  .list-panel :deep(.content-list-scroll) {
+  .list-panel .content-list-scroll {
     max-height: 48vh;
     overflow-y: auto;
     padding-right: 2px;
   }
 
-  .list-panel :deep(.content-row) {
+  .list-panel .content-row {
     margin-bottom: 8px;
     padding: 10px 11px;
   }
 
-  .list-panel :deep(.content-row strong),
-  .list-panel :deep(.content-row span) {
+  .list-panel .content-row strong,
+  .list-panel .content-row span {
     white-space: normal;
   }
 
-  .list-panel :deep(.content-row strong) {
+  .list-panel .content-row strong {
     display: -webkit-box;
     overflow: hidden;
     line-height: 1.45;
@@ -2790,7 +2237,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     -webkit-line-clamp: 2;
   }
 
-  .list-panel :deep(.content-row span) {
+  .list-panel .content-row span {
     display: -webkit-box;
     margin-top: 5px;
     overflow: hidden;
@@ -2799,16 +2246,16 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     -webkit-line-clamp: 2;
   }
 
-  .list-panel :deep(.list-pager) {
+  .list-panel .list-pager {
     gap: 8px;
   }
 
-  .list-panel :deep(.list-pager button) {
+  .list-panel .list-pager button {
     min-height: 34px;
     padding: 0 8px;
   }
 
-  .list-panel :deep(.list-pager span) {
+  .list-panel .list-pager span {
     align-self: center;
     white-space: nowrap;
   }
@@ -2861,7 +2308,7 @@ onBeforeUnmount(releaseMemberAvatarPreview)
     padding: 12px 0 0;
   }
 
-  .form-actions :deep(.el-button) {
+  .form-actions .el-button {
     width: 100%;
     margin: 0;
   }

@@ -17,12 +17,21 @@ export interface Instrument {
   sort_order?: number
 }
 
+export interface InstrumentFormPayload {
+  name: string
+  model: string
+  location_detail: string
+  status: string
+  notes: string
+  image?: File
+}
+
 export async function fetchInstruments() {
   const response = await http.get<Instrument[]>('/instruments/instruments/')
   return response.data
 }
 
-function toInstrumentBody(payload: Record<string, unknown>) {
+function toInstrumentBody(payload: InstrumentFormPayload) {
   const hasFile = Object.values(payload).some((value) => value instanceof File)
   if (!hasFile) return payload
   const formData = new FormData()
@@ -33,7 +42,7 @@ function toInstrumentBody(payload: Record<string, unknown>) {
   return formData
 }
 
-export async function createInstrument(payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+export async function createInstrument(payload: InstrumentFormPayload, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const body = toInstrumentBody(payload)
   const response = await http.post<Instrument>('/instruments/instruments/', body, {
     timeout: body instanceof FormData ? 5400000 : undefined,
@@ -59,7 +68,7 @@ export async function importInstrumentsExcel(file: File, onUploadProgress?: (eve
   return response.data
 }
 
-export async function updateInstrument(id: number, payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+export async function updateInstrument(id: number, payload: InstrumentFormPayload, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const body = toInstrumentBody(payload)
   const response = await http.patch<Instrument>(`/instruments/instruments/${id}/`, body, {
     timeout: body instanceof FormData ? 5400000 : undefined,

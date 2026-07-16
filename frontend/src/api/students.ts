@@ -61,6 +61,13 @@ export interface StudentProfilePayload {
   avatar_upload?: File
 }
 
+export interface StudentArchiveUploadPayload {
+  file_type: string
+  title: string
+  description: string
+  file: File
+}
+
 function studentAvatarBody(file: File) {
   const formData = new FormData()
   formData.append('avatar_upload', file)
@@ -100,13 +107,10 @@ export async function deleteStudentProfile(id: number) {
   await http.delete(`/students/profiles/${id}/`)
 }
 
-export async function uploadStudentArchiveFile(payload: {
-  student: number
-  file_type: string
-  title: string
-  file: File
-  description?: string
-}, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+export async function uploadStudentArchiveFile(
+  payload: StudentArchiveUploadPayload & { student: number },
+  onUploadProgress?: (event: AxiosProgressEvent) => void,
+) {
   const formData = new FormData()
   Object.entries(payload).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return

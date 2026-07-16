@@ -43,48 +43,26 @@
       description="该仪器可能已删除，或当前账号没有查看权限。"
     />
 
-    <el-dialog v-model="formVisible" title="编辑设备" width="620px">
-      <el-form label-position="top" class="instrument-form">
-        <el-form-item label="仪器名称"><el-input v-model="instrumentForm.name" /></el-form-item>
-        <div class="form-two-col">
-          <el-form-item label="型号"><el-input v-model="instrumentForm.model" /></el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="instrumentForm.status">
-              <el-option label="正常" value="normal" />
-              <el-option label="维护中" value="maintenance" />
-              <el-option label="停用" value="disabled" />
-            </el-select>
-          </el-form-item>
-        </div>
-        <el-form-item label="详细位置"><el-input v-model="instrumentForm.location_detail" /></el-form-item>
-        <el-form-item label="设备图片">
-          <input class="file-input" type="file" accept="image/*" @change="setInstrumentImage" />
-          <small v-if="instrumentForm.image" class="upload-file-note">{{ instrumentForm.image.name }}（{{ formatFileSize(instrumentForm.image.size) }}）</small>
-          <small v-else-if="instrument?.image" class="upload-file-note">不选择图片则保留当前图片。</small>
-        </el-form-item>
-        <el-form-item label="使用说明"><el-input v-model="instrumentForm.notes" type="textarea" :rows="8" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <div v-if="saving && uploadProgress > 0" class="upload-progress dialog-upload-progress">
-          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
-          <span>{{ uploadProgress < 100 ? '正在上传设备图片，请不要关闭窗口。' : '上传完成，正在保存设备信息。' }}</span>
-        </div>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveInstrument">保存修改</el-button>
-      </template>
-    </el-dialog>
+    <InstrumentFormDialog
+      v-model:open="formVisible"
+      :instrument="instrument"
+      :saving="saving"
+      :progress="uploadProgress"
+      @save="saveInstrument"
+    />
   </InternalLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 
 import EmptyState from '../../components/EmptyState.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import { deleteInstrument, fetchInstruments, updateInstrument, type Instrument } from '../../api/instruments'
+import { deleteInstrument, fetchInstruments, updateInstrument, type Instrument, type InstrumentFormPayload } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
+import InstrumentFormDialog from './components/InstrumentFormDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,14 +76,6 @@ const instruments = ref<Instrument[]>([])
 const formVisible = ref(false)
 const saving = ref(false)
 const uploadProgress = ref(0)
-const instrumentForm = reactive({
-  name: '',
-  model: '',
-  location_detail: '',
-  status: 'normal',
-  notes: '',
-  image: undefined as File | undefined,
-})
 
 const displayInstruments = computed(() => instruments.value)
 const instrument = computed(() => {
@@ -142,40 +112,16 @@ async function confirmDelete() {
 
 function openEdit() {
   if (!instrument.value) return
-  Object.assign(instrumentForm, {
-    name: instrument.value.name || '',
-    model: instrument.value.model || '',
-    location_detail: instrument.value.location_detail || '',
-    status: instrument.value.status || 'normal',
-    notes: instrument.value.notes || '',
-    image: undefined,
-  })
   uploadProgress.value = 0
   formVisible.value = true
 }
 
-function setInstrumentImage(event: Event) {
-  const input = event.target as HTMLInputElement
-  instrumentForm.image = input.files?.[0]
-  uploadProgress.value = 0
-}
-
-function formatFileSize(size: number) {
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${size} B`
-}
-
-async function saveInstrument() {
+async function saveInstrument(payload: InstrumentFormPayload) {
   if (!instrument.value) return
-  if (!instrumentForm.name.trim()) {
-    ElMessage.warning('请填写仪器名称。')
-    return
-  }
   saving.value = true
   uploadProgress.value = 0
   try {
-    await updateInstrument(instrument.value.id, { ...instrumentForm, name: instrumentForm.name.trim() }, (event) => {
+    await updateInstrument(instrument.value.id, payload, (event) => {
       if (!event.total) return
       uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
@@ -338,52 +284,6 @@ onMounted(async () => {
   white-space: pre-line;
 }
 
-.instrument-form {
-  display: grid;
-}
-
-.form-two-col {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.file-input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 11px;
-  background: #fff;
-}
-
-.upload-file-note {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-muted);
-  font-size: 13px;
-  line-height: 1.5;
-  word-break: break-all;
-}
-
-.upload-progress {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  background: var(--color-soft-gray);
-}
-
-.upload-progress span {
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.dialog-upload-progress {
-  margin-bottom: 12px;
-  text-align: left;
-}
-
 @media (max-width: 760px) {
   .detail-heading {
     display: grid;
@@ -391,10 +291,6 @@ onMounted(async () => {
 
   .detail-content {
     padding: 22px;
-  }
-
-  .form-two-col {
-    grid-template-columns: 1fr;
   }
 }
 </style>
