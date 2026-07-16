@@ -16,18 +16,14 @@
           </div>
           <div class="form-two-col">
             <el-form-item label="Logo">
-              <input class="file-input" type="file" accept="image/*" @change="emitFile($event, 'logo')" />
-              <small v-if="logo">当前 Logo：{{ displayFileLabel(logo) }}</small>
+              <UploadFileField v-model="siteForm.logo" :disabled="saving" accept="image/*" :existing-label="logo ? displayFileLabel(logo) : ''" />
             </el-form-item>
             <el-form-item label="网站图标">
-              <input class="file-input" type="file" accept="image/*" @change="emitFile($event, 'favicon')" />
-              <small v-if="favicon">当前图标：{{ displayFileLabel(favicon) }}</small>
+              <UploadFileField v-model="siteForm.favicon" :disabled="saving" accept="image/*" :existing-label="favicon ? displayFileLabel(favicon) : ''" />
             </el-form-item>
           </div>
           <el-form-item label="默认横幅图">
-            <input class="file-input" type="file" accept="image/*" @change="emitFile($event, 'hero_image')" />
-            <small v-if="heroImage">当前默认横幅：{{ displayFileLabel(heroImage) }}</small>
-            <small>没有单独配置“首页横幅”轮播图时，首页会使用这张图。</small>
+            <UploadFileField v-model="siteForm.hero_image" :disabled="saving" accept="image/*" :existing-label="heroImage ? displayFileLabel(heroImage) : ''" hint="没有轮播横幅时首页使用此图，文件不超过 200 MB" />
           </el-form-item>
         </div>
         <div class="form-section">
@@ -52,6 +48,7 @@
 
 <script setup lang="ts">
 import CmsFormActions from './CmsFormActions.vue'
+import UploadFileField from '../../../components/UploadFileField.vue'
 
 defineProps<{
   siteForm: Record<string, any>
@@ -64,12 +61,5 @@ defineProps<{
   displayFileLabel: (value: string) => string
 }>()
 
-const emit = defineEmits<{
-  save: []
-  file: [event: Event, field: 'logo' | 'favicon' | 'hero_image']
-}>()
-
-function emitFile(event: Event, field: 'logo' | 'favicon' | 'hero_image') {
-  emit('file', event, field)
-}
+defineEmits<{ save: [] }>()
 </script>

@@ -52,19 +52,13 @@ import { useRoute } from 'vue-router'
 import { fetchPatent, type Patent } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import { formatOptionalFileSize } from '../../utils/files'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/publications')
 const patent = ref<Patent | null>(null)
 
-const pdfSizeLabel = computed(() => formatFileSize(patent.value?.pdf_file_size || 0))
-
-function formatFileSize(size: number) {
-  if (!size) return '大小未知'
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${size} B`
-}
+const pdfSizeLabel = computed(() => formatOptionalFileSize(patent.value?.pdf_file_size))
 
 onMounted(async () => {
   patent.value = await fetchPatent(String(route.params.id || ''))

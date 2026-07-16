@@ -72,12 +72,10 @@
           :total="displayDocuments.length"
           :page="documentPage"
           :total-pages="documentTotalPages"
-          :page-size="documentPageSize"
           @preview="handlePreview"
           @edit="openEdit"
           @download="handleDownload"
           @update:page="documentPage = $event"
-          @update:page-size="documentPageSize = $event"
         />
       </main>
     </section>
@@ -131,6 +129,7 @@ import DocumentSidebar from './components/DocumentSidebar.vue'
 import DocumentUploadDialog from './components/DocumentUploadDialog.vue'
 import { categoryName, currentFilename } from './documentPresentation'
 import { useDocumentPreviewPolling } from './composables/useDocumentPreviewPolling'
+import { useListPagination } from '../../composables/useListPagination'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,7 +139,6 @@ const loading = ref(false)
 const keyword = ref(String(route.query.q || ''))
 const activeCategory = ref(String(route.query.category || ''))
 const documentPage = ref(Math.max(1, Number(route.query.page) || 1))
-const documentPageSize = ref(12)
 const readerPage = ref(1)
 const readerPageSize = 12
 const uploadVisible = ref(false)
@@ -163,11 +161,9 @@ useDocumentPreviewPolling(previewDocument, async (documentId) => {
 
 const displayCategories = computed(() => categories.value)
 const displayDocuments = computed(() => documents.value)
-const documentTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / documentPageSize.value)))
-const pagedDocuments = computed(() => {
-  const start = (documentPage.value - 1) * documentPageSize.value
-  return displayDocuments.value.slice(start, start + documentPageSize.value)
-})
+const documentTotal = computed(() => displayDocuments.value.length)
+const { totalPages: documentTotalPages, paginate: paginateDocuments } = useListPagination(documentTotal, { page: documentPage })
+const pagedDocuments = computed(() => paginateDocuments(displayDocuments.value))
 const readerTotalPages = computed(() => Math.max(1, Math.ceil(displayDocuments.value.length / readerPageSize)))
 const pagedReaderDocuments = computed(() => {
   const start = (readerPage.value - 1) * readerPageSize
@@ -430,15 +426,6 @@ watch(
     })
   },
 )
-
-watch(documentTotalPages, (total) => {
-  if (documentPage.value > total) documentPage.value = total
-  if (documentPage.value < 1) documentPage.value = 1
-})
-
-watch(documentPageSize, () => {
-  documentPage.value = 1
-})
 
 watch(readerTotalPages, (total) => {
   if (readerPage.value > total) readerPage.value = total

@@ -52,7 +52,7 @@
               </div>
             </RouterLink>
             <div v-if="!papers.length" class="empty-note">没有找到匹配的论文。</div>
-            <Pager :page="paperPage" :total="paperTotal" :page-size="pageSize" @change="loadPapers" />
+            <AppPagination :page="paperPage" :total-pages="Math.max(1, Math.ceil(paperTotal / pageSize))" @change="loadPapers" />
           </section>
 
           <section v-else-if="activeTab === 'projects'" class="result-block">
@@ -87,7 +87,7 @@
               </dl>
             </RouterLink>
             <div v-if="!projects.length" class="empty-note">没有找到匹配的项目。</div>
-            <Pager :page="projectPage" :total="projectTotal" :page-size="pageSize" @change="loadProjects" />
+            <AppPagination :page="projectPage" :total-pages="Math.max(1, Math.ceil(projectTotal / pageSize))" @change="loadProjects" />
           </section>
 
           <section v-else-if="activeTab === 'patents'" class="result-block">
@@ -118,7 +118,7 @@
               </dl>
             </RouterLink>
             <div v-if="!patents.length" class="empty-note">没有找到匹配的专利。</div>
-            <Pager :page="patentPage" :total="patentTotal" :page-size="pageSize" @change="loadPatents" />
+            <AppPagination :page="patentPage" :total-pages="Math.max(1, Math.ceil(patentTotal / pageSize))" @change="loadPatents" />
           </section>
 
           <section v-else class="result-block">
@@ -149,7 +149,7 @@
               </dl>
             </RouterLink>
             <div v-if="!awards.length" class="empty-note">没有找到匹配的获奖成果。</div>
-            <Pager :page="awardPage" :total="awardTotal" :page-size="pageSize" @change="loadAwards" />
+            <AppPagination :page="awardPage" :total-pages="Math.max(1, Math.ceil(awardTotal / pageSize))" @change="loadAwards" />
           </section>
         </main>
       </div>
@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -173,7 +173,7 @@ import {
   type Publication,
   type PublicationStats,
 } from '../../api/publicPortal'
-import PageJump from '../../components/PageJump.vue'
+import AppPagination from '../../components/AppPagination.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 type TabKey = 'papers' | 'projects' | 'patents' | 'awards'
@@ -219,27 +219,6 @@ const statsItems = computed(() => [
   { value: stats.value?.patents ?? patentTotal.value, label: '专利成果' },
   { value: stats.value?.awards ?? awardTotal.value, label: '获奖成果' },
 ])
-
-const Pager = defineComponent({
-  props: {
-    page: { type: Number, required: true },
-    total: { type: Number, required: true },
-    pageSize: { type: Number, required: true },
-  },
-  emits: ['change'],
-  setup(props, { emit }) {
-    return () => {
-      const totalPages = Math.max(1, Math.ceil(props.total / props.pageSize))
-      if (props.total <= props.pageSize) return null
-      return h('div', { class: 'pager' }, [
-        h('span', { class: 'pager-summary' }, `共 ${props.total} 条`),
-        h('button', { class: 'pager-nav', type: 'button', disabled: props.page <= 1, onClick: () => emit('change', props.page - 1) }, '上一页'),
-        h(PageJump, { compact: true, inline: true, page: props.page, totalPages, onChange: (page: number) => emit('change', page) }),
-        h('button', { class: 'pager-nav', type: 'button', disabled: props.page >= totalPages, onClick: () => emit('change', props.page + 1) }, '下一页'),
-      ])
-    }
-  },
-})
 
 function syncActiveQuery() {
   const pages = { papers: paperPage.value, projects: projectPage.value, patents: patentPage.value, awards: awardPage.value }
@@ -551,47 +530,6 @@ onMounted(async () => {
   line-height: 1.45;
 }
 
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  border-top: 1px solid var(--color-line);
-  padding-top: 16px;
-}
-
-.pager-summary {
-  width: 100%;
-  color: var(--color-text);
-  text-align: right;
-  font-weight: 650;
-}
-
-.pager button {
-  border: 1px solid rgba(0, 135, 60, 0.22);
-  border-radius: var(--radius-sm);
-  min-height: 34px;
-  padding: 0 12px;
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.pager .pager-nav {
-  width: 72px;
-  padding: 0;
-  text-align: center;
-}
-
-.pager button:disabled {
-  color: var(--color-muted);
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.pager strong,
 .empty-note {
   color: var(--color-muted);
   font-size: 14px;

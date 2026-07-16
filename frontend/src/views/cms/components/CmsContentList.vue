@@ -18,19 +18,15 @@
       </button>
     </div>
     <div v-else class="empty-list">{{ keyword ? '没有找到匹配内容。' : '暂无内容，点击右上角新增。' }}</div>
-    <div v-if="filteredItems.length > 12" class="list-pager">
-      <div class="pager-controls">
-        <button type="button" :disabled="page === 1" @click="setPage(page - 1)">上一页</button>
-        <PageJump compact inline :page="page" :total-pages="totalPages" @change="setPage" />
-        <button type="button" :disabled="page === totalPages" @click="setPage(page + 1)">下一页</button>
-      </div>
-    </div>
+    <AppPagination compact :page="page" :total-pages="totalPages" @change="setPage" />
   </article>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import PageJump from '../../../components/PageJump.vue'
+import AppPagination from '../../../components/AppPagination.vue'
+import { useListPagination } from '../../../composables/useListPagination'
+import { useDebouncedValue } from '../../../composables/useDebouncedValue'
 
 interface CmsListRow {
   key: string | number
@@ -48,20 +44,15 @@ const props = defineProps<{
 defineEmits<{ create: []; edit: [source: any] }>()
 
 const keyword = ref('')
-const page = ref(1)
-const pageSize = 12
+const debouncedKeyword = useDebouncedValue(keyword)
 const filteredItems = computed(() => {
-  const query = keyword.value.trim().toLowerCase()
+  const query = debouncedKeyword.value.trim().toLowerCase()
   return query ? props.items.filter((item) => `${item.title} ${item.meta}`.toLowerCase().includes(query)) : props.items
 })
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / pageSize)))
-const pagedItems = computed(() => filteredItems.value.slice((page.value - 1) * pageSize, page.value * pageSize))
-
-function setPage(nextPage: number) {
-  page.value = Math.min(totalPages.value, Math.max(1, nextPage))
-}
-
-watch(totalPages, () => setPage(page.value))
+const filteredTotal = computed(() => filteredItems.value.length)
+const { page, totalPages, setPage, resetPage, paginate } = useListPagination(filteredTotal)
+const pagedItems = computed(() => paginate(filteredItems.value))
+watch(debouncedKeyword, resetPage)
 </script>
 
 <style scoped>
@@ -169,36 +160,4 @@ watch(totalPages, () => setPage(page.value))
   text-align: center;
 }
 
-.list-pager {
-  border-top: 1px solid var(--color-line);
-  margin-top: 12px;
-  padding-top: 12px;
-}
-
-.pager-controls {
-  display: grid;
-  grid-template-columns: 72px minmax(44px, 1fr) 72px;
-  align-items: center;
-  gap: 8px;
-}
-
-.pager-controls :deep(.page-jump) {
-  justify-self: center;
-}
-
-.list-pager button {
-  width: 72px;
-  min-height: 30px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.list-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
 </style>

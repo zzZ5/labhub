@@ -53,20 +53,14 @@ import { useRoute } from 'vue-router'
 import { fetchAward, type Award } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import { formatOptionalFileSize } from '../../utils/files'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/publications')
 const award = ref<Award | null>(null)
 
-const imageSizeLabel = computed(() => formatFileSize(award.value?.image_size || 0))
-const attachmentSizeLabel = computed(() => formatFileSize(award.value?.attachment_size || 0))
-
-function formatFileSize(size: number) {
-  if (!size) return '大小未知'
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${size} B`
-}
+const imageSizeLabel = computed(() => formatOptionalFileSize(award.value?.image_size))
+const attachmentSizeLabel = computed(() => formatOptionalFileSize(award.value?.attachment_size))
 
 onMounted(async () => {
   award.value = await fetchAward(String(route.params.id || ''))

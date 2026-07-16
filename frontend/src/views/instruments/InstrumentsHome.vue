@@ -31,12 +31,10 @@
           :total="filteredInstruments.length"
           :page="instrumentPage"
           :total-pages="instrumentTotalPages"
-          :page-size="instrumentPageSize"
           :can-manage="canManageInstruments"
           @detail="goDetail"
           @edit="openEdit"
           @update:page="instrumentPage = $event"
-          @update:page-size="instrumentPageSize = $event"
         />
       </section>
 
@@ -66,6 +64,8 @@ import {
   type InstrumentFormPayload,
 } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
+import { useListPagination } from '../../composables/useListPagination'
+import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InstrumentFormDialog from './components/InstrumentFormDialog.vue'
 import InstrumentList from './components/InstrumentList.vue'
 import InstrumentToolbar from './components/InstrumentToolbar.vue'
@@ -77,10 +77,9 @@ const instruments = ref<Instrument[]>([])
 const queryText = (value: unknown) => typeof value === 'string' ? value : ''
 const queryNumber = (value: unknown, fallback: number) => Math.max(1, Number.parseInt(queryText(value), 10) || fallback)
 const keyword = ref(queryText(route.query.q))
+const debouncedKeyword = useDebouncedValue(keyword)
 const statusFilter = ref(queryText(route.query.status))
 const instrumentPage = ref(queryNumber(route.query.page, 1))
-const initialPageSize = queryNumber(route.query.size, 12)
-const instrumentPageSize = ref([12, 24, 48].includes(initialPageSize) ? initialPageSize : 12)
 const formVisible = ref(false)
 const editingInstrument = ref<Instrument | null>(null)
 const saving = ref(false)
@@ -90,17 +89,15 @@ const importProgress = ref(0)
 
 const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'instrument_manager'])))
 const filteredInstruments = computed(() => {
-  const q = keyword.value.trim().toLowerCase()
+  const q = debouncedKeyword.value.trim().toLowerCase()
   return instruments.value.filter((item) => {
     const haystack = `${item.name} ${item.model || ''} ${item.location_detail || ''} ${item.manager_name || ''} ${item.notes || ''}`.toLowerCase()
     return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
   })
 })
-const instrumentTotalPages = computed(() => Math.max(1, Math.ceil(filteredInstruments.value.length / instrumentPageSize.value)))
-const pagedInstruments = computed(() => {
-  const start = (instrumentPage.value - 1) * instrumentPageSize.value
-  return filteredInstruments.value.slice(start, start + instrumentPageSize.value)
-})
+const instrumentTotal = computed(() => filteredInstruments.value.length)
+const { totalPages: instrumentTotalPages, paginate: paginateInstruments } = useListPagination(instrumentTotal, { page: instrumentPage })
+const pagedInstruments = computed(() => paginateInstruments(filteredInstruments.value))
 const statusSummary = computed(() => [
   { label: '设备总数', value: instruments.value.length, note: '当前台账设备' },
   { label: '正常设备', value: instruments.value.filter((item) => item.status === 'normal').length, note: '可按线下台账使用' },
@@ -202,7 +199,6 @@ function syncInstrumentQuery() {
   if (keyword.value.trim()) query.q = keyword.value.trim()
   if (statusFilter.value) query.status = statusFilter.value
   if (instrumentPage.value > 1) query.page = String(instrumentPage.value)
-  if (instrumentPageSize.value !== 12) query.size = String(instrumentPageSize.value)
   void router.replace({ name: 'instruments-home', query })
 }
 
@@ -212,16 +208,11 @@ onMounted(async () => {
   openEditFromQuery()
 })
 
-watch([keyword, statusFilter], () => {
-  instrumentPage.value = 1
-  syncInstrumentQuery()
-})
-watch(instrumentPageSize, () => {
+watch([debouncedKeyword, statusFilter], () => {
   instrumentPage.value = 1
   syncInstrumentQuery()
 })
 watch(instrumentPage, syncInstrumentQuery)
-watch(instrumentTotalPages, clampInstrumentPage)
 </script>
 
 <style scoped>

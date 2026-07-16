@@ -31,12 +31,7 @@
           </RouterLink>
         </div>
         <div v-if="!displayNews.length" class="card empty-panel">暂无新闻活动，请在内部平台“门户内容”中维护。</div>
-        <div v-if="displayNews.length > pageSize" class="news-pager">
-          <span>共 {{ displayNews.length }} 条新闻</span>
-          <button class="pager-nav" type="button" :disabled="page === 1" @click="page -= 1">上一页</button>
-          <PageJump compact inline :page="page" :total-pages="totalPages" @change="page = $event" />
-          <button class="pager-nav" type="button" :disabled="page === totalPages" @click="page += 1">下一页</button>
-        </div>
+        <AppPagination :page="page" :total-pages="totalPages" @change="page = $event" />
       </div>
     </section>
   </PortalLayout>
@@ -47,7 +42,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchNews, fetchNewsCategories, type NewsArticle, type NewsCategory } from '../../api/publicPortal'
-import PageJump from '../../components/PageJump.vue'
+import AppPagination from '../../components/AppPagination.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const news = ref<NewsArticle[]>([])
@@ -184,51 +179,6 @@ onMounted(async () => {
   padding: 28px;
   color: var(--color-muted);
   box-shadow: none;
-}
-
-.news-pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.news-pager span {
-  width: 100%;
-  color: var(--color-text);
-  text-align: center;
-  font-weight: 650;
-}
-
-.news-pager button {
-  border: 1px solid rgba(0, 135, 60, 0.2);
-  border-radius: var(--radius-sm);
-  min-height: 34px;
-  padding: 0 14px;
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.news-pager .pager-nav {
-  width: 72px;
-  padding: 0;
-  text-align: center;
-}
-
-.news-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.news-pager strong {
-  color: var(--color-muted);
-  font-size: 13px;
 }
 
 .news-card {

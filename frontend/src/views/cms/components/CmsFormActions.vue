@@ -1,15 +1,13 @@
 <template>
   <div class="form-actions">
-    <div v-if="progress > 0" class="upload-progress">
-      <el-progress :percentage="progress" :status="progress === 100 ? 'success' : undefined" />
-      <span>{{ progress < 100 ? '正在上传附件，请不要关闭页面。' : '上传完成，正在保存内容。' }}</span>
-    </div>
+    <UploadProgress :active="saving && progress > 0" :progress="progress" uploading-text="正在上传附件，请不要关闭页面。" processing-text="上传完成，正在保存内容。" />
     <el-button type="primary" :loading="saving" @click="$emit('save')">保存</el-button>
     <el-button v-if="deletable" plain @click="$emit('delete')">删除</el-button>
   </div>
 </template>
 
 <script setup lang="ts">
+import UploadProgress from '../../../components/UploadProgress.vue'
 withDefaults(defineProps<{ saving?: boolean; deletable?: boolean; progress?: number }>(), {
   saving: false,
   deletable: false,
@@ -29,16 +27,5 @@ defineEmits<{ save: []; delete: [] }>()
   padding-top: 16px;
 }
 
-.upload-progress {
-  display: grid;
-  flex: 1 1 280px;
-  gap: 5px;
-  margin-right: auto;
-  text-align: left;
-}
-
-.upload-progress span {
-  color: var(--color-muted);
-  font-size: 12px;
-}
+.form-actions :deep(.upload-progress-panel) { flex: 1 1 280px; margin: 0 auto 0 0; }
 </style>

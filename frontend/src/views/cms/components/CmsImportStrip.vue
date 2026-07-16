@@ -8,15 +8,15 @@
       </button>
       <input ref="inputRef" type="file" accept=".xlsx" @change="handleFile" />
     </div>
-    <div v-if="loading" class="upload-progress import-progress">
-      <el-progress :percentage="progress" :status="progress === 100 ? 'success' : undefined" />
-      <span>{{ progress < 100 ? uploadingText : processingText }}</span>
-    </div>
+    <UploadProgress :active="loading" :progress="progress" :uploading-text="uploadingText" :processing-text="processingText" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import UploadProgress from '../../../components/UploadProgress.vue'
+import { validateUploadFile } from '../../../utils/files'
+import { ElMessage } from 'element-plus'
 
 defineProps<{
   description: string
@@ -36,8 +36,11 @@ const inputRef = ref<HTMLInputElement | null>(null)
 function handleFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (file) emit('import', file)
+  if (file) {
+    const message = validateUploadFile(file)
+    if (message) ElMessage.warning(message)
+    else emit('import', file)
+  }
   input.value = ''
 }
 </script>
-

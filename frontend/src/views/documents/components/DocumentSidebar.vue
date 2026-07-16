@@ -15,13 +15,7 @@
         <strong>{{ document.title }}</strong>
         <span>{{ currentFilename(document) }}</span>
       </button>
-      <div v-if="total" class="side-pager">
-        <div class="side-pager-controls">
-          <button type="button" :disabled="page === 1" @click="$emit('update:page', page - 1)">上一页</button>
-          <PageJump compact inline :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
-          <button type="button" :disabled="page === totalPages" @click="$emit('update:page', page + 1)">下一页</button>
-        </div>
-      </div>
+      <AppPagination compact :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
     </template>
     <template v-else>
       <div class="side-heading static"><h2>资料分类</h2></div>
@@ -40,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import PageJump from '../../../components/PageJump.vue'
+import AppPagination from '../../../components/AppPagination.vue'
 import type { DocumentCategory, LabDocument } from '../../../api/documents'
 import { categoryName, currentFilename } from '../documentPresentation'
 
@@ -157,40 +151,6 @@ defineEmits<{
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.side-pager {
-  border-top: 1px solid var(--color-line);
-  margin-top: 10px;
-  padding-top: 12px;
-}
-
-.side-pager-controls {
-  display: grid;
-  grid-template-columns: 64px minmax(44px, 1fr) 64px;
-  align-items: center;
-  gap: 8px;
-}
-
-.side-pager button {
-  width: 64px;
-  min-height: 30px;
-  border: 1px solid rgba(0, 135, 60, 0.18);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.side-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.side-pager-controls :deep(.page-jump) {
-  justify-self: center;
 }
 
 @media (max-width: 1080px) {

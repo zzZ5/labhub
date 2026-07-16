@@ -30,18 +30,12 @@
       </span>
     </button>
     <div v-if="!total" class="empty-note">{{ allCount ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
-    <div v-if="total > 12" class="student-pager">
-      <div class="pager-controls">
-        <button type="button" :disabled="page === 1" @click="$emit('update:page', page - 1)">上一页</button>
-        <PageJump compact inline :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
-        <button type="button" :disabled="page === totalPages" @click="$emit('update:page', page + 1)">下一页</button>
-      </div>
-    </div>
+    <AppPagination compact :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
   </aside>
 </template>
 
 <script setup lang="ts">
-import PageJump from '../../../components/PageJump.vue'
+import AppPagination from '../../../components/AppPagination.vue'
 import type { StudentProfile } from '../../../api/students'
 
 defineProps<{
@@ -179,39 +173,6 @@ defineEmits<{
 .student-list-copy span {
   color: var(--color-muted);
   font-size: 12px;
-}
-
-.student-pager {
-  border-top: 1px solid var(--color-line);
-  margin-top: 10px;
-  padding-top: 12px;
-}
-
-.pager-controls {
-  display: grid;
-  grid-template-columns: 72px minmax(44px, 1fr) 72px;
-  align-items: center;
-  gap: 8px;
-}
-
-.pager-controls :deep(.page-jump) {
-  justify-self: center;
-}
-
-.student-pager button {
-  width: 72px;
-  min-height: 30px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.student-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .empty-note {

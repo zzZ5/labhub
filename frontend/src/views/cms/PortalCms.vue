@@ -28,7 +28,6 @@
             :saving="saving"
             :progress="cmsUploadProgress"
             :display-file-label="displayFileLabel"
-            @file="(event, field) => setFile(event, siteForm, field)"
             @save="saveFooterContent"
           />
         </el-tab-pane>
@@ -46,7 +45,6 @@
             :display-file-label="displayFileLabel"
             @create="resetBanner"
             @edit="editBanner"
-            @file="setFile($event, bannerForm, 'image')"
             @save="saveBanner"
             @delete="deleteBanner"
           />
@@ -63,7 +61,6 @@
             :display-file-label="displayFileLabel"
             @create="resetResearch"
             @edit="editResearch"
-            @file="setFile($event, researchForm, 'cover_image')"
             @save="saveResearch"
             @delete="deleteResearch"
           />
@@ -85,11 +82,10 @@
           <CmsNewsEditor
             ref="newsEditorRef" :rows="newsRows" :editing-slug="editingNewsSlug" :form="newsForm" :categories="newsCategories"
             v-model:content="newsContent" :uploading-image="uploadingNewsImage" :image-upload-progress="newsImageUploadProgress"
-            :file-input-key="newsFileInputKey" :selected-word-file="selectedNewsWordFile" :current-word-file="editingNewsWordFile"
+            :current-word-file="editingNewsWordFile"
             :current-cover="editingNewsCover" :upload-progress="newsUploadProgress" :saving="saving"
-            :display-file-label="displayFileLabel" :format-file-size="formatFileSize"
+            :display-file-label="displayFileLabel"
             @create="resetNews" @edit="editNews" @image-selected="insertNewsBodyImage"
-            @word-file="setFile($event, newsForm, 'word_file')" @cover-file="setFile($event, newsForm, 'cover_image')"
             @save="saveNews" @delete="deleteNews"
           />
         </el-tab-pane>
@@ -100,7 +96,7 @@
             :has-preview="hasPublicationPreview" :volume-preview="publicationVolumePreview" :current-pdf="editingPublicationPdf"
             :saving="saving" :progress="cmsUploadProgress" :importing="importingKind === 'publications'" :import-progress="importProgress"
             :display-file-label="displayFileLabel" @create="resetPublication" @edit="editPublication" @parse="parsePublicationCitation"
-            @file="setFile($event, publicationForm, 'pdf_file')" @import="importCmsFile($event, 'publications')"
+            @import="importCmsFile($event, 'publications')"
             @save="savePublication" @delete="deletePublication"
           />
         </el-tab-pane>
@@ -118,7 +114,7 @@
             :rows="patentRows" :editing-id="editingPatentId" :form="patentForm" :current-pdf="editingPatentPdf"
             :saving="saving" :progress="cmsUploadProgress" :importing="importingKind === 'patents'" :import-progress="importProgress"
             :display-file-label="displayFileLabel" @create="resetPatent" @edit="editPatent"
-            @file="setFile($event, patentForm, 'pdf_file')" @import="importCmsFile($event, 'patents')" @save="savePatent" @delete="deletePatent"
+            @import="importCmsFile($event, 'patents')" @save="savePatent" @delete="deletePatent"
           />
         </el-tab-pane>
 
@@ -127,8 +123,7 @@
             :rows="awardRows" :editing-id="editingAwardId" :form="awardForm" :current-image="editingAwardImage"
             :current-attachment="editingAwardAttachment" :saving="saving" :progress="cmsUploadProgress"
             :importing="importingKind === 'awards'" :import-progress="importProgress" :display-file-label="displayFileLabel"
-            @create="resetAward" @edit="editAward" @image-file="setFile($event, awardForm, 'image')"
-            @attachment-file="setFile($event, awardForm, 'attachment')" @import="importCmsFile($event, 'awards')"
+            @create="resetAward" @edit="editAward" @import="importCmsFile($event, 'awards')"
             @save="saveAward" @delete="deleteAward"
           />
         </el-tab-pane>
@@ -147,6 +142,7 @@ import { cmsApi, type CmsNewsArticle } from '../../api/cms'
 import type { Award, ContactInfo, HomeBanner, Member, NewsCategory, Patent, Project, Publication, ResearchDirection, SiteSetting } from '../../api/publicPortal'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSiteBrandStore } from '../../stores/siteBrand'
+import { formatFileSize, validateUploadFile } from '../../utils/files'
 import CmsBannerEditor from './components/CmsBannerEditor.vue'
 import CmsAwardEditor from './components/CmsAwardEditor.vue'
 import CmsFooterEditor from './components/CmsFooterEditor.vue'
@@ -186,7 +182,6 @@ const siteBrand = useSiteBrandStore()
 const cmsUploadProgress = ref(0)
 const newsUploadProgress = ref(0)
 const newsImageUploadProgress = ref(0)
-const newsFileInputKey = ref(0)
 const newsEditorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)
 const memberAvatarInputKey = ref(0)
 const memberAvatarObjectUrl = ref('')
@@ -388,7 +383,6 @@ const newsRows = computed<Row<CmsNewsArticle>[]>(() =>
     source: item,
   })),
 )
-const selectedNewsWordFile = computed(() => (newsForm.word_file instanceof File ? newsForm.word_file : null))
 const newsContent = computed({
   get: () => String(newsForm.content || ''),
   set: (value: string) => {
@@ -547,7 +541,16 @@ async function saveFooterContent() {
 
 function setFile(event: Event, form: CmsForm, field: FileField) {
   const input = event.target as HTMLInputElement
-  form[field] = input.files?.[0]
+  const selected = input.files?.[0]
+  if (selected) {
+    const message = validateUploadFile(selected)
+    if (message) {
+      input.value = ''
+      ElMessage.warning(message)
+      return
+    }
+  }
+  form[field] = selected
   if (form === memberForm && field === 'avatar') {
     releaseMemberAvatarPreview()
     const file = input.files?.[0]
@@ -609,12 +612,6 @@ function findUploadedFileSize(value: string) {
     if (match(award.attachment)) return award.attachment_size || 0
   }
   return 0
-}
-
-function formatFileSize(size: number) {
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${size} B`
 }
 
 function createCmsUploadProgressHandler() {
@@ -753,7 +750,6 @@ function resetNews() {
   editingNewsId.value = null
   editingNewsCover.value = ''
   editingNewsWordFile.value = ''
-  newsFileInputKey.value += 1
   newsUploadProgress.value = 0
   Object.assign(newsForm, {
     title: '',
@@ -775,7 +771,6 @@ function editNews(item: CmsNewsArticle) {
   editingNewsId.value = item.id
   editingNewsCover.value = item.cover_image || ''
   editingNewsWordFile.value = item.word_file || ''
-  newsFileInputKey.value += 1
   newsUploadProgress.value = 0
   Object.assign(newsForm, {
     title: item.title,
@@ -804,7 +799,6 @@ async function saveNews() {
       ? await cmsApi.updateNews(editingNewsSlug.value, newsForm, onUploadProgress)
       : await cmsApi.createNews(newsForm, onUploadProgress)
     newsUploadProgress.value = 100
-    newsFileInputKey.value += 1
     await loadAll()
     editNews(saved)
     ElMessage.success('新闻已保存')

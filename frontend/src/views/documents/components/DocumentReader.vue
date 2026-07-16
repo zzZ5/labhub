@@ -18,19 +18,24 @@
       <div><dt>更新</dt><dd>{{ formatDate(document.updated_at) }}</dd></div>
       <div v-if="document.description"><dt>说明</dt><dd>{{ document.description }}</dd></div>
     </dl>
-    <div class="document-reader">
-      <iframe v-if="previewUrl && canEmbed" :src="previewUrl" title="资料在线查看" />
-      <div v-else class="preview-empty">
-        <strong>当前文件暂不能在线查看</strong>
-        <p>请下载后查看，或将旧版 Word 文件转换为 PDF / DOCX 后重新上传。</p>
+    <FilePreview
+      :url="canEmbed ? previewUrl : ''"
+      :title="document.title"
+      :filename="document.original_filename"
+      :mime-type="document.file_type"
+      :status="document.preview_status"
+      :error="document.preview_error"
+    >
+      <template #fallback>
         <el-button v-if="document.can_download" type="primary" @click="$emit('download', document)">下载文件</el-button>
-      </div>
-    </div>
+      </template>
+    </FilePreview>
   </section>
 </template>
 
 <script setup lang="ts">
 import type { LabDocument } from '../../../api/documents'
+import FilePreview from '../../../components/FilePreview.vue'
 import { categoryName, currentFileLabel, formatDate } from '../documentPresentation'
 
 defineProps<{ document: LabDocument; previewUrl: string; canEmbed: boolean }>()
@@ -119,42 +124,7 @@ defineEmits<{
   font-weight: 650;
 }
 
-.document-reader {
-  overflow: hidden;
-  border: 1px solid #dfe5e1;
-  border-radius: 10px;
-  margin-top: 10px;
-  background: #eef2f0;
-}
-
-.document-reader iframe {
-  display: block;
-  width: 100%;
-  min-height: min(86vh, 980px);
-  border: 0;
-  background: #fff;
-}
-
-.preview-empty {
-  display: grid;
-  min-height: 420px;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  padding: 32px;
-  color: var(--color-muted);
-  text-align: center;
-}
-
-.preview-empty strong {
-  color: var(--color-deep-green);
-  font-size: 20px;
-}
-
-.preview-empty p {
-  max-width: 460px;
-  margin: 0;
-}
+.embedded-reader :deep(.file-preview) { margin-top: 10px; }
 
 @media (max-width: 640px) {
   .reader-heading {

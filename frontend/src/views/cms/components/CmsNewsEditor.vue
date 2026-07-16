@@ -18,22 +18,14 @@
         <div class="news-assets-grid">
           <div class="news-asset-field">
             <strong>Word 稿件</strong>
-            <input :key="fileInputKey" class="file-input" type="file" accept=".docx" @change="$emit('wordFile', $event)" />
-            <small v-if="selectedWordFile">{{ selectedWordFile.name }}（{{ formatFileSize(selectedWordFile.size) }}）</small>
-            <small v-else-if="currentWordFile">已上传：{{ displayFileLabel(currentWordFile) }}</small>
-            <small v-else>可选，支持 .docx 正文和内嵌图片。</small>
+            <UploadFileField v-model="form.word_file" :disabled="saving" accept=".docx" :existing-label="currentWordFile ? displayFileLabel(currentWordFile) : ''" hint="可选，支持 .docx 正文和内嵌图片，文件不超过 200 MB" />
           </div>
           <div class="news-asset-field">
             <strong>封面图</strong>
-            <input class="file-input" type="file" accept="image/*" @change="$emit('coverFile', $event)" />
-            <small v-if="currentCover">已上传：{{ displayFileLabel(currentCover) }}</small>
-            <small v-else>用于新闻列表，未上传时使用正文首图。</small>
+            <UploadFileField v-model="form.cover_image" :disabled="saving" accept="image/*" :existing-label="currentCover ? displayFileLabel(currentCover) : ''" hint="用于新闻列表；未上传时使用正文首图" />
           </div>
         </div>
-        <div v-if="uploadProgress > 0 || saving" class="upload-progress news-save-progress">
-          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : undefined" />
-          <span>{{ uploadProgress < 100 ? '正在上传并保存…' : '上传完成，正在处理正文。' }}</span>
-        </div>
+        <UploadProgress :active="saving" :progress="uploadProgress" uploading-text="正在上传并保存…" processing-text="上传完成，正在处理正文。" />
         <div class="form-two-col">
           <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
           <el-form-item label="置顶"><el-switch v-model="form.is_pinned" /></el-form-item>
@@ -47,18 +39,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import RichTextEditor from '../../../components/RichTextEditor.vue'
+import UploadFileField from '../../../components/UploadFileField.vue'
+import UploadProgress from '../../../components/UploadProgress.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 
 defineProps<{
   rows: Array<any>; editingSlug: string; form: Record<string, any>; categories: Array<any>; content: string
-  uploadingImage: boolean; imageUploadProgress: number; fileInputKey: number; selectedWordFile: File | null
+  uploadingImage: boolean; imageUploadProgress: number
   currentWordFile: string; currentCover: string; uploadProgress: number; saving: boolean
-  displayFileLabel: (value: string) => string; formatFileSize: (size: number) => string
+  displayFileLabel: (value: string) => string
 }>()
 defineEmits<{
   create: []; edit: [row: any]; save: []; delete: []; 'update:content': [value: string]
-  imageSelected: [file: File]; wordFile: [event: Event]; coverFile: [event: Event]
+  imageSelected: [file: File]
 }>()
 
 const editorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)

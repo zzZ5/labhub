@@ -8,12 +8,10 @@
       </div>
       <el-form label-position="top">
         <el-form-item label="资料清单（.xlsx）">
-          <input :key="inputKey" class="file-input" type="file" accept=".xlsx" @change="selectExcel" />
-          <small v-if="form.file" class="upload-file-note">{{ form.file.name }}（{{ formatFileSize(form.file.size) }}）</small>
+          <UploadFileField v-model="form.file" :disabled="saving" accept=".xlsx" hint="请选择内部资料导入模板，单个文件不超过 200 MB" />
         </el-form-item>
         <el-form-item label="资料文件包（.zip，可选）">
-          <input :key="inputKey + 1" class="file-input" type="file" accept=".zip" @change="selectArchive" />
-          <small v-if="form.archive" class="upload-file-note">{{ form.archive.name }}（{{ formatFileSize(form.archive.size) }}）</small>
+          <UploadFileField v-model="form.archive" :disabled="saving" accept=".zip" hint="文件名需与清单一致，压缩包不超过 200 MB" />
         </el-form-item>
       </el-form>
       <div v-if="result" class="import-result">
@@ -25,10 +23,7 @@
       </div>
     </div>
     <template #footer>
-      <div v-if="saving || progress > 0" class="upload-progress">
-        <el-progress :percentage="progress" :status="progress === 100 ? 'success' : undefined" />
-        <span>{{ progress < 100 ? '正在上传并导入，请不要关闭窗口。' : '上传完成，正在处理资料。' }}</span>
-      </div>
+      <UploadProgress :active="saving" :progress="progress" uploading-text="正在上传并导入，请不要关闭窗口。" processing-text="上传完成，正在处理资料。" />
       <el-button @click="$emit('update:open', false)">取消</el-button>
       <el-button type="primary" :loading="saving" @click="submit">开始导入</el-button>
     </template>
@@ -36,10 +31,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import UploadFileField from '../../../components/UploadFileField.vue'
+import UploadProgress from '../../../components/UploadProgress.vue'
 import type { DocumentImportPayload, DocumentImportResult } from '../../../api/documents'
-import { formatFileSize } from '../documentPresentation'
 
 const props = defineProps<{ open: boolean; saving: boolean; progress: number; result: DocumentImportResult | null }>()
 const emit = defineEmits<{
@@ -47,16 +43,7 @@ const emit = defineEmits<{
   import: [payload: DocumentImportPayload]
 }>()
 
-const inputKey = ref(0)
 const form = reactive<{ file?: File; archive?: File }>({ file: undefined, archive: undefined })
-
-function selectExcel(event: Event) {
-  form.file = (event.target as HTMLInputElement).files?.[0]
-}
-
-function selectArchive(event: Event) {
-  form.archive = (event.target as HTMLInputElement).files?.[0]
-}
 
 function submit() {
   if (!form.file) {
@@ -69,7 +56,6 @@ function submit() {
 watch(() => props.open, (open) => {
   if (!open) return
   Object.assign(form, { file: undefined, archive: undefined })
-  inputKey.value += 2
 })
 </script>
 
@@ -108,22 +94,6 @@ watch(() => props.open, (open) => {
   font-weight: 700;
 }
 
-.file-input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 11px;
-  background: #fff;
-}
-
-.upload-file-note {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-muted);
-  font-size: 13px;
-  word-break: break-all;
-}
-
 .import-result {
   display: grid;
   gap: 6px;
@@ -139,19 +109,4 @@ watch(() => props.open, (open) => {
   color: #9f5135;
 }
 
-.upload-progress {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
-  padding: 12px;
-  background: var(--color-soft-gray);
-  text-align: left;
-}
-
-.upload-progress span {
-  color: var(--color-muted);
-  font-size: 13px;
-}
 </style>

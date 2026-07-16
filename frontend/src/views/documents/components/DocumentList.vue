@@ -28,24 +28,12 @@
         </footer>
       </article>
     </div>
-    <div v-if="total > 12" class="list-pager">
-      <span class="pager-summary">共 {{ total }} 条资料</span>
-      <div class="pager-controls">
-        <button type="button" :disabled="page === 1" @click="$emit('update:page', page - 1)">上一页</button>
-        <PageJump compact inline :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
-        <button type="button" :disabled="page === totalPages" @click="$emit('update:page', page + 1)">下一页</button>
-      </div>
-      <el-select :model-value="pageSize" size="small" class="page-size-select" @update:model-value="$emit('update:pageSize', Number($event))">
-        <el-option label="12 条/页" :value="12" />
-        <el-option label="24 条/页" :value="24" />
-        <el-option label="48 条/页" :value="48" />
-      </el-select>
-    </div>
+    <AppPagination :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
   </div>
 </template>
 
 <script setup lang="ts">
-import PageJump from '../../../components/PageJump.vue'
+import AppPagination from '../../../components/AppPagination.vue'
 import type { LabDocument } from '../../../api/documents'
 import { categoryName, currentFileSizeLabel, fileTypeLabel, formatDate } from '../documentPresentation'
 
@@ -54,7 +42,6 @@ defineProps<{
   total: number
   page: number
   totalPages: number
-  pageSize: number
 }>()
 
 defineEmits<{
@@ -62,7 +49,6 @@ defineEmits<{
   edit: [document: LabDocument]
   download: [document: LabDocument]
   'update:page': [page: number]
-  'update:pageSize': [size: number]
 }>()
 </script>
 
@@ -176,65 +162,10 @@ defineEmits<{
   gap: 8px;
 }
 
-.list-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  background: #fff;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.pager-summary {
-  color: var(--color-text);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.pager-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.page-size-select {
-  width: 128px;
-}
-
-.list-pager button {
-  width: 72px;
-  min-height: 32px;
-  border: 1px solid rgba(0, 135, 60, 0.2);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.list-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 @media (max-width: 640px) {
   .document-card footer {
     display: grid;
   }
 
-  .list-pager {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .pager-summary {
-    width: 100%;
-    text-align: center;
-  }
 }
 </style>

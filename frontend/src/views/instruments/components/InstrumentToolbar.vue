@@ -23,15 +23,15 @@
     <p v-if="canManage" class="import-tip">
       模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入。
     </p>
-    <div v-if="importing" class="upload-progress import-progress">
-      <el-progress :percentage="progress" :status="progress === 100 ? 'success' : undefined" />
-      <span>{{ progress < 100 ? '正在上传设备表，请不要关闭页面。' : '上传完成，正在解析仪器和图片。' }}</span>
-    </div>
+    <UploadProgress :active="importing" :progress="progress" uploading-text="正在上传设备表，请不要关闭页面。" processing-text="上传完成，正在解析仪器和图片。" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import UploadProgress from '../../../components/UploadProgress.vue'
+import { validateUploadFile } from '../../../utils/files'
 
 defineProps<{
   keyword: string
@@ -54,7 +54,11 @@ function selectExcel(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
-  if (file) emit('import', file)
+  if (file) {
+    const message = validateUploadFile(file)
+    if (message) ElMessage.warning(message)
+    else emit('import', file)
+  }
 }
 </script>
 
@@ -130,20 +134,6 @@ function selectExcel(event: Event) {
   color: var(--color-muted);
   font-size: 13px;
   line-height: 1.6;
-}
-
-.upload-progress {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  background: var(--color-soft-gray);
-}
-
-.upload-progress span {
-  color: var(--color-muted);
-  font-size: 13px;
 }
 
 @media (max-width: 900px) {

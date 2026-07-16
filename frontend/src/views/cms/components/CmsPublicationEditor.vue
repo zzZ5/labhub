@@ -28,7 +28,7 @@
           <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
         </div>
         <el-form-item label="摘要"><el-input v-model="form.abstract" type="textarea" :rows="4" /></el-form-item>
-        <el-form-item label="PDF 附件"><input class="file-input" type="file" accept="application/pdf" @change="$emit('file', $event)" /><small v-if="currentPdf">当前 PDF：{{ displayFileLabel(currentPdf) }}</small></el-form-item>
+        <el-form-item label="PDF 附件"><UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" /></el-form-item>
       </el-form>
       <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="$emit('save')" @delete="$emit('delete')" />
     </article>
@@ -39,7 +39,7 @@
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import UploadFileField from '../../../components/UploadFileField.vue'
 defineProps<{ rows: Array<any>; editingId: number | null; form: Record<string, any>; preview: Record<string, any>; hasPreview: boolean; volumePreview: string; currentPdf: string; saving: boolean; progress: number; importing: boolean; importProgress: number; displayFileLabel: (value: string) => string }>()
-defineEmits<{ create: []; edit: [row: any]; save: []; delete: []; parse: []; file: [event: Event]; import: [file: File] }>()
+defineEmits<{ create: []; edit: [row: any]; save: []; delete: []; parse: []; import: [file: File] }>()
 </script>
-

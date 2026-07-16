@@ -16,15 +16,11 @@
       <el-form-item label="标题"><el-input v-model="form.title" placeholder="例如：硕士毕业论文终稿" /></el-form-item>
       <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
       <el-form-item label="文件">
-        <input :key="fileInputKey" class="file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="selectFile" />
-        <small v-if="form.file" class="upload-file-note">{{ form.file.name }}（{{ formatFileSize(form.file.size) }}）</small>
+        <UploadFileField v-model="form.file" :disabled="saving" accept=".pdf,.doc,.docx,.ppt,.pptx" hint="支持 PDF、Word 和 PowerPoint，单个文件不超过 200 MB" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <div v-if="saving || progress > 0" class="upload-progress">
-        <el-progress :percentage="progress" :status="progress === 100 ? 'success' : undefined" />
-        <span>{{ progress < 100 ? '正在上传，请不要关闭窗口。' : '上传完成，正在保存记录。' }}</span>
-      </div>
+      <UploadProgress :active="saving" :progress="progress" processing-text="上传完成，正在保存学生资料。" />
       <el-button @click="$emit('update:open', false)">取消</el-button>
       <el-button type="primary" :loading="saving" @click="submit">保存资料</el-button>
     </template>
@@ -32,8 +28,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import UploadFileField from '../../../components/UploadFileField.vue'
+import UploadProgress from '../../../components/UploadProgress.vue'
 import type { StudentArchiveUploadPayload } from '../../../api/students'
 
 const props = defineProps<{ open: boolean; saving: boolean; progress: number }>()
@@ -42,22 +40,10 @@ const emit = defineEmits<{
   save: [payload: StudentArchiveUploadPayload]
 }>()
 
-const fileInputKey = ref(0)
 const form = reactive({ file_type: 'proposal_report', title: '', description: '', file: undefined as File | undefined })
 
 function reset() {
   Object.assign(form, { file_type: 'proposal_report', title: '', description: '', file: undefined })
-  fileInputKey.value += 1
-}
-
-function selectFile(event: Event) {
-  form.file = (event.target as HTMLInputElement).files?.[0]
-}
-
-function formatFileSize(size: number) {
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`
-  if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${size} B`
 }
 
 function submit() {
@@ -72,37 +58,3 @@ watch(() => props.open, (open) => {
   if (open) reset()
 })
 </script>
-
-<style scoped>
-.file-input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 11px;
-  background: #fff;
-}
-
-.upload-file-note {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-muted);
-  font-size: 13px;
-  word-break: break-all;
-}
-
-.upload-progress {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
-  padding: 12px;
-  background: var(--color-soft-gray);
-  text-align: left;
-}
-
-.upload-progress span {
-  color: var(--color-muted);
-  font-size: 13px;
-}
-</style>

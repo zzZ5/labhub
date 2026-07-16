@@ -94,19 +94,7 @@
           </article>
         </div>
         <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
-        <div v-if="filteredUsers.length > 12" class="list-pager member-list-pager">
-          <span class="pager-summary">共 {{ filteredUsers.length }} 人</span>
-          <div class="pager-controls">
-            <button class="pager-nav" type="button" :disabled="memberPage === 1" @click="memberPage -= 1">上一页</button>
-            <PageJump compact inline :page="memberPage" :total-pages="memberTotalPages" @change="memberPage = $event" />
-            <button class="pager-nav" type="button" :disabled="memberPage === memberTotalPages" @click="memberPage += 1">下一页</button>
-          </div>
-          <el-select v-model="memberPageSize" size="small" class="page-size-select" placeholder="分页">
-            <el-option label="12 人/页" :value="12" />
-            <el-option label="24 人/页" :value="24" />
-            <el-option label="48 人/页" :value="48" />
-          </el-select>
-        </div>
+        <AppPagination :page="memberPage" :total-pages="memberTotalPages" @change="memberPage = $event" />
       </article>
 
       <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
@@ -158,7 +146,9 @@ import {
   updateUser,
 } from '../../api/accounts'
 import { createStudentProfile, fetchStudentProfiles, type StudentProfile } from '../../api/students'
-import PageJump from '../../components/PageJump.vue'
+import AppPagination from '../../components/AppPagination.vue'
+import { useListPagination } from '../../composables/useListPagination'
+import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
 
@@ -178,12 +168,12 @@ const passwordTarget = ref<CurrentUser | null>(null)
 const accountAvatarPreview = ref('')
 const errorMessage = ref('')
 const keyword = ref('')
+const debouncedKeyword = useDebouncedValue(keyword)
 const statusFilter = ref('all')
 const schoolFilter = ref('all')
 const permissionFilter = ref('all')
 const membershipFilter = ref('all')
 const memberPage = ref(1)
-const memberPageSize = ref(12)
 const schoolIdentityForms = reactive<Record<number, string>>({})
 const accountForm = reactive({
   real_name: '',
@@ -251,7 +241,7 @@ const studentMissingArchiveCount = computed(
   () => users.value.filter((user) => isStudentRole(user) && !studentByUserId.value[user.id]).length,
 )
 const filteredUsers = computed(() => {
-  const term = keyword.value.trim().toLowerCase()
+  const term = debouncedKeyword.value.trim().toLowerCase()
   return users.value.filter((user) => {
     const text = `${displayUser(user)} ${user.email} ${user.username}`.toLowerCase()
     const statusMatched =
@@ -264,11 +254,9 @@ const filteredUsers = computed(() => {
     return (!term || text.includes(term)) && statusMatched && schoolMatched && membershipMatched && permissionMatched
   })
 })
-const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / memberPageSize.value)))
-const pagedUsers = computed(() => {
-  const start = (memberPage.value - 1) * memberPageSize.value
-  return filteredUsers.value.slice(start, start + memberPageSize.value)
-})
+const filteredUserTotal = computed(() => filteredUsers.value.length)
+const { totalPages: memberTotalPages, paginate: paginateMembers } = useListPagination(filteredUserTotal, { page: memberPage })
+const pagedUsers = computed(() => paginateMembers(filteredUsers.value))
 const passwordTargetName = computed(() => (passwordTarget.value ? displayUser(passwordTarget.value) : ''))
 
 function roleOrder(code: string) {
@@ -588,15 +576,10 @@ async function handleReject(user: CurrentUser) {
 
 onMounted(reload)
 
-watch([keyword, statusFilter, membershipFilter, schoolFilter, permissionFilter], () => {
+watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissionFilter], () => {
   memberPage.value = 1
 })
 
-watch(memberPageSize, () => {
-  memberPage.value = 1
-})
-
-watch(memberTotalPages, clampMemberPage)
 </script>
 
 <style scoped>
@@ -916,66 +899,6 @@ watch(memberTotalPages, clampMemberPage)
   padding: 14px 0 2px;
 }
 
-.list-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  margin-top: 14px;
-  padding: 10px 12px;
-  background: #fff;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.member-list-pager {
-  flex-wrap: nowrap;
-}
-
-.pager-summary {
-  flex: 0 0 auto;
-  color: var(--color-text);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.pager-controls {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.page-size-select {
-  flex: 0 0 112px;
-  width: 128px;
-}
-
-.list-pager button {
-  border: 1px solid rgba(0, 135, 60, 0.2);
-  border-radius: var(--radius-sm);
-  min-height: 32px;
-  padding: 0 12px;
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.list-pager .pager-nav {
-  width: 72px;
-  padding: 0;
-  text-align: center;
-}
-
-.list-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 .create-form {
   display: grid;
 }
@@ -1039,18 +962,6 @@ watch(memberTotalPages, clampMemberPage)
     justify-content: flex-start;
   }
 
-  .list-pager {
-    justify-content: center;
-  }
-
-  .pager-summary {
-    width: 100%;
-    text-align: center;
-  }
-
-  .pager-controls {
-    flex-wrap: wrap;
-  }
 }
 </style>
 

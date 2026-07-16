@@ -23,9 +23,7 @@
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="副标题"><el-input v-model="form.subtitle" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="横幅图片">
-          <input class="file-input" type="file" accept="image/*" @change="$emit('file', $event)" />
-          <small v-if="currentImage">当前图片：{{ displayFileLabel(currentImage) }}</small>
-          <small>建议上传横向照片，主体尽量位于画面中间。</small>
+          <UploadFileField v-model="form.image" :disabled="saving" accept="image/*" :existing-label="currentImage ? displayFileLabel(currentImage) : ''" hint="建议上传主体居中的横向照片，文件不超过 200 MB" />
         </el-form-item>
         <el-form-item label="跳转链接"><el-input v-model="form.link" placeholder="可选，https://..." /></el-form-item>
         <div class="form-two-col">
@@ -41,6 +39,7 @@
 <script setup lang="ts">
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
+import UploadFileField from '../../../components/UploadFileField.vue'
 
 defineProps<{
   rows: Array<any>
@@ -59,7 +58,5 @@ defineEmits<{
   edit: [row: any]
   save: []
   delete: []
-  file: [event: Event]
 }>()
 </script>
-

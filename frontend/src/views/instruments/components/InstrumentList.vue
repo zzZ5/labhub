@@ -39,24 +39,12 @@
 
     <div v-if="!instruments.length" class="card empty-panel">没有找到匹配的仪器设备。</div>
 
-    <div v-if="total > 12" class="list-pager">
-      <span class="pager-summary">共 {{ total }} 台设备</span>
-      <div class="pager-controls">
-        <button class="pager-nav" type="button" :disabled="page === 1" @click="$emit('update:page', page - 1)">上一页</button>
-        <PageJump compact inline :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
-        <button class="pager-nav" type="button" :disabled="page === totalPages" @click="$emit('update:page', page + 1)">下一页</button>
-      </div>
-      <el-select :model-value="pageSize" size="small" class="page-size-select" placeholder="分页" @update:model-value="$emit('update:pageSize', Number($event))">
-        <el-option label="12 台/页" :value="12" />
-        <el-option label="24 台/页" :value="24" />
-        <el-option label="48 台/页" :value="48" />
-      </el-select>
-    </div>
+    <AppPagination :page="page" :total-pages="totalPages" @change="$emit('update:page', $event)" />
   </div>
 </template>
 
 <script setup lang="ts">
-import PageJump from '../../../components/PageJump.vue'
+import AppPagination from '../../../components/AppPagination.vue'
 import type { Instrument } from '../../../api/instruments'
 
 defineProps<{
@@ -64,7 +52,6 @@ defineProps<{
   total: number
   page: number
   totalPages: number
-  pageSize: number
   canManage: boolean
 }>()
 
@@ -72,7 +59,6 @@ defineEmits<{
   detail: [id: number]
   edit: [instrument: Instrument]
   'update:page': [page: number]
-  'update:pageSize': [size: number]
 }>()
 
 function shortNote(note: string) {
@@ -208,8 +194,7 @@ function statusText(status: string) {
   font-weight: 700;
 }
 
-.edit-action,
-.list-pager button {
+.edit-action {
   border: 1px solid rgba(0, 135, 60, 0.2);
   border-radius: var(--radius-sm);
   background: #fff;
@@ -234,51 +219,6 @@ function statusText(status: string) {
   text-align: center;
 }
 
-.list-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  background: #fff;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.pager-summary {
-  color: var(--color-text);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.pager-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.page-size-select {
-  width: 128px;
-}
-
-.list-pager button {
-  min-height: 32px;
-  padding: 0 12px;
-}
-
-.list-pager .pager-nav {
-  width: 72px;
-  padding: 0;
-}
-
-.list-pager button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 @media (max-width: 1080px) {
   .instrument-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -290,14 +230,5 @@ function statusText(status: string) {
     grid-template-columns: 1fr;
   }
 
-  .list-pager {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .pager-summary {
-    width: 100%;
-    text-align: center;
-  }
 }
 </style>
