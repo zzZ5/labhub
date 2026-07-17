@@ -19,7 +19,7 @@
       </div>
       <el-form-item label="详细位置"><el-input v-model="form.location_detail" placeholder="如 沃土实验室一楼" /></el-form-item>
       <el-form-item label="设备图片">
-        <ImageCropField v-model="form.image" :disabled="saving" :existing-url="instrument?.image || ''" :aspect-ratio="4 / 3" :output-width="1400" :output-height="1050" :max-size-mb="20" hint="按设备列表比例裁剪，原图不超过 20 MB" />
+        <ImageCropField v-model="form.image" :disabled="saving" :existing-url="instrument?.image || ''" :existing-size="instrument?.image_size || 0" :aspect-ratio="4 / 3" :output-width="1400" :output-height="1050" :max-size-mb="20" hint="按设备列表比例裁剪，原图不超过 20 MB" />
       </el-form-item>
       <el-form-item label="使用说明">
         <el-input v-model="form.notes" type="textarea" :rows="8" placeholder="可填写操作步骤、注意事项、联系人或维护要求。" />

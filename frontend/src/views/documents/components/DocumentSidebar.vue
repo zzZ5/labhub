@@ -62,8 +62,8 @@ defineEmits<{
   top: 24px;
   max-height: calc(100vh - 48px);
   overflow: auto;
-  padding: 22px;
-  box-shadow: 0 1px 2px rgba(31, 61, 43, 0.035), 0 12px 30px rgba(31, 61, 43, 0.035);
+  padding: 15px;
+  box-shadow: var(--shadow-flat);
 }
 
 .category-tree:hover {
@@ -91,11 +91,11 @@ defineEmits<{
 .category-tree > button {
   display: block;
   width: 100%;
-  min-height: 42px;
+  min-height: 38px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  margin-bottom: 7px;
-  padding: 10px 12px;
+  margin-bottom: 5px;
+  padding: 8px 10px;
   background: transparent;
   color: var(--color-muted);
   text-align: left;

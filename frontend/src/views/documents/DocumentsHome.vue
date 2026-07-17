@@ -1,25 +1,15 @@
 <template>
   <InternalLayout title="内部资料库">
-    <section class="library-hero">
-      <div>
-        <h1>内部资料库</h1>
-        <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读、下载和资料维护。</p>
-      </div>
-      <dl>
-        <div>
-          <dt>{{ displayDocuments.length }}</dt>
-          <dd>当前资料</dd>
-        </div>
-        <div>
-          <dt>{{ displayCategories.length }}</dt>
-          <dd>资料分类</dd>
-        </div>
-        <div>
-          <dt>{{ previewableCount }}</dt>
-          <dd>可在线查看</dd>
-        </div>
-      </dl>
-    </section>
+    <InternalPageHeader class="library-note">
+      <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读和下载。</p>
+      <template #summary><div class="compact-summary">
+        <span><strong>{{ displayDocuments.length }}</strong>份资料</span>
+        <span><strong>{{ displayCategories.length }}</strong>个分类</span>
+        <span><strong>{{ previewableCount }}</strong>份可在线查看</span>
+      </div></template>
+    </InternalPageHeader>
+
+    <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="reloadLibrary" />
 
     <section :class="['document-shell', { 'is-reading': previewDocument }]">
       <DocumentSidebar
@@ -37,16 +27,20 @@
       />
 
       <main class="document-main">
-        <div class="card filter-bar">
-          <div class="filter-title">
-            <strong>{{ activeCategoryName }}</strong>
-            <span>{{ loading ? '正在更新资料列表' : `共 ${displayDocuments.length} 条资料` }}</span>
-          </div>
-          <el-input v-model="keyword" placeholder="搜索实验方法、论文材料、项目资料或组会资料" clearable @keyup.enter="loadDocuments()" />
-          <el-button type="primary" @click="loadDocuments()">搜索</el-button>
-          <el-button plain @click="openCreate">上传资料</el-button>
-          <el-button plain @click="openImport">批量导入</el-button>
-        </div>
+        <FilterToolbar class="filter-bar">
+          <template #primary>
+            <div class="filter-title">
+              <strong>{{ activeCategoryName }}</strong>
+              <span>{{ loading ? '正在更新资料列表' : `共 ${displayDocuments.length} 条资料` }}</span>
+            </div>
+            <el-input v-model="keyword" placeholder="搜索实验方法、论文材料、项目资料或组会资料" clearable @keyup.enter="loadDocuments()" />
+          </template>
+          <template #actions>
+            <el-button type="primary" @click="loadDocuments()">搜索</el-button>
+            <el-button plain @click="openCreate">上传资料</el-button>
+            <el-button plain @click="openImport">批量导入</el-button>
+          </template>
+        </FilterToolbar>
 
         <DocumentReader
           v-if="previewDocument"
@@ -105,7 +99,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
 
 import EmptyState from '../../components/EmptyState.vue'
+import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import InternalPageHeader from '../../components/InternalPageHeader.vue'
+import FilterToolbar from '../../components/FilterToolbar.vue'
 import {
   createDocument,
   deleteDocument,
@@ -130,12 +127,14 @@ import DocumentUploadDialog from './components/DocumentUploadDialog.vue'
 import { categoryName, currentFilename } from './documentPresentation'
 import { useDocumentPreviewPolling } from './composables/useDocumentPreviewPolling'
 import { useListPagination } from '../../composables/useListPagination'
+import { requestErrorMessage } from '../../utils/requestErrors'
 
 const route = useRoute()
 const router = useRouter()
 const categories = ref<DocumentCategory[]>([])
 const documents = ref<LabDocument[]>([])
 const loading = ref(false)
+const loadError = ref('')
 const keyword = ref(String(route.query.q || ''))
 const activeCategory = ref(String(route.query.category || ''))
 const documentPage = ref(Math.max(1, Number(route.query.page) || 1))
@@ -187,9 +186,8 @@ function selectCategory(slug: string) {
 async function loadCategories() {
   try {
     categories.value = await fetchDocumentCategories()
-  } catch {
-    categories.value = []
-    ElMessage.error('资料分类加载失败，请确认已登录并刷新页面。')
+  } catch (error) {
+    loadError.value = requestErrorMessage(error, '资料分类加载失败，请确认当前账号权限后重试。')
   }
 }
 
@@ -204,9 +202,8 @@ async function loadDocuments(resetPages = true) {
       documentPage.value = 1
       readerPage.value = 1
     }
-  } catch {
-    documents.value = []
-    previewDocument.value = null
+  } catch (error) {
+    loadError.value = requestErrorMessage(error, '资料列表加载失败，现有内容已保留。')
   } finally {
     loading.value = false
   }
@@ -215,6 +212,11 @@ async function loadDocuments(resetPages = true) {
 function closeUploadDialog() {
   uploadVisible.value = false
   editingDocument.value = null
+}
+
+async function reloadLibrary() {
+  loadError.value = ''
+  await Promise.all([loadCategories(), loadDocuments(false)])
 }
 
 function openCreate() {
@@ -237,15 +239,6 @@ function openEdit(doc: LabDocument) {
   editingDocument.value = doc
   uploadProgress.value = 0
   uploadVisible.value = true
-}
-
-function uploadErrorMessage(error: any) {
-  const data = error?.response?.data
-  if (data?.detail) return data.detail
-  if (data?.file?.length) return data.file[0]
-  if (error?.code === 'ECONNABORTED') return '上传超时，请检查网络或稍后重试。'
-  if (!error?.response) return '上传连接失败，请检查网络或服务器上传大小限制。'
-  return '保存失败，请确认账号权限和表单内容。'
 }
 
 async function submitDocument(form: DocumentFormPayload) {
@@ -275,7 +268,7 @@ async function submitDocument(form: DocumentFormPayload) {
       previewDocument.value = documents.value.find((item) => item.id === editedId) || saved
     }
   } catch (error: any) {
-    ElMessage.error(uploadErrorMessage(error))
+    ElMessage.error(requestErrorMessage(error, '保存失败，请确认账号权限和表单内容。'))
   } finally {
     uploading.value = false
     setTimeout(() => {
@@ -298,7 +291,7 @@ async function submitImport(payload: DocumentImportPayload) {
     ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条。`)
     await loadDocuments(false)
   } catch (error: any) {
-    ElMessage.error(uploadErrorMessage(error))
+    ElMessage.error(requestErrorMessage(error, '导入失败，请检查模板和账号权限。'))
   } finally {
     importing.value = false
     setTimeout(() => {
@@ -434,69 +427,15 @@ watch(readerTotalPages, (total) => {
 </script>
 
 <style scoped>
-.library-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 22px;
-  border: 1px solid rgba(0, 135, 60, 0.12);
-  border-radius: 14px;
-  margin-bottom: 16px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(234, 245, 238, 0.72), rgba(255, 255, 255, 0.82) 48%, rgba(248, 247, 242, 0.9));
-}
-
-.library-hero h1 {
-  margin: 0 0 6px;
-  color: var(--color-deep-green);
-  font-size: clamp(24px, 2.7vw, 31px);
-  font-weight: 650;
-}
-
-.library-hero p {
-  max-width: 720px;
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 15px;
-  line-height: 1.62;
-}
-
-.library-hero dl {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(84px, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.library-hero dl div {
-  min-width: 92px;
-  border-left: 1px solid rgba(0, 135, 60, 0.16);
-  padding-left: 14px;
-}
-
-.library-hero dt,
-.library-hero dd {
-  margin: 0;
-}
-
-.library-hero dt {
-  color: var(--color-deep-green);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.library-hero dd {
-  margin-top: 4px;
-  color: var(--color-muted);
-  font-size: 13px;
+.library-note {
+  margin-bottom: 14px;
 }
 
 .document-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   align-items: start;
-  gap: 24px;
+  gap: 16px;
 }
 
 .document-shell.is-reading {
@@ -505,20 +444,16 @@ watch(readerTotalPages, (total) => {
 
 .document-main {
   display: grid;
-  gap: 20px;
+  gap: 14px;
 }
 
 .filter-bar,
 .loading-panel {
-  padding: 22px;
+  padding: 14px;
 }
 
 .filter-bar {
-  display: grid;
-  grid-template-columns: minmax(140px, 180px) minmax(240px, 1fr) auto auto auto;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 1px 2px rgba(31, 61, 43, 0.035), 0 12px 30px rgba(31, 61, 43, 0.035);
+  box-shadow: var(--shadow-flat);
 }
 
 .filter-bar:hover {
@@ -528,6 +463,7 @@ watch(readerTotalPages, (total) => {
 
 .filter-title {
   display: grid;
+  flex: 0 0 160px;
   gap: 3px;
 }
 
@@ -547,41 +483,16 @@ watch(readerTotalPages, (total) => {
 }
 
 @media (max-width: 1280px) {
-  .filter-bar {
-    grid-template-columns: 1fr auto auto auto;
-  }
-
   .filter-title {
-    grid-column: 1 / -1;
+    flex-basis: 130px;
   }
 }
 
 @media (max-width: 1080px) {
-  .library-hero,
   .document-shell,
-  .document-shell.is-reading,
-  .filter-bar {
+  .document-shell.is-reading {
     grid-template-columns: 1fr;
   }
 
-  .library-hero {
-    align-items: start;
-  }
-}
-
-@media (max-width: 640px) {
-  .library-hero {
-    padding: 18px;
-  }
-
-  .library-hero dl {
-    grid-template-columns: 1fr;
-  }
-
-  .library-hero dl div {
-    border-left: 0;
-    border-top: 1px solid rgba(0, 135, 60, 0.16);
-    padding: 12px 0 0;
-  }
 }
 </style>

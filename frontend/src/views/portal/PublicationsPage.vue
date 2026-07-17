@@ -1,11 +1,6 @@
 <template>
   <PortalLayout>
-    <section class="portal-page-head">
-      <div class="container">
-        <h1>成果汇总</h1>
-        <p>系统展示团队发表论文、承担项目和授权专利，支持按关键词检索和分页浏览。</p>
-      </div>
-    </section>
+    <PortalPageHeader title="科研成果" description="展示团队发表论文、承担项目、授权专利与获奖成果，支持检索和分页浏览。" />
 
     <section class="page-section">
       <div class="container output-layout">
@@ -174,6 +169,7 @@ import {
   type PublicationStats,
 } from '../../api/publicPortal'
 import AppPagination from '../../components/AppPagination.vue'
+import PortalPageHeader from '../../components/PortalPageHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 type TabKey = 'papers' | 'projects' | 'patents' | 'awards'
@@ -319,8 +315,8 @@ onMounted(async () => {
 
 .output-layout {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .stats-panel,
@@ -331,9 +327,20 @@ onMounted(async () => {
 
 .stats-panel {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-self: start;
-  gap: 12px;
-  padding: 18px;
+  gap: 0;
+  padding: 12px 18px;
+}
+
+.stats-panel > div {
+  border-left: 1px solid var(--color-line);
+  padding: 2px 18px;
+}
+
+.stats-panel > div:first-child {
+  border-left: 0;
+  padding-left: 0;
 }
 
 .stats-panel strong,
@@ -343,12 +350,24 @@ onMounted(async () => {
 
 .stats-panel strong {
   color: var(--color-cau-green);
-  font-size: 25px;
+  font-size: 22px;
 }
 
 .stats-panel span {
   color: var(--color-muted);
   font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .stats-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 0;
+  }
+
+  .stats-panel > div:nth-child(3) {
+    border-left: 0;
+    padding-left: 0;
+  }
 }
 
 .output-main {
@@ -359,11 +378,14 @@ onMounted(async () => {
 .result-tabs {
   display: flex;
   gap: 4px;
+  overflow-x: auto;
   border-bottom: 1px solid var(--color-line);
   padding: 12px 16px 0;
+  scrollbar-width: none;
 }
 
 .result-tabs button {
+  flex: 0 0 auto;
   border: 0;
   border-bottom: 2px solid transparent;
   padding: 12px 16px;
@@ -488,12 +510,16 @@ onMounted(async () => {
 }
 
 .meta-line span {
-  border-radius: 999px;
-  padding: 4px 9px;
-  background: rgba(78, 110, 126, 0.1);
+  padding: 0;
   color: var(--color-blue-gray);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 500;
+}
+
+.meta-line span + span::before {
+  margin-right: 8px;
+  color: var(--color-border);
+  content: "·";
 }
 
 .simple-card {
@@ -543,6 +569,16 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
+  .result-tabs {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .result-tabs button {
+    min-height: var(--control-touch);
+    padding: 10px 13px;
+  }
+
   .result-tools,
   .result-tools.two,
   .paper-row {

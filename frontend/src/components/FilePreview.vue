@@ -26,11 +26,15 @@ const kind = computed(() => {
 
 <style scoped>
 .file-preview { overflow: hidden; border: 1px solid #dfe5e1; border-radius: 10px; background: #eef2f0; }
-.file-preview iframe { display: block; width: 100%; min-height: min(86vh, 980px); border: 0; background: #fff; }
-.file-preview img, .file-preview video { display: block; width: 100%; max-height: min(86vh, 980px); background: #111; object-fit: contain; }
+.file-preview iframe { display: block; width: 100%; height: min(78dvh, 980px); min-height: 560px; border: 0; background: #fff; }
+.file-preview img, .file-preview video { display: block; width: 100%; max-height: min(78dvh, 980px); background: #111; object-fit: contain; }
 .preview-state { display: grid; min-height: 420px; place-items: center; align-content: center; gap: 10px; padding: 32px; color: var(--color-muted); text-align: center; }
 .preview-state .el-icon { color: var(--color-cau-green); font-size: 28px; }
 .preview-state strong { color: var(--color-deep-green); font-size: 20px; }
 .preview-state p { max-width: 480px; margin: 0; line-height: 1.65; }
-@media (max-width: 640px) { .file-preview iframe, .preview-state { min-height: 62vh; } }
+@media (max-width: 640px) {
+  .file-preview iframe { height: 68dvh; min-height: 440px; }
+  .file-preview img, .file-preview video { max-height: 68dvh; }
+  .preview-state { min-height: max(440px, 62dvh); padding: 24px 18px; }
+}
 </style>

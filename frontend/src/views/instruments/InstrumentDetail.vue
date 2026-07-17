@@ -1,7 +1,7 @@
 <template>
   <InternalLayout title="仪器详情">
     <section v-if="instrument" class="instrument-detail-page">
-      <RouterLink class="back-link" :to="returnTo">返回仪器平台</RouterLink>
+      <ReturnLink class="back-link" :to="returnTo">返回仪器平台</ReturnLink>
 
       <article class="card detail-card">
         <img v-if="instrument.image" :src="instrument.image" :alt="instrument.name" />
@@ -11,6 +11,7 @@
             <div>
               <h1>{{ instrument.name }}</h1>
               <p>{{ instrument.model || '型号待补充' }}</p>
+              <small v-if="instrument.image_size">设备图片 {{ formatFileSize(instrument.image_size) }}</small>
             </div>
             <div class="detail-tools">
               <span :class="['status-tag', statusClass(instrument.status)]">{{ statusText(instrument.status) }}</span>
@@ -59,10 +60,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 
 import EmptyState from '../../components/EmptyState.vue'
+import ReturnLink from '../../components/ReturnLink.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { deleteInstrument, fetchInstruments, updateInstrument, type Instrument, type InstrumentFormPayload } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
 import InstrumentFormDialog from './components/InstrumentFormDialog.vue'
+import { formatFileSize } from '../../utils/files'
 
 const route = useRoute()
 const router = useRouter()

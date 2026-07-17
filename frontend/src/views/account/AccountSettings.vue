@@ -1,12 +1,9 @@
 <template>
   <InternalLayout title="个人设置">
     <section class="account-page">
-      <header class="surface-heading account-heading">
-        <div>
-          <h1>个人设置</h1>
-          <p>维护个人资料和账号安全。学校身份、成员状态和系统权限由管理员维护。</p>
-        </div>
-      </header>
+      <InternalPageHeader class="account-heading">
+        <p>维护个人资料和账号安全。学校身份、成员状态和系统权限由管理员维护。</p>
+      </InternalPageHeader>
 
       <div class="account-layout">
         <aside class="card account-summary">
@@ -34,7 +31,7 @@
             </div>
             <el-form label-position="top" class="settings-form">
               <el-form-item label="头像">
-                <ImageCropField v-model="avatarFile" :existing-url="avatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" hint="未上传时使用姓名首字" @preview="avatarPreview = $event" />
+                <ImageCropField v-model="avatarFile" :existing-url="avatarPreview" :existing-size="session.user?.profile?.avatar_size || 0" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" hint="未上传时使用姓名首字" @preview="avatarPreview = $event" />
               </el-form-item>
               <el-form-item label="账号名">
                 <el-input v-model="profileForm.username" maxlength="150" placeholder="用于登录，不能与其他成员重复" />
@@ -75,6 +72,7 @@ import { ElMessage } from 'element-plus'
 import { changeCurrentUserPassword, updateCurrentUserProfile } from '../../api/accounts'
 import ImageCropField from '../../components/ImageCropField.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()

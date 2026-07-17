@@ -84,6 +84,11 @@ function change(value: number) {
   .page-nav,
   .compact .page-nav {
     width: 100%;
+    min-height: var(--control-touch);
+  }
+
+  .app-pagination :deep(.page-jump input) {
+    height: var(--control-touch);
   }
 }
 </style>

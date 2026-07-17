@@ -5,9 +5,9 @@
       template-url="/templates/projects-import-template.xlsx"
       :loading="importing" :progress="importProgress"
       uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。"
-      @import="$emit('import', $event)"
+      @import="emit('import', $event)"
     />
-    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="$emit('create')" @edit="$emit('edit', $event)" />
+    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="resetProject" @edit="editProject" />
     <article class="card form-panel">
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '科研项目' }}</h2></div></div>
       <el-form label-position="top">
@@ -31,16 +31,87 @@
         <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>
-      <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="$emit('save')" @delete="$emit('delete')" />
+      <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="saveProject" @delete="deleteProject" />
     </article>
   </section>
 </template>
 
 <script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+
+import { cmsApi } from '../../../api/cms'
+import type { Project } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
-defineProps<{ rows: Array<any>; editingId: number | null; form: Record<string, any>; saving: boolean; progress: number; importing: boolean; importProgress: number }>()
-defineEmits<{ create: []; edit: [row: any]; save: []; delete: []; import: [file: File] }>()
-</script>
+import type { CmsListRow } from '../composables/useCmsContentData'
+import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
+defineProps<{ rows: CmsListRow<Project>[]; importing: boolean; importProgress: number }>()
+const emit = defineEmits<{ import: [file: File]; changed: [] }>()
+
+type ProjectForm = Record<string, unknown> & {
+  title: string
+  project_number: string
+  funding_source: string
+  principal_investigator: string
+  start_date: string
+  end_date: string
+  amount: string | number
+  status: string
+  visibility: string
+  description: string
+  sort_order: number
+}
+const editingId = ref<number | null>(null)
+const form = reactive<ProjectForm>({
+  title: '', project_number: '', funding_source: '', principal_investigator: '', start_date: '', end_date: '',
+  amount: '', status: '', visibility: 'public', description: '', sort_order: 0,
+})
+const { saving, progress, save, remove } = useCmsEditorMutation(async () => emit('changed'))
+
+function resetProject() {
+  editingId.value = null
+  Object.assign(form, {
+    title: '', project_number: '', funding_source: '', principal_investigator: '', start_date: '', end_date: '',
+    amount: '', status: '', visibility: 'public', description: '', sort_order: 0,
+  })
+}
+
+function editProject(item: Project) {
+  editingId.value = item.id
+  Object.assign(form, {
+    title: item.title,
+    project_number: item.project_number || '',
+    funding_source: item.funding_source || '',
+    principal_investigator: item.principal_investigator || '',
+    start_date: item.start_date || '',
+    end_date: item.end_date || '',
+    amount: item.amount || '',
+    status: item.status || '',
+    visibility: item.visibility || 'public',
+    description: item.description || '',
+    sort_order: item.sort_order || 0,
+  })
+}
+
+async function saveProject() {
+  if (!form.title.trim()) {
+    ElMessage.warning('请填写项目名称。')
+    return
+  }
+  const id = editingId.value
+  const succeeded = await save((onUploadProgress) =>
+    id ? cmsApi.updateProject(id, form, onUploadProgress) : cmsApi.createProject(form, onUploadProgress),
+  )
+  if (succeeded) resetProject()
+}
+
+async function deleteProject() {
+  const id = editingId.value
+  if (!id) return
+  const succeeded = await remove('确定删除这个科研项目吗？', () => cmsApi.deleteProject(id))
+  if (succeeded) resetProject()
+}
+</script>

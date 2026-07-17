@@ -11,6 +11,18 @@ export const http = axios.create({
 })
 
 let csrfReady: Promise<void> | null = null
+const activeUploadControllers = new Map<object, AbortController>()
+
+export function cancelActiveUploads() {
+  const count = activeUploadControllers.size
+  activeUploadControllers.forEach((controller) => controller.abort())
+  activeUploadControllers.clear()
+  return count
+}
+
+function finishTrackedUpload(signal?: object | null) {
+  if (signal) activeUploadControllers.delete(signal)
+}
 
 function getCookie(name: string) {
   return document.cookie
@@ -44,6 +56,11 @@ function normalizeResponseMediaUrls<T>(data: T): T {
 
 http.interceptors.request.use(async (config) => {
   beginNetworkRequest()
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData && !config.signal) {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    activeUploadControllers.set(controller.signal, controller)
+  }
   const method = config.method?.toUpperCase() || 'GET'
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     await ensureCsrfToken()
@@ -54,11 +71,13 @@ http.interceptors.request.use(async (config) => {
 http.interceptors.response.use(
   (response) => {
     finishNetworkRequest()
+    finishTrackedUpload(response.config.signal)
     response.data = normalizeResponseMediaUrls(response.data)
     return response
   },
   (error) => {
     finishNetworkRequest()
+    finishTrackedUpload(error?.config?.signal)
     const status = error?.response?.status
     const detail = String(error?.response?.data?.detail || '')
     const isInternalRoute = ['/dashboard', '/documents', '/instruments', '/students', '/members', '/cms', '/pending'].some((path) =>

@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="detail-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" :to="returnTo">返回科研成果</RouterLink>
+        <ReturnLink class="back-link portal-back-link" :to="returnTo">返回科研成果</ReturnLink>
         <p class="section-kicker">论文详情</p>
         <h1>{{ paper?.title || '论文详情' }}</h1>
         <div class="tags">
@@ -70,6 +70,7 @@ import { useRoute } from 'vue-router'
 import { fetchPublication, type Publication } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import ReturnLink from '../../components/ReturnLink.vue'
 import { formatOptionalFileSize } from '../../utils/files'
 
 const route = useRoute()
@@ -97,7 +98,7 @@ onMounted(async () => {
 .detail-head {
   border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   padding: 34px 0 30px;
-  background: linear-gradient(90deg, rgba(234, 245, 238, 0.9), rgba(255, 255, 255, 0.98) 58%, rgba(248, 247, 242, 0.92));
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .back-link {
@@ -111,7 +112,7 @@ onMounted(async () => {
   max-width: 1000px;
   margin: 0;
   color: var(--color-deep-green);
-  font-size: clamp(28px, 3.6vw, 44px);
+  font-size: clamp(26px, 3.2vw, 38px);
   font-weight: 650;
   line-height: 1.25;
 }

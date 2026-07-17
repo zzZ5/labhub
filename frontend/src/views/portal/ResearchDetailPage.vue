@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="portal-page-head">
       <div class="container">
-        <RouterLink class="back-link portal-back-link" :to="returnTo">返回研究方向</RouterLink>
+        <ReturnLink class="back-link portal-back-link" :to="returnTo">返回研究方向</ReturnLink>
         <p class="section-kicker">研究方向</p>
         <h1>{{ direction?.title || '研究方向' }}</h1>
         <p>{{ direction?.summary || '研究方向简介待补充。' }}</p>
@@ -19,11 +19,6 @@
             <p v-if="!contentParagraphs.length" class="muted">详细内容可在内部平台“门户内容-研究方向”中维护。</p>
           </div>
         </article>
-        <aside class="card side-card">
-          <span>Research</span>
-          <strong>{{ direction?.title || '研究方向' }}</strong>
-          <p>{{ direction?.summary || '围绕农业资源环境问题开展机制解析与应用研究。' }}</p>
-        </aside>
       </div>
     </section>
   </PortalLayout>
@@ -36,6 +31,7 @@ import { useRoute } from 'vue-router'
 import { fetchResearchDirection, type ResearchDirection } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import ReturnLink from '../../components/ReturnLink.vue'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/research')
@@ -61,13 +57,13 @@ onMounted(async () => {
 .portal-page-head {
   border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   padding: 30px 0 26px;
-  background: linear-gradient(90deg, rgba(234, 245, 238, 0.78), rgba(255, 255, 255, 0.96) 52%, rgba(248, 247, 242, 0.92));
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .portal-page-head h1 {
   margin: 0 0 10px;
   color: var(--color-deep-green);
-  font-size: clamp(30px, 3.4vw, 42px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 650;
 }
 
@@ -93,11 +89,6 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-.back-link::before {
-  margin-right: 7px;
-  content: "←";
-}
-
 .back-link:hover {
   border-color: var(--color-cau-green);
   background: var(--color-eco-green);
@@ -108,9 +99,7 @@ onMounted(async () => {
 }
 
 .detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 20px;
+  max-width: 960px;
 }
 
 .detail-card,
@@ -150,38 +139,10 @@ onMounted(async () => {
   color: var(--color-muted) !important;
 }
 
-.side-card {
-  position: sticky;
-  top: 96px;
-  align-self: start;
-  padding: 22px;
-}
-
-.side-card span {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.side-card strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-deep-green);
-  font-size: 20px;
-}
-
-.side-card p {
-  color: var(--color-muted);
-  line-height: 1.7;
-}
-
 @media (max-width: 860px) {
   .detail-layout {
     grid-template-columns: 1fr;
   }
 
-  .side-card {
-    position: static;
-  }
 }
 </style>

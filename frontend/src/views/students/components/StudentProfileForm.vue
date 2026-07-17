@@ -9,7 +9,7 @@
 
     <el-form v-if="open" label-position="top" class="profile-form">
       <el-form-item label="头像">
-        <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
+        <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :existing-size="student?.avatar_size || currentStudent?.avatar_size || 0" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
       </el-form-item>
       <el-form-item label="关联成员账号">
         <el-select v-model="form.user" filterable placeholder="选择学生登录账号" :disabled="!canManage && Boolean(student)">

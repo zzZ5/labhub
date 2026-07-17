@@ -1,12 +1,18 @@
 <template>
   <div v-if="active || progress > 0" class="upload-progress-panel" role="status" aria-live="polite">
     <el-progress :percentage="normalizedProgress" :status="normalizedProgress === 100 ? 'success' : undefined" />
-    <span>{{ normalizedProgress < 100 ? uploadingText : processingText }}</span>
+    <div class="upload-progress-copy">
+      <span>{{ normalizedProgress < 100 ? uploadingText : processingText }}</span>
+      <button v-if="active && normalizedProgress > 0 && normalizedProgress < 100" type="button" @click="cancelUpload">取消上传</button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ElMessage } from 'element-plus'
+
+import { cancelActiveUploads } from '../api/http'
 
 const props = withDefaults(defineProps<{
   active?: boolean
@@ -20,6 +26,10 @@ const props = withDefaults(defineProps<{
 })
 
 const normalizedProgress = computed(() => Math.min(100, Math.max(0, Math.round(props.progress))))
+
+function cancelUpload() {
+  if (cancelActiveUploads()) ElMessage.info('正在取消上传。')
+}
 </script>
 
 <style scoped>
@@ -35,9 +45,31 @@ const normalizedProgress = computed(() => Math.min(100, Math.max(0, Math.round(p
   text-align: left;
 }
 
+.upload-progress-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .upload-progress-panel span {
   color: var(--color-muted);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.upload-progress-copy button {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: #9f312f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.upload-progress-copy button:hover {
+  text-decoration: underline;
 }
 </style>

@@ -1,14 +1,20 @@
+from io import BytesIO
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image as WorksheetImage
+from PIL import Image as PillowImage
 
 from apps.accounts.models import Role, RoleCode, UserRole
 from apps.instruments.models import Instrument
 from apps.members.models import Member
 from apps.portal.models import ResearchDirection
-from apps.system.cms_importers import import_members, parse_publication_citation
+from apps.publications.models import Publication
+from apps.system.cms_importers import import_members, import_publications, parse_publication_citation, read_rows_from_excel
 
 User = get_user_model()
 
@@ -54,6 +60,83 @@ def test_member_import_keeps_image_rows_and_can_clear_avatar():
     assert keep.avatar
     assert not clear.avatar
     assert result["updated"] == 2
+
+
+@pytest.mark.django_db
+def test_member_excel_import_extracts_embedded_avatar():
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "导入数据"
+    sheet.append(["姓名", "头像", "身份头衔", "研究方向", "排序"])
+    sheet.append(["头像成员", "", "博士生", "堆肥微生物", 1])
+    image_buffer = BytesIO()
+    PillowImage.new("RGB", (10, 12), color=(0, 135, 60)).save(image_buffer, format="PNG")
+    image_buffer.seek(0)
+    sheet.add_image(WorksheetImage(PillowImage.open(image_buffer)), "B2")
+    workbook_buffer = BytesIO()
+    workbook.save(workbook_buffer)
+    workbook_buffer.seek(0)
+
+    rows, images = read_rows_from_excel(workbook_buffer)
+    result = import_members(rows, {image.row_number: image for image in images})
+
+    member = Member.objects.get(name="头像成员")
+    assert result["created"] == 1
+    assert result["images"] == 1
+    assert member.avatar
+    assert member.avatar.size > 0
+
+
+@pytest.mark.django_db
+def test_publication_import_updates_duplicate_doi():
+    Publication.objects.create(
+        title="旧题名",
+        authors="旧作者",
+        journal="旧期刊",
+        year=2024,
+        doi="10.1000/labhub",
+    )
+
+    result = import_publications([
+        {
+            "论文题目": "更新后的题名",
+            "作者": "团队作者",
+            "期刊": "Bioresource Technology",
+            "年份": "2025",
+            "DOI": "10.1000/LABHUB",
+        },
+    ])
+
+    assert result == {"created": 0, "updated": 1, "skipped": 0, "images": 0, "total": 1}
+    assert Publication.objects.count() == 1
+    publication = Publication.objects.get()
+    assert publication.title == "更新后的题名"
+    assert publication.year == 2025
+
+
+@pytest.mark.django_db(transaction=True)
+def test_publication_import_rolls_back_all_rows_on_failure(monkeypatch):
+    from apps.system import cms_importers
+
+    original_upsert = cms_importers.upsert_record
+    calls = 0
+
+    def fail_on_second_row(model, lookup, defaults):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise ValueError("第二行模拟失败")
+        return original_upsert(model, lookup, defaults)
+
+    monkeypatch.setattr(cms_importers, "upsert_record", fail_on_second_row)
+
+    with pytest.raises(ValueError, match="第二行模拟失败"):
+        import_publications([
+            {"论文题目": "第一篇", "年份": "2025"},
+            {"论文题目": "第二篇", "年份": "2025"},
+        ])
+
+    assert not Publication.objects.exists()
 
 
 @pytest.mark.django_db

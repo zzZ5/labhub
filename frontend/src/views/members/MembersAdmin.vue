@@ -1,28 +1,23 @@
 ﻿<template>
   <InternalLayout title="成员管理">
     <section class="member-page">
-      <header class="surface-heading member-heading">
-        <div>
-          <h1>成员管理</h1>
-          <p>学校身份、成员状态和系统权限分别维护。毕业或离组不会自动删除账号和历史档案。</p>
-        </div>
-        <div class="heading-actions">
-          <el-button plain @click="openCreateDrawer">新建账号</el-button>
-          <el-button type="primary" :loading="loading" @click="reload">刷新</el-button>
-        </div>
-      </header>
+      <InternalPageHeader class="member-heading">
+        <p>学校身份、成员状态和系统权限分别维护。毕业或离组不会自动删除账号和历史档案。</p>
+        <template #summary><div class="compact-summary member-summary">
+            <span><strong>{{ users.length }}</strong>个账号</span>
+            <span v-if="pendingUsers.length"><strong>{{ pendingUsers.length }}</strong>个待审核</span>
+            <span v-if="studentMissingArchiveCount"><strong>{{ studentMissingArchiveCount }}</strong>名学生待建档</span>
+        </div></template>
+        <template #actions>
+          <el-button plain :loading="loading" @click="reload">刷新</el-button>
+          <el-button type="primary" @click="openCreateDrawer">新建账号</el-button>
+        </template>
+      </InternalPageHeader>
 
-      <el-alert v-if="errorMessage" class="permission-alert" type="warning" :closable="false" :title="errorMessage" />
-
-      <section class="stat-grid">
-        <article class="card stat-card"><span>全部账号</span><strong>{{ users.length }}</strong></article>
-        <article class="card stat-card"><span>已审核</span><strong>{{ approvedCount }}</strong></article>
-        <article class="card stat-card"><span>待审核</span><strong>{{ pendingUsers.length }}</strong></article>
-        <article class="card stat-card"><span>学生待建档</span><strong>{{ studentMissingArchiveCount }}</strong></article>
-      </section>
+      <LoadErrorNotice v-if="errorMessage" :description="errorMessage" :retrying="loading" @retry="reload" />
 
       <section class="member-grid">
-        <article class="card panel">
+        <article v-if="pendingUsers.length" class="card panel">
           <div class="panel-heading">
             <div>
               <h2>待审核账号</h2>
@@ -30,7 +25,7 @@
             </div>
             <span>{{ pendingUsers.length }} 个</span>
           </div>
-          <div v-if="pendingUsers.length" class="review-list">
+          <div class="review-list">
             <div v-for="user in pendingUsers" :key="user.id" class="review-card">
               <div><strong>{{ displayUser(user) }}</strong><span>{{ user.email || user.username }}</span></div>
               <el-select v-model="schoolIdentityForms[user.id]" placeholder="学校身份">
@@ -42,19 +37,18 @@
               </div>
             </div>
           </div>
-          <div v-else class="empty-note">暂无待审核账号。</div>
         </article>
 
-        <article class="card panel permission-note">
-          <strong>系统权限</strong>
-          <p>系统权限只控制后台管理能力，和学校身份分开维护。</p>
+        <details class="permission-note">
+          <summary>系统权限说明</summary>
+          <p>系统权限只控制后台管理能力，与学校身份和成员状态分开维护。</p>
           <div class="permission-summary">
             <span><b>网站编辑</b>维护门户内容、新闻和成果</span>
             <span><b>资料管理员</b>维护内部资料库</span>
             <span><b>仪器管理员</b>维护仪器信息和说明</span>
             <span><b>系统管理员</b>管理账号和系统权限</span>
           </div>
-        </article>
+        </details>
       </section>
 
       <article class="card panel account-panel">
@@ -63,13 +57,15 @@
             <h2>全部成员</h2>
             <p>本科生、硕士生、博士生账号可一键生成学生档案；已有档案的账号不会重复创建。</p>
           </div>
-          <div class="filters">
-            <el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" />
-            <el-select v-model="statusFilter" placeholder="状态"><el-option label="全部状态" value="all" /><el-option label="已审核" value="approved" /><el-option label="待审核" value="pending" /></el-select>
-            <el-select v-model="membershipFilter" placeholder="成员状态"><el-option label="全部成员" value="all" /><el-option v-for="item in membershipStatusOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
-            <el-select v-model="schoolFilter" placeholder="学校身份"><el-option label="全部身份" value="all" /><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
-            <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
-          </div>
+          <FilterToolbar has-filters>
+            <template #primary><el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" /></template>
+            <template #filters>
+              <el-select v-model="statusFilter" placeholder="状态"><el-option label="全部状态" value="all" /><el-option label="已审核" value="approved" /><el-option label="待审核" value="pending" /></el-select>
+              <el-select v-model="membershipFilter" placeholder="成员状态"><el-option label="全部成员" value="all" /><el-option v-for="item in membershipStatusOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
+              <el-select v-model="schoolFilter" placeholder="学校身份"><el-option label="全部身份" value="all" /><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
+              <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
+            </template>
+          </FilterToolbar>
         </div>
 
         <div class="account-list">
@@ -84,12 +80,14 @@
               <span class="status-tag archived">{{ roleLabel(schoolIdentity(user)) }}</span>
               <span :class="['status-tag', membershipStatus(user) === 'active' ? 'normal' : 'archived']">{{ membershipStatusLabel(membershipStatus(user)) }}</span>
             </div>
-            <div class="permission-chips compact-permissions"><span v-for="role in systemRoles(user)" :key="role" class="status-tag archived">{{ roleLabel(role) }}</span><span v-if="!systemRoles(user).length" class="status-tag archived">无管理权限</span></div>
+            <div class="permission-chips compact-permissions">
+              <span v-if="systemRoles(user).length" class="status-tag archived" :title="systemRoles(user).map(roleLabel).join('、')">已分配 {{ systemRoles(user).length }} 项</span>
+              <span v-else class="status-tag archived">无管理权限</span>
+            </div>
             <div class="student-link-cell"><RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
             <div class="account-actions">
               <el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button>
-              <el-button size="small" plain @click="openPasswordDialog(user)">重置密码</el-button>
-              <el-button v-if="user.id !== session.user?.id && !user.is_superuser" size="small" plain type="danger" @click="confirmDeleteAccount(user)">删除</el-button>
+              <ActionMenu :items="accountMenuItems(user)" @command="handleAccountMenu($event, user)" />
             </div>
           </article>
         </div>
@@ -101,7 +99,7 @@
         <el-form label-position="top" class="create-form">
           <el-form-item label="姓名"><el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" /></el-form-item>
           <el-form-item label="头像">
-            <ImageCropField v-model="accountForm.avatar" :existing-url="accountAvatarPreview" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="accountAvatarPreview = $event" />
+            <ImageCropField v-model="accountForm.avatar" :existing-url="accountAvatarPreview" :existing-size="accountAvatarSize" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="accountAvatarPreview = $event" />
           </el-form-item>
           <el-form-item label="邮箱"><el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" /></el-form-item>
           <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
@@ -144,7 +142,11 @@ import {
 } from '../../api/accounts'
 import { createStudentProfile, fetchStudentProfiles, type StudentProfile } from '../../api/students'
 import AppPagination from '../../components/AppPagination.vue'
+import ActionMenu, { type ActionMenuItem } from '../../components/ActionMenu.vue'
+import FilterToolbar from '../../components/FilterToolbar.vue'
 import ImageCropField from '../../components/ImageCropField.vue'
+import InternalPageHeader from '../../components/InternalPageHeader.vue'
+import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
@@ -164,6 +166,7 @@ const passwordVisible = ref(false)
 const passwordSaving = ref(false)
 const passwordTarget = ref<CurrentUser | null>(null)
 const accountAvatarPreview = ref('')
+const accountAvatarSize = computed(() => users.value.find((user) => user.id === editingUserId.value)?.profile?.avatar_size || 0)
 const errorMessage = ref('')
 const keyword = ref('')
 const debouncedKeyword = useDebouncedValue(keyword)
@@ -231,7 +234,6 @@ const normalizedRoles = computed(() => {
   return [...source, ...missing].sort((a, b) => roleOrder(a.code) - roleOrder(b.code))
 })
 const systemPermissionRoles = computed(() => normalizedRoles.value.filter((role) => systemPermissionCodes.includes(role.code)))
-const approvedCount = computed(() => users.value.filter((user) => user.profile?.is_approved).length)
 const studentByUserId = computed<Record<number, StudentProfile>>(() =>
   Object.fromEntries(studentProfiles.value.map((student) => [student.user, student])),
 )
@@ -373,6 +375,22 @@ function openPasswordDialog(user: CurrentUser) {
   passwordTarget.value = user
   passwordForm.password = ''
   passwordVisible.value = true
+}
+
+function handleAccountMenu(command: string, user: CurrentUser) {
+  if (command === 'password') {
+    openPasswordDialog(user)
+    return
+  }
+  if (command === 'delete') void confirmDeleteAccount(user)
+}
+
+function accountMenuItems(user: CurrentUser): ActionMenuItem[] {
+  const items: ActionMenuItem[] = [{ command: 'password', label: '重置密码' }]
+  if (user.id !== session.user?.id && !user.is_superuser) {
+    items.push({ command: 'delete', label: '删除账号', divided: true, danger: true })
+  }
+  return items
 }
 
 async function submitAccountForm() {
@@ -599,39 +617,17 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   border-radius: var(--radius-md);
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.stat-card {
-  padding: 18px 20px;
-}
-
-.stat-card:hover,
 .panel:hover {
   transform: none;
 }
 
-.stat-card span {
-  display: block;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.stat-card strong {
-  display: block;
+.member-summary {
   margin-top: 6px;
-  color: var(--color-deep-green);
-  font-size: 28px;
-  font-weight: 650;
 }
 
 .member-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
+  gap: 12px;
 }
 
 .panel {
@@ -640,14 +636,16 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 .permission-note {
-  align-content: start;
-  min-height: 0;
+  border-bottom: 1px solid var(--color-line);
+  padding: 0 2px 12px;
+  color: var(--color-muted);
 }
 
-.permission-note strong {
-  display: block;
+.permission-note summary {
+  width: fit-content;
   color: var(--color-deep-green);
-  font-size: 20px;
+  cursor: pointer;
+  font-size: 14px;
   font-weight: 650;
 }
 
@@ -659,7 +657,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 
 .permission-summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -790,7 +788,13 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 .account-toolbar {
+  display: grid;
+  grid-template-columns: 1fr;
   align-items: center;
+}
+
+.account-toolbar :deep(.filter-toolbar) {
+  width: 100%;
 }
 
 .filters {
@@ -813,7 +817,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 
 .account-row-card {
   display: grid;
-  grid-template-columns: minmax(190px, 1.15fr) minmax(210px, 1.25fr) minmax(150px, 1fr) 110px 220px;
+  grid-template-columns: minmax(170px, 1.1fr) minmax(220px, 1.35fr) minmax(150px, 1fr) 104px 118px;
   align-items: center;
   gap: 14px;
   border: 1px solid var(--color-line);
@@ -939,14 +943,16 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
     display: grid;
   }
 
-  .stat-grid,
   .member-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .permission-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 720px) {
-  .stat-grid,
   .member-grid,
   .review-card {
     grid-template-columns: 1fr;
@@ -955,6 +961,10 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   .heading-actions,
   .filters {
     justify-content: flex-start;
+  }
+
+  .permission-summary {
+    grid-template-columns: 1fr;
   }
 
 }

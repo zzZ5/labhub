@@ -22,7 +22,7 @@ export interface SiteSetting {
   hero_image?: string
   hero_image_size?: number
   description: string
-  keywords: string
+  hero_subtitle: string
   banner_interval_seconds?: number
   footer_text: string
   contact_email: string

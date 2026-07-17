@@ -1,20 +1,14 @@
 <template>
   <InternalLayout title="仪器平台">
     <section class="instrument-page">
-      <div class="page-heading">
-        <div>
-          <h1>仪器平台</h1>
-          <p>查看课题组仪器设备状态、位置、图片和使用说明，便于组内成员快速了解设备情况。</p>
-        </div>
-      </div>
+      <InternalPageHeader>
+        <p>查看课题组仪器设备状态、位置、图片和使用说明，便于组内成员快速了解设备情况。</p>
+        <template #summary><div class="compact-summary">
+          <span v-for="item in statusSummary" :key="item.label"><strong>{{ item.value }}</strong>{{ item.label }}</span>
+        </div></template>
+      </InternalPageHeader>
 
-      <section class="status-grid">
-        <article v-for="item in statusSummary" :key="item.label" class="card status-card">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-          <p>{{ item.note }}</p>
-        </article>
-      </section>
+      <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="loadInstruments" />
 
       <section class="content-grid">
         <InstrumentToolbar
@@ -55,6 +49,8 @@ import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import InternalPageHeader from '../../components/InternalPageHeader.vue'
+import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import {
   createInstrument,
   fetchInstruments,
@@ -64,6 +60,7 @@ import {
   type InstrumentFormPayload,
 } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
+import { requestErrorMessage } from '../../utils/requestErrors'
 import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InstrumentFormDialog from './components/InstrumentFormDialog.vue'
@@ -74,6 +71,8 @@ const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
 const instruments = ref<Instrument[]>([])
+const loading = ref(false)
+const loadError = ref('')
 const queryText = (value: unknown) => typeof value === 'string' ? value : ''
 const queryNumber = (value: unknown, fallback: number) => Math.max(1, Number.parseInt(queryText(value), 10) || fallback)
 const keyword = ref(queryText(route.query.q))
@@ -105,10 +104,14 @@ const statusSummary = computed(() => [
 ])
 
 async function loadInstruments() {
+  loading.value = true
+  loadError.value = ''
   try {
     instruments.value = await fetchInstruments()
-  } catch {
-    instruments.value = []
+  } catch (error) {
+    loadError.value = requestErrorMessage(error, '仪器列表加载失败，现有内容已保留。')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -156,7 +159,7 @@ async function handleExcelImport(file: File) {
     await loadInstruments()
     clampInstrumentPage()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '导入失败，请确认模板列和设备图片位置。')
+    ElMessage.error(requestErrorMessage(error, '导入失败，请确认模板列和设备图片位置。'))
   } finally {
     importing.value = false
     setTimeout(() => {
@@ -181,7 +184,7 @@ async function saveInstrument(payload: InstrumentFormPayload) {
     await loadInstruments()
     clampInstrumentPage()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '保存失败，请确认权限和表单内容。')
+    ElMessage.error(requestErrorMessage(error, '保存失败，请确认权限和表单内容。'))
   } finally {
     saving.value = false
     setTimeout(() => {
@@ -222,83 +225,4 @@ watch(instrumentPage, syncInstrumentQuery)
   gap: 14px;
 }
 
-.page-heading {
-  border: 1px solid rgba(0, 135, 60, 0.12);
-  border-radius: var(--radius-lg);
-  padding: 22px 26px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 60%, rgba(234, 245, 238, 0.86));
-  box-shadow: var(--shadow-flat);
-}
-
-.page-heading h1 {
-  margin: 0 0 6px;
-  color: var(--color-deep-green);
-  font-size: clamp(24px, 2.7vw, 31px);
-  font-weight: 650;
-  line-height: 1.2;
-}
-
-.page-heading p {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.status-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  min-height: 54px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-
-.status-card:hover {
-  transform: none;
-}
-
-.status-card span,
-.status-card p {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-card span {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.status-card strong {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--color-deep-green);
-  font-size: 24px;
-  font-weight: 650;
-  line-height: 1;
-}
-
-.status-card p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-@media (max-width: 760px) {
-  .status-grid {
-    grid-template-columns: repeat(3, minmax(110px, 1fr));
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-}
 </style>

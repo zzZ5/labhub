@@ -7,11 +7,18 @@
           :key="`${banner.image}-${index}`"
           class="hero-slide"
           :class="{ active: index === activeBannerIndex }"
-          :style="{
-            backgroundImage: `url('${banner.image}')`,
-            transform: `translateX(${(index - activeBannerIndex) * 100}%)`,
-          }"
-        ></div>
+          :style="{ transform: `translateX(${(index - activeBannerIndex) * 100}%)` }"
+        >
+          <div v-if="!heroImageStates[heroStateKey(banner.image, index)]" class="hero-skeleton" aria-hidden="true"></div>
+          <img
+            v-if="heroImageStates[heroStateKey(banner.image, index)] !== 'failed'"
+            :src="banner.image"
+            :alt="banner.title || siteName"
+            @load="heroImageStates[heroStateKey(banner.image, index)] = 'loaded'"
+            @error="heroImageStates[heroStateKey(banner.image, index)] = 'failed'"
+          />
+          <ImagePlaceholder v-else class="hero-fallback" label="横幅图片暂不可用" text="横幅图片暂不可用" />
+        </div>
         <div class="hero-caption">
           <h1>{{ activeHeroTitle }}</h1>
           <span v-if="activeHeroSubtitle">{{ activeHeroSubtitle }}</span>
@@ -38,34 +45,32 @@
     </section>
     <section class="page-section intro-section">
       <div class="container intro-grid">
-        <div class="intro-main">
+        <div :class="['intro-main', { 'is-empty': !introDescription }]">
           <div class="intro-heading">
             <span>{{ siteName }}</span>
             <h2>课题组简介</h2>
           </div>
-          <div class="intro-body">
-            <strong v-if="heroLead" class="intro-lead">{{ heroLead }}</strong>
-            <p>{{ introDescription }}</p>
+          <div v-if="introDescription" class="intro-body">
+            <p v-if="introDescription">{{ introDescription }}</p>
           </div>
           <div class="intro-actions">
             <RouterLink class="primary-action" to="/research">研究方向</RouterLink>
-            <RouterLink class="secondary-action" to="/dashboard">进入内部平台</RouterLink>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="page-section research-section">
+    <section v-if="displayResearchDirections.length" class="page-section research-section">
       <div class="container">
-        <SectionHeader :title="researchSectionTitle" :description="researchSectionDescription" />
-        <div v-if="displayResearchDirections.length" class="research-grid">
+        <SectionHeader title="研究方向" />
+        <div class="research-grid">
           <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="{ path: item.to, query: { from: route.fullPath } }">
             <component :is="item.icon" />
             <h3>{{ item.title }}</h3>
             <p>{{ item.description }}</p>
           </RouterLink>
         </div>
-        <RouterLink v-if="displayResearchDirections.length" class="section-link" to="/research">查看全部研究方向</RouterLink>
+        <RouterLink class="section-link" to="/research">查看全部研究方向</RouterLink>
       </div>
     </section>
 
@@ -95,10 +100,10 @@
       </div>
     </section>
 
-    <section class="page-section team-section">
+    <section v-if="displayMembers.length" class="page-section team-section">
       <div class="container">
         <div class="team-heading-row">
-          <SectionHeader title="团队成员" description="汇聚不同研究背景的师生，在开放交流与协作实践中共同推进科研工作。" />
+          <SectionHeader title="团队成员" />
           <RouterLink v-if="displayMembers.length" class="team-all-link" to="/team">
             查看全部成员
             <ArrowRight />
@@ -107,7 +112,13 @@
         <div class="member-grid">
           <RouterLink v-for="member in displayMembers" :key="member.name" class="card member-card" :to="{ path: member.to, query: { from: route.fullPath } }">
             <div class="member-photo">
-              <img :src="member.avatar" :alt="member.name" />
+              <img
+                v-if="member.avatar && !memberImageErrors.has(member.name)"
+                :src="member.avatar"
+                :alt="member.name"
+                @error="memberImageErrors.add(member.name)"
+              />
+              <ImagePlaceholder v-else :label="`${member.name}暂无头像`" :initial="member.name" />
             </div>
             <div class="member-info">
               <div class="member-name-row">
@@ -119,47 +130,53 @@
             </div>
           </RouterLink>
         </div>
-        <div v-if="!displayMembers.length" class="empty-inline">暂无公开团队成员。</div>
       </div>
     </section>
 
-    <section class="page-section news-section">
+    <section v-if="displayNews.length" class="page-section news-section">
       <div class="container">
-        <SectionHeader title="新闻活动" description="发布组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
+        <SectionHeader title="新闻活动" />
         <div class="news-grid">
           <RouterLink v-for="item in displayNews" :key="item.title" class="card news-card" :to="{ path: `/news/${item.slug}`, query: { from: route.fullPath } }">
-            <img v-if="item.image" :src="item.image" :alt="item.title" />
-            <div v-else class="news-image-placeholder">暂无封面</div>
-            <div>
+            <div class="news-media">
+              <img
+                v-if="item.image && !newsImageErrors.has(item.slug)"
+                :src="item.image"
+                :alt="item.title"
+                @error="newsImageErrors.add(item.slug)"
+              />
+              <ImagePlaceholder v-else class="news-image-placeholder" :label="`${item.title}暂无封面`" text="暂无封面" />
+            </div>
+            <div class="news-card-content">
               <span>{{ item.date }} · {{ item.category }}</span>
               <h3>{{ item.title }}</h3>
               <p>{{ item.summary }}</p>
             </div>
           </RouterLink>
         </div>
-        <div v-if="!displayNews.length" class="empty-inline">暂无新闻活动。</div>
         <RouterLink class="section-link" to="/news">查看新闻活动</RouterLink>
       </div>
     </section>
 
-    <section class="join-section">
+    <section v-if="contactDescription || contactEmail" class="join-section">
       <div class="container join-card">
         <div>
           <h2>加入我们</h2>
           <p>{{ contactDescription }}</p>
         </div>
-        <a :href="`mailto:${contactEmail}`">联系实验室</a>
+        <a v-if="contactEmail" :href="`mailto:${contactEmail}`">联系实验室</a>
       </div>
     </section>
   </PortalLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { ArrowRight, Cpu, DataAnalysis, MostlyCloudy, Orange, SetUp, WindPower } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 
 import SectionHeader from '../../components/SectionHeader.vue'
+import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import {
   fetchMembers,
@@ -200,6 +217,9 @@ const siteSetting = ref<Partial<SiteSetting>>({})
 const contactInfo = ref<Partial<ContactInfo>>({})
 const achievementsReady = ref(false)
 const activeBannerIndex = ref(0)
+const heroImageStates = reactive<Record<string, 'loaded' | 'failed'>>({})
+const newsImageErrors = reactive(new Set<string>())
+const memberImageErrors = reactive(new Set<string>())
 let bannerTimer: number | undefined
 
 type HomeAchievement = {
@@ -214,31 +234,25 @@ type HomeAchievement = {
 }
 
 const siteName = computed(() => siteSetting.value.site_name || '中农雨磷')
-const siteSubtitle = computed(() => siteSetting.value.site_subtitle || '中国农业大学资源与环境学院')
-const heroLead = computed(() => siteSetting.value.keywords || '聚焦微生物生态、有机废弃物资源转化与高值产品开发')
-const siteDescription = computed(() => siteSetting.value.description || '课题组面向农业绿色发展与资源环境治理需求，围绕有机废弃物资源化、养分循环和土壤生态过程开展基础研究、技术研发与应用评价。')
+const heroSubtitle = computed(() => siteSetting.value.hero_subtitle || '聚焦微生物生态、有机废弃物资源转化与高值产品开发')
+const siteDescription = computed(() => siteSetting.value.description || '')
 const introDescription = computed(() => siteDescription.value)
-const contactDescription = computed(() => contactInfo.value.content || '长期欢迎具有环境科学、生态学、农学、微生物学、资源利用等背景的同学参与科研训练、硕士和博士研究。')
-const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || 'weiyq2019@cau.edu.cn')
+const contactDescription = computed(() => contactInfo.value.content || '')
+const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || '')
 const bannerIntervalMs = computed(() => {
   const seconds = Number(siteSetting.value.banner_interval_seconds || 6)
   return Math.min(30, Math.max(3, Number.isFinite(seconds) ? seconds : 6)) * 1000
 })
-const researchSectionTitle = computed(() => (apiResearchDirections.value.length ? '研究方向' : '研究方向待维护'))
-const researchSectionDescription = computed(() =>
-  apiResearchDirections.value.length
-    ? '展示课题组当前公开维护的研究方向，详细内容可进入对应页面查看。'
-    : '研究方向内容可在内部平台“门户内容”中维护，首页会实时同步公开展示。',
-)
 const heroBanners = computed(() => {
   const banners = apiBanners.value
     .filter((item) => item.image)
+    .map((item) => ({ ...item, image: item.image as string }))
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
   if (banners.length) return banners
   return [{
     id: 0,
     title: siteName.value,
-    subtitle: heroLead.value,
+    subtitle: heroSubtitle.value,
     image: siteSetting.value.hero_image || '/default-hero.svg',
     link: '',
     sort_order: 0,
@@ -246,11 +260,15 @@ const heroBanners = computed(() => {
 })
 const activeHeroBanner = computed(() => heroBanners.value[activeBannerIndex.value] || heroBanners.value[0] || {
   title: siteName.value,
-  subtitle: heroLead.value,
+  subtitle: heroSubtitle.value,
   image: '',
 })
 const activeHeroTitle = computed(() => activeHeroBanner.value.title || siteName.value)
-const activeHeroSubtitle = computed(() => activeHeroBanner.value.subtitle || heroLead.value)
+const activeHeroSubtitle = computed(() => activeHeroBanner.value.subtitle || heroSubtitle.value)
+
+function heroStateKey(image: string, index: number) {
+  return `${index}:${image}`
+}
 
 function startBannerTimer() {
   if (bannerTimer) window.clearInterval(bannerTimer)
@@ -399,7 +417,7 @@ const displayMembers = computed(() => {
     name: member.name,
     role: memberIdentity(member),
     focus: member.research_direction || '农业生态环境过程',
-    avatar: member.avatar || '/site-icon.png',
+    avatar: member.avatar || '',
     to: `/team/${member.id}`,
   }))
 })
@@ -486,17 +504,45 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   opacity: 1;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  overflow: hidden;
   transition: transform 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-slide > img,
+.hero-skeleton,
+.hero-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-slide > img {
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-skeleton {
+  background: linear-gradient(100deg, var(--color-panel-strong) 30%, #f8faf8 46%, var(--color-panel-strong) 62%);
+  background-size: 220% 100%;
+  animation: hero-loading 1.5s ease-in-out infinite;
+}
+
+.hero-fallback {
+  background: var(--color-panel-strong);
+}
+
+@keyframes hero-loading {
+  to { background-position: -220% 0; }
 }
 
 .hero-slide::after {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(180deg, transparent 62%, rgba(31, 61, 43, 0.16));
+  z-index: 2;
+  background: linear-gradient(180deg, transparent 58%, rgba(16, 38, 24, 0.28));
 }
 
 .hero-slide.active {
@@ -635,11 +681,11 @@ onUnmounted(() => {
   position: relative;
   display: grid;
   grid-template-columns: minmax(200px, 0.32fr) minmax(0, 1fr);
-  gap: 42px;
+  gap: 34px;
   min-width: 0;
   border-top: 1px solid rgba(31, 61, 43, 0.12);
   border-bottom: 1px solid rgba(31, 61, 43, 0.08);
-  padding: 34px 0 32px;
+  padding: 28px 0 26px;
 }
 
 .intro-heading span {
@@ -653,9 +699,9 @@ onUnmounted(() => {
 }
 
 .intro-heading h2 {
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   color: var(--color-deep-green);
-  font-size: clamp(30px, 3vw, 40px);
+  font-size: clamp(28px, 3vw, 34px);
   font-weight: 650;
   line-height: 1.18;
 }
@@ -668,8 +714,8 @@ onUnmounted(() => {
   max-width: 820px;
   margin: 0;
   color: rgba(47, 52, 55, 0.82);
-  font-size: 17px;
-  line-height: 1.9;
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 .intro-lead {
@@ -711,11 +757,9 @@ onUnmounted(() => {
 .intro-section {
   position: relative;
   margin-top: -1px;
-  padding-top: 54px;
-  padding-bottom: 58px;
-  background:
-    linear-gradient(180deg, #fff 0%, rgba(248, 247, 242, 0.72) 100%),
-    var(--color-rice);
+  padding-top: 38px;
+  padding-bottom: 44px;
+  background: #fff;
 }
 
 .intro-section::before {
@@ -788,47 +832,37 @@ onUnmounted(() => {
 .research-section {
   position: relative;
   overflow: hidden;
-  padding-top: 78px;
-  padding-bottom: 82px;
-  background:
-    linear-gradient(180deg, rgba(248, 247, 242, 0.82), rgba(245, 247, 246, 0.98)),
-    var(--color-soft-gray);
+  padding-top: 68px;
+  padding-bottom: 72px;
+  background: var(--color-soft-gray);
+}
+
+.intro-main.is-empty {
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: center;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.intro-main.is-empty .intro-actions {
+  grid-column: auto;
+  margin: 0;
 }
 
 .research-section::before {
-  position: absolute;
-  top: 44px;
-  right: max(20px, calc((100vw - var(--container)) / 2));
-  width: 172px;
-  height: 118px;
-  pointer-events: none;
-  content: "";
-  opacity: 0.34;
-  background:
-    radial-gradient(circle at 42px 76px, rgba(0, 135, 60, 0.12) 0 8px, transparent 9px),
-    radial-gradient(circle at 72px 54px, rgba(0, 135, 60, 0.1) 0 7px, transparent 8px),
-    radial-gradient(circle at 106px 36px, rgba(166, 120, 78, 0.12) 0 7px, transparent 8px),
-    radial-gradient(circle at 128px 66px, rgba(0, 135, 60, 0.09) 0 6px, transparent 7px),
-    linear-gradient(150deg, transparent 0 31%, rgba(31, 61, 43, 0.36) 32% 33%, transparent 34%),
-    linear-gradient(112deg, transparent 0 43%, rgba(31, 61, 43, 0.28) 44% 45%, transparent 46%);
+  display: none;
 }
 
 .publication-section {
-  background:
-    linear-gradient(180deg, #fff 0%, rgba(248, 247, 242, 0.5) 100%),
-    #fff;
+  background: #fff;
 }
 
 .team-section {
-  background:
-    linear-gradient(180deg, rgba(245, 247, 246, 0.98), rgba(234, 245, 238, 0.78)),
-    var(--color-soft-gray);
+  background: var(--color-eco-green);
 }
 
 .news-section {
-  background:
-    radial-gradient(circle at 12% 16%, rgba(234, 245, 238, 0.86), transparent 260px),
-    var(--color-rice);
+  background: var(--color-rice);
 }
 
 .research-grid,
@@ -911,6 +945,13 @@ onUnmounted(() => {
   margin: 0;
   color: var(--color-muted);
   line-height: 1.7;
+}
+
+.research-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .paper-compact {
@@ -1116,9 +1157,21 @@ onUnmounted(() => {
   box-shadow: var(--shadow-soft);
 }
 
-.news-card img {
+.news-media,
+.news-card img,
+.news-image-placeholder {
   width: 100%;
   aspect-ratio: 16 / 8.5;
+}
+
+.news-media {
+  overflow: hidden;
+  padding: 0;
+  background: var(--color-panel-strong);
+}
+
+.news-card img {
+  display: block;
   object-fit: cover;
   filter: saturate(0.92);
 }
@@ -1128,12 +1181,12 @@ onUnmounted(() => {
   place-items: center;
   width: 100%;
   aspect-ratio: 16 / 8.5;
-  background: var(--color-eco-green);
-  color: var(--color-muted);
-  font-size: 14px;
+  background: var(--color-panel-strong);
+  color: rgba(78, 110, 126, 0.62);
+  font-size: 12px;
 }
 
-.news-card div {
+.news-card-content {
   padding: 14px 15px 16px;
 }
 
@@ -1187,32 +1240,30 @@ onUnmounted(() => {
   gap: 32px;
   border: 1px solid rgba(0, 135, 60, 0.18);
   border-radius: var(--radius-lg);
-  padding: 34px 38px;
-  background:
-    linear-gradient(90deg, var(--color-deep-green), #0a7638),
-    var(--color-deep-green);
+  padding: 28px 32px;
+  background: #fff;
   box-shadow: none;
 }
 
 .join-card h2 {
   margin: 0;
-  color: #fff;
-  font-size: 30px;
+  color: var(--color-deep-green);
+  font-size: 27px;
   font-weight: 650;
 }
 
 .join-card p:last-child {
   max-width: 760px;
   margin: 12px 0 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--color-muted);
 }
 
 .join-card a {
   flex: 0 0 auto;
   border-radius: var(--radius-sm);
   padding: 11px 20px;
-  background: #fff;
-  color: var(--color-deep-green);
+  background: var(--color-cau-green);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -1320,9 +1371,29 @@ onUnmounted(() => {
 
   .research-grid,
   .news-grid,
-  .member-grid,
-  .stats-row {
+  .member-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .compact-stats {
+    max-width: none;
+  }
+
+  .compact-stats div {
+    padding-left: 10px;
+  }
+
+  .compact-stats strong {
+    font-size: 21px;
+  }
+
+  .research-card {
+    min-height: 0;
+    padding: 17px;
   }
 
   .team-heading-row {

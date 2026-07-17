@@ -25,6 +25,7 @@
         <RouterLink to="/news" @click="closeMenu">新闻活动</RouterLink>
         <RouterLink class="internal-entry" to="/dashboard" @click="closeMenu">内部平台</RouterLink>
       </nav>
+      <button v-if="menuOpen" class="portal-menu-backdrop" type="button" aria-label="关闭导航菜单" @click="closeMenu"></button>
     </header>
 
     <main class="portal-main">
@@ -50,14 +51,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSiteBrandStore } from '../stores/siteBrand'
 
 const menuOpen = ref(false)
 const brand = useSiteBrandStore()
 
 const siteSetting = computed(() => brand.setting)
-const footerUnit = computed(() => `${brand.siteSubtitle}生态系`)
+const footerUnit = computed(() => brand.siteSubtitle)
 const footerAddress = computed(() => brand.address)
 const footerName = computed(() => brand.siteName)
 const footerDescription = computed(() => brand.footerDescription)
@@ -68,15 +69,28 @@ function closeMenu() {
   menuOpen.value = false
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeMenu()
+}
+
+watch(menuOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
   await brand.load()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  document.body.style.overflow = ''
 })
 </script>
 
 <style scoped>
 .portal-shell {
   min-height: 100vh;
-  overflow-x: hidden;
   background:
     linear-gradient(180deg, rgba(234, 245, 238, 0.22), rgba(248, 247, 242, 0) 320px),
     var(--color-rice);
@@ -96,19 +110,7 @@ onMounted(async () => {
   border-top: 2px solid var(--color-cau-green);
   border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   padding: 0 max(20px, calc((100vw - var(--container)) / 2));
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 4px 18px rgba(31, 61, 43, 0.04);
-}
-
-.portal-nav::after {
-  position: absolute;
-  right: max(20px, calc((100vw - var(--container)) / 2));
-  bottom: 0;
-  left: max(20px, calc((100vw - var(--container)) / 2));
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, rgba(0, 135, 60, 0.28), rgba(166, 120, 78, 0.18), transparent);
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .portal-main {
@@ -268,10 +270,12 @@ onMounted(async () => {
   transform: translateY(6px);
 }
 
+.portal-menu-backdrop {
+  display: none;
+}
+
 .portal-footer {
-  background:
-    linear-gradient(90deg, rgba(0, 135, 60, 0.18), transparent 48%),
-    var(--color-deep-green);
+  background: var(--color-deep-green);
   color: rgba(255, 255, 255, 0.86);
   padding: 42px 0;
 }
@@ -340,32 +344,36 @@ onMounted(async () => {
   }
 
   .portal-links {
-    position: absolute;
+    position: fixed;
     top: calc(var(--nav-height) - 1px);
-    right: 12px;
-    left: 12px;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    z-index: var(--z-menu);
     display: none;
+    width: min(320px, 88vw);
     height: auto;
-    max-height: calc(100vh - var(--nav-height) - 18px);
+    max-height: none;
     overflow-y: auto;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 12px 28px rgba(31, 61, 43, 0.12);
+    border-left: 1px solid var(--color-border);
+    border-radius: 0;
+    padding: 14px;
+    background: #fff;
+    box-shadow: -12px 0 30px rgba(31, 61, 43, 0.1);
     font-size: 15px;
   }
 
   .portal-links.open {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    grid-template-columns: 1fr;
     gap: 6px;
   }
 
   .portal-links a,
   .portal-links .internal-entry {
-    justify-content: center;
-    height: 42px;
+    justify-content: flex-start;
+    height: 44px;
     border-radius: var(--radius-sm);
     padding: 0 10px;
   }
@@ -380,6 +388,16 @@ onMounted(async () => {
 
   .nav-toggle {
     display: inline-flex;
+    z-index: calc(var(--z-menu) + 1);
+  }
+
+  .portal-menu-backdrop {
+    position: fixed;
+    inset: var(--nav-height) 0 0;
+    z-index: var(--z-overlay);
+    display: block;
+    border: 0;
+    background: rgba(17, 31, 23, 0.28);
   }
 }
 
@@ -413,6 +431,10 @@ onMounted(async () => {
 
   .portal-links.open {
     grid-template-columns: 1fr;
+  }
+
+  .portal-menu-backdrop {
+    inset: 62px 0 0;
   }
 
   .footer-grid {

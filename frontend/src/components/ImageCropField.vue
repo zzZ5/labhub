@@ -10,6 +10,7 @@
       <el-button v-if="props.modelValue" text :disabled="props.disabled" @click="clear">移除</el-button>
       <span>{{ props.hint || `按 ${ratioLabel} 裁剪，原图不超过 ${props.maxSizeMb} MB` }}</span>
       <span v-if="props.modelValue" class="file-meta">{{ props.modelValue.name }} · {{ formatFileSize(props.modelValue.size) }}</span>
+      <span v-else-if="props.existingUrl && props.existingSize" class="file-meta">当前图片 · {{ formatFileSize(props.existingSize) }}</span>
     </div>
 
     <el-dialog
@@ -77,6 +78,7 @@ import { formatFileSize, validateUploadFile } from '../utils/files'
 const props = withDefaults(defineProps<{
   modelValue?: File
   existingUrl?: string
+  existingSize?: number
   aspectRatio: number
   outputWidth: number
   outputHeight: number
@@ -86,6 +88,7 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
 }>(), {
   existingUrl: '',
+  existingSize: 0,
   maxSizeMb: 20,
   hint: '',
   previewShape: 'rectangle',

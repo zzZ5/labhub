@@ -5,7 +5,7 @@
       <div>
         <p class="section-kicker">中农雨磷内部平台</p>
         <h1>内部科研管理平台</h1>
-        <p>请使用课题组账号登录。新注册账号需要通过管理员审核后，才能访问内部资料、仪器平台和学生档案等功能。</p>
+        <p>请使用课题组账号登录。新账号通过管理员审核后即可访问内部平台。</p>
       </div>
       <el-form class="login-form" @submit.prevent="submit">
         <el-form-item label="账号名或邮箱">
@@ -61,9 +61,7 @@ async function submit() {
   min-height: 100vh;
   place-items: center;
   padding: 32px;
-  background:
-    linear-gradient(135deg, rgba(234, 245, 238, 0.76), rgba(248, 247, 242, 0.96) 46%, rgba(255, 255, 255, 0.8)),
-    var(--color-rice);
+  background: var(--color-rice);
 }
 
 .back-link {
@@ -80,12 +78,12 @@ async function submit() {
 
 .login-card {
   display: grid;
-  width: min(920px, 100%);
-  grid-template-columns: 1fr 360px;
-  gap: 46px;
+  width: min(780px, 100%);
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 34px;
   border-radius: var(--radius-lg);
-  padding: 42px;
-  box-shadow: 0 18px 44px rgba(31, 61, 43, 0.08);
+  padding: 34px;
+  box-shadow: var(--shadow-soft);
 }
 
 .login-card:hover {
@@ -96,7 +94,7 @@ async function submit() {
 .login-card h1 {
   margin: 0;
   color: var(--color-deep-green);
-  font-size: clamp(30px, 4vw, 38px);
+  font-size: clamp(27px, 3.6vw, 34px);
   line-height: 1.2;
 }
 

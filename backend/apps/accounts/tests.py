@@ -65,6 +65,33 @@ def test_login_and_current_user(client):
 
 
 @pytest.mark.django_db
+def test_login_accepts_email_case_insensitively(client):
+    user = User.objects.create_user(username="email-member", email="Member@Example.com", password="pass12345")
+
+    response = client.post(
+        reverse("auth-login"),
+        {"username": "member@example.com", "password": "pass12345"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["username"] == user.username
+
+
+@pytest.mark.django_db
+def test_disabled_account_cannot_login(client):
+    User.objects.create_user(username="disabled-member", password="pass12345", is_active=False)
+
+    response = client.post(
+        reverse("auth-login"),
+        {"username": "disabled-member", "password": "pass12345"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
 def test_member_can_update_own_profile_and_shared_avatar(client):
     user = User.objects.create_user(username="profile-member", password="pass12345")
     image_bytes = base64.b64decode(

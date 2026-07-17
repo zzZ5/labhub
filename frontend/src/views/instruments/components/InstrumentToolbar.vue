@@ -1,28 +1,30 @@
 <template>
   <div class="instrument-tools">
-    <div class="instrument-toolbar card">
-      <input
-        :value="keyword"
-        type="search"
-        placeholder="搜索仪器名称、型号、位置或说明"
-        @input="$emit('update:keyword', ($event.target as HTMLInputElement).value)"
-      />
-      <select :value="status" @change="$emit('update:status', ($event.target as HTMLSelectElement).value)">
-        <option value="">全部状态</option>
-        <option value="normal">正常</option>
-        <option value="maintenance">维护中</option>
-        <option value="disabled">停用</option>
-      </select>
-      <template v-if="canManage">
+    <FilterToolbar class="instrument-toolbar" has-filters>
+      <template #primary>
+        <input
+          :value="keyword"
+          type="search"
+          placeholder="搜索仪器名称、型号、位置或说明"
+          @input="$emit('update:keyword', ($event.target as HTMLInputElement).value)"
+        />
+      </template>
+      <template #filters>
+        <select :value="status" @change="$emit('update:status', ($event.target as HTMLSelectElement).value)">
+          <option value="">全部状态</option>
+          <option value="normal">正常</option>
+          <option value="maintenance">维护中</option>
+          <option value="disabled">停用</option>
+        </select>
+      </template>
+      <template v-if="canManage" #actions>
         <input ref="excelInput" class="hidden-file-input" type="file" accept=".xlsx" @change="selectExcel" />
         <a class="toolbar-link" href="/templates/instruments-import-template.xlsx" download>下载模板</a>
         <button type="button" class="secondary-action" @click="excelInput?.click()">导入 Excel</button>
         <button type="button" @click="$emit('create')">新建设备</button>
       </template>
-    </div>
-    <p v-if="canManage" class="import-tip">
-      模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入，Excel 不超过 50 MB。
-    </p>
+      <template v-if="canManage" #note>模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入，Excel 不超过 50 MB。</template>
+    </FilterToolbar>
     <UploadProgress :active="importing" :progress="progress" uploading-text="正在上传设备表，请不要关闭页面。" processing-text="上传完成，正在解析仪器和图片。" />
   </div>
 </template>
@@ -31,6 +33,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import UploadProgress from '../../../components/UploadProgress.vue'
+import FilterToolbar from '../../../components/FilterToolbar.vue'
 import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
 
 defineProps<{
@@ -69,11 +72,6 @@ function selectExcel(event: Event) {
 }
 
 .instrument-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px auto auto auto;
-  gap: 10px;
-  align-items: center;
-  padding: 12px;
   box-shadow: none;
 }
 
@@ -129,22 +127,4 @@ function selectExcel(event: Event) {
   display: none;
 }
 
-.import-tip {
-  margin: 0 4px;
-  color: var(--color-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-@media (max-width: 900px) {
-  .instrument-toolbar {
-    grid-template-columns: minmax(0, 1fr) 140px;
-  }
-}
-
-@media (max-width: 620px) {
-  .instrument-toolbar {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

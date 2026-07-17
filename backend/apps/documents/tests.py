@@ -264,3 +264,97 @@ def test_approved_member_can_import_documents_with_simplified_template(client, a
     document = Document.objects.get(title="批量导入实验方法")
     assert document.owner == approved_user
     assert document.description == "批量导入测试。"
+
+
+@pytest.mark.django_db
+def test_document_import_updates_by_title_and_reports_invalid_rows(client, approved_user):
+    category = DocumentCategory.objects.create(name="实验方法", slug="import-update-methods")
+    Document.objects.create(
+        title="堆肥采样方法",
+        category=category,
+        description="旧说明",
+        owner=approved_user,
+        uploaded_by=approved_user,
+    )
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "导入数据"
+    sheet.append(["资料标题", "资料分类", "资料说明", "文件名", "允许下载"])
+    sheet.append(["堆肥采样方法", "实验方法", "更新后的简短说明", "", "是"])
+    sheet.append(["无效分类资料", "不存在分类", "不应导入", "", "是"])
+    buffer = BytesIO()
+    workbook.save(buffer)
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-import-excel"),
+        {"file": ContentFile(buffer.getvalue(), name="documents.xlsx")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["updated"] == 1
+    assert response.json()["created"] == 0
+    assert response.json()["errors"] == ["第 3 行：资料分类不存在：不存在分类"]
+    assert Document.objects.get(title="堆肥采样方法").description == "更新后的简短说明"
+    assert not Document.objects.filter(title="无效分类资料").exists()
+
+
+@pytest.mark.django_db
+def test_document_import_attaches_file_from_zip_package(client, approved_user):
+    DocumentCategory.objects.create(name="实验方法", slug="zip-methods")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "导入数据"
+    sheet.append(["资料标题", "资料分类", "资料说明", "文件名", "允许下载"])
+    sheet.append(["含附件的堆肥方法", "实验方法", "批量导入附件。", "compost-method.pdf", "是"])
+    workbook_buffer = BytesIO()
+    workbook.save(workbook_buffer)
+    archive_buffer = BytesIO()
+    with ZipFile(archive_buffer, "w") as archive:
+        archive.writestr("nested/compost-method.pdf", b"%PDF-1.4\n% LabHub test\n")
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-import-excel"),
+        {
+            "file": ContentFile(workbook_buffer.getvalue(), name="documents.xlsx"),
+            "archive": ContentFile(archive_buffer.getvalue(), name="documents.zip"),
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 1
+    assert response.json()["errors"] == []
+    document = Document.objects.get(title="含附件的堆肥方法")
+    assert document.original_filename == "compost-method.pdf"
+    assert document.file_size == len(b"%PDF-1.4\n% LabHub test\n")
+    assert document.file
+
+
+@pytest.mark.django_db
+def test_document_import_reports_missing_zip_attachment(client, approved_user):
+    DocumentCategory.objects.create(name="实验方法", slug="missing-zip-methods")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "导入数据"
+    sheet.append(["资料标题", "资料分类", "文件名"])
+    sheet.append(["缺失附件资料", "实验方法", "missing.pdf"])
+    workbook_buffer = BytesIO()
+    workbook.save(workbook_buffer)
+    archive_buffer = BytesIO()
+    with ZipFile(archive_buffer, "w") as archive:
+        archive.writestr("another.pdf", b"%PDF-1.4")
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-import-excel"),
+        {
+            "file": ContentFile(workbook_buffer.getvalue(), name="documents.xlsx"),
+            "archive": ContentFile(archive_buffer.getvalue(), name="documents.zip"),
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 0
+    assert response.json()["errors"] == ["第 2 行：zip 文件包中找不到：missing.pdf"]
+    assert not Document.objects.filter(title="缺失附件资料").exists()

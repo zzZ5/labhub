@@ -1,13 +1,10 @@
 <template>
   <InternalLayout title="内部工作台">
     <section class="dashboard-page">
-      <header class="dashboard-hero">
-        <div>
-          <h1>工作台</h1>
-          <p>快速进入常用内部模块，查看近期资料、设备状态和学生归档概况。</p>
-        </div>
-        <RouterLink class="outline-action" to="/">返回门户首页</RouterLink>
-      </header>
+      <InternalPageHeader>
+        <p>快速进入常用内部模块，查看近期资料、设备状态和学生归档概况。</p>
+        <template #actions><RouterLink class="outline-action" to="/">返回门户首页</RouterLink></template>
+      </InternalPageHeader>
 
       <section class="quick-grid">
         <RouterLink v-for="item in quickLinks" :key="item.title" class="card quick-card" :to="item.to">
@@ -17,12 +14,8 @@
         </RouterLink>
       </section>
 
-      <section class="summary-strip">
-        <article v-for="item in visibleSummary" :key="item.label" class="card summary-card">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-          <p>{{ item.note }}</p>
-        </article>
+      <section class="compact-summary dashboard-summary">
+        <span v-for="item in visibleSummary" :key="item.label"><strong>{{ item.value }}</strong>{{ item.label }}</span>
       </section>
 
       <section class="panel-grid">
@@ -94,6 +87,7 @@ import { computed, onMounted, reactive } from 'vue'
 
 import { fetchDashboard, type DashboardData } from '../../api/dashboard'
 import InternalLayout from '../../layouts/InternalLayout.vue'
+import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()
@@ -178,29 +172,6 @@ function degreeText(degree: string) {
   gap: 16px;
 }
 
-.dashboard-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  border: 1px solid rgba(0, 135, 60, 0.12);
-  border-radius: var(--radius-lg);
-  padding: 22px 26px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 251, 0.94) 58%, rgba(234, 245, 238, 0.82)),
-    #fff;
-  box-shadow: var(--shadow-flat);
-}
-
-.dashboard-hero h1 {
-  margin: 0 0 6px;
-  color: var(--color-deep-green);
-  font-size: clamp(24px, 2.7vw, 31px);
-  font-weight: 650;
-  line-height: 1.2;
-}
-
-.dashboard-hero p,
 .quick-card p,
 .panel-heading p,
 .student-card p,
@@ -225,8 +196,8 @@ function degreeText(degree: string) {
 .quick-card {
   display: grid;
   gap: 7px;
-  min-height: 118px;
-  padding: 17px 18px;
+  min-height: 96px;
+  padding: 14px 16px;
   color: inherit;
   box-shadow: none;
 }
@@ -252,54 +223,12 @@ function degreeText(degree: string) {
   font-size: 14px;
 }
 
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-}
-
-.summary-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  min-height: 56px;
-  padding: 11px 14px;
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-
-.summary-card:hover,
 .panel:hover {
   transform: none;
 }
 
-.summary-card span {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-muted);
-  font-size: 13px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.summary-card strong {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--color-deep-green);
-  font-size: 24px;
-  font-weight: 650;
-  line-height: 1;
-}
-
-.summary-card p {
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  color: var(--color-muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.dashboard-summary {
+  padding: 0 2px 2px;
 }
 
 .panel-grid {
@@ -420,14 +349,9 @@ function degreeText(degree: string) {
 }
 
 @media (max-width: 760px) {
-  .dashboard-hero,
   .panel-heading {
     display: grid;
     align-items: start;
-  }
-
-  .dashboard-hero {
-    padding: 18px;
   }
 
   .quick-grid,

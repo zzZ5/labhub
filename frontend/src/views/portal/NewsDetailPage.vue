@@ -2,7 +2,7 @@
   <PortalLayout>
     <section class="news-detail-head">
       <div class="container detail-head-grid">
-        <RouterLink class="back-link portal-back-link" :to="returnTo">返回新闻活动</RouterLink>
+        <ReturnLink class="back-link portal-back-link" :to="returnTo">返回新闻活动</ReturnLink>
         <div>
           <p class="section-kicker">{{ article?.category?.name || '新闻活动' }}</p>
           <h1>{{ article?.title || '新闻活动' }}</h1>
@@ -68,6 +68,7 @@ import { useRoute } from 'vue-router'
 import { fetchNewsArticle, type NewsArticle } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import ReturnLink from '../../components/ReturnLink.vue'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/news')
@@ -101,11 +102,9 @@ onMounted(async () => {
 
 <style scoped>
 .news-detail-head {
-  border-bottom: 4px solid var(--color-cau-green);
-  padding: 46px 0 38px;
-  background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.96), rgba(255, 255, 255, 0.98) 56%, rgba(248, 247, 242, 0.96)),
-    var(--color-white);
+  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  padding: 32px 0 28px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .detail-head-grid {
@@ -123,7 +122,7 @@ onMounted(async () => {
   max-width: 860px;
   margin: 0;
   color: var(--color-deep-green);
-  font-size: clamp(34px, 4.2vw, 52px);
+  font-size: clamp(28px, 3.4vw, 40px);
   font-weight: 650;
   line-height: 1.18;
 }

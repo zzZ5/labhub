@@ -1,11 +1,6 @@
 ﻿<template>
   <PortalLayout>
-    <section class="portal-page-head">
-      <div class="container">
-        <h1>新闻活动</h1>
-        <p>汇集组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。</p>
-      </div>
-    </section>
+    <PortalPageHeader title="新闻活动" description="汇集组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
     <section class="page-section">
       <div class="container">
         <div class="filter-row">
@@ -21,9 +16,11 @@
         </div>
         <div class="news-grid">
           <RouterLink v-for="item in pagedNews" :key="item.title" class="card news-card" :to="{ path: `/news/${item.slug}`, query: { from: route.fullPath } }">
-            <img v-if="item.cover_image" :src="item.cover_image" :alt="item.title" />
-            <div v-else class="news-image-placeholder">暂无封面</div>
-            <div>
+            <div class="news-media" :class="{ 'is-empty': !item.cover_image || imageErrors.has(item.slug) }">
+              <img v-if="item.cover_image && !imageErrors.has(item.slug)" :src="item.cover_image" :alt="item.title" @error="imageErrors.add(item.slug)" />
+              <ImagePlaceholder v-else class="news-image-placeholder" :label="`${item.title}暂无封面`" text="" />
+            </div>
+            <div class="news-card-content">
               <span>{{ item.event_date || '近期' }} · {{ item.category?.name || '新闻活动' }}</span>
               <h2>{{ item.title }}</h2>
               <p>{{ item.summary || '新闻摘要待补充。' }}</p>
@@ -38,11 +35,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchNews, fetchNewsCategories, type NewsArticle, type NewsCategory } from '../../api/publicPortal'
 import AppPagination from '../../components/AppPagination.vue'
+import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
+import PortalPageHeader from '../../components/PortalPageHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const news = ref<NewsArticle[]>([])
@@ -53,6 +52,7 @@ const initialPage = Math.max(1, Number.parseInt(typeof route.query.page === 'str
 const activeCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
 const page = ref(initialPage)
 const pageSize = 9
+const imageErrors = reactive(new Set<string>())
 const displayNews = computed(() => news.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(displayNews.value.length / pageSize)))
 const pagedNews = computed(() => displayNews.value.slice((page.value - 1) * pageSize, page.value * pageSize))
@@ -149,24 +149,33 @@ onMounted(async () => {
 
 .filter-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 22px;
   margin-bottom: 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-line);
+  scrollbar-width: none;
+}
+
+.filter-row::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-row button {
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 7px 14px;
-  background: #fff;
+  min-height: 40px;
+  flex: 0 0 auto;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 2px;
+  background: transparent;
   color: var(--color-muted);
   cursor: pointer;
 }
 
 .filter-row button.active,
 .filter-row button:hover {
-  border-color: var(--color-cau-green);
+  border-bottom-color: var(--color-cau-green);
   color: var(--color-cau-green);
+  font-weight: 650;
 }
 
 .news-grid {
@@ -188,9 +197,26 @@ onMounted(async () => {
   box-shadow: none;
 }
 
-.news-card img {
+.news-media,
+.news-card img,
+.news-image-placeholder {
   width: 100%;
   aspect-ratio: 16 / 8.5;
+}
+
+.news-media {
+  overflow: hidden;
+  padding: 0;
+  background: var(--color-panel-strong);
+}
+
+.news-media.is-empty,
+.news-media.is-empty .news-image-placeholder {
+  aspect-ratio: 16 / 4.5;
+}
+
+.news-card img {
+  display: block;
   object-fit: cover;
 }
 
@@ -204,7 +230,7 @@ onMounted(async () => {
   font-size: 14px;
 }
 
-.news-card div {
+.news-card-content {
   padding: 15px 16px 17px;
 }
 

@@ -11,6 +11,7 @@ const fallbackSetting: Partial<SiteSetting> = {
   logo: '/site-icon.png',
   favicon: '/site-icon.png',
   description: '面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。',
+  footer_text: '围绕农业资源循环与生态环境过程开展科研、教学与技术交流。',
   address: '北京市海淀区圆明园西路2号 中国农业大学西校区',
   external_links: [
     { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
@@ -68,7 +69,7 @@ export const useSiteBrandStore = defineStore('siteBrand', () => {
 
   const siteName = computed(() => setting.value.site_name || fallbackSetting.site_name || '')
   const siteSubtitle = computed(() => setting.value.site_subtitle || fallbackSetting.site_subtitle || '')
-  const footerDescription = computed(() => setting.value.footer_text || setting.value.description || fallbackSetting.description || '')
+  const footerDescription = computed(() => setting.value.footer_text || fallbackSetting.footer_text || '')
   const address = computed(() => setting.value.address || fallbackSetting.address || '')
   const externalLinks = computed<ExternalLink[]>(() => {
     const links = setting.value.external_links?.filter((link) => link.label && link.url) || []

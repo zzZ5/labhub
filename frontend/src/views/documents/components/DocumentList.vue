@@ -21,7 +21,7 @@
           <span class="preview-hint">{{ document.can_preview ? '点击卡片查看' : '暂无可预览文件' }}</span>
           <div class="document-actions">
             <el-button v-if="document.can_edit" plain @click.stop="$emit('edit', document)">编辑</el-button>
-            <el-button type="primary" :disabled="!document.can_download" @click.stop="$emit('download', document)">
+            <el-button plain :disabled="!document.can_download" @click.stop="$emit('download', document)">
               {{ document.can_download ? '下载' : '不可下载' }}
             </el-button>
           </div>
@@ -60,15 +60,16 @@ defineEmits<{
 
 .document-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  gap: 10px;
 }
 
 .document-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 286px;
-  padding: 20px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 170px auto;
+  align-items: center;
+  min-height: 108px;
+  gap: 14px;
+  padding: 14px 16px;
   box-shadow: 0 1px 2px rgba(31, 61, 43, 0.035);
 }
 
@@ -86,7 +87,8 @@ defineEmits<{
 }
 
 .document-topline {
-  margin-bottom: 16px;
+  align-self: start;
+  margin: 2px 0 0;
 }
 
 .file-type {
@@ -100,9 +102,9 @@ defineEmits<{
 }
 
 .document-card h3 {
-  margin: 0 0 10px;
+  margin: 0 0 4px;
   color: var(--color-deep-green);
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 650;
   line-height: 1.35;
 }
@@ -112,17 +114,18 @@ defineEmits<{
   overflow: hidden;
   margin: 0;
   color: var(--color-muted);
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.55;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .document-card dl {
   display: grid;
-  gap: 8px;
-  margin: 18px 0;
-  border-top: 1px solid var(--color-line);
-  padding-top: 14px;
+  gap: 4px;
+  margin: 0;
+  border-left: 1px solid var(--color-line);
+  padding-left: 14px;
 }
 
 .document-card dl div {
@@ -130,7 +133,7 @@ defineEmits<{
   justify-content: space-between;
   gap: 16px;
   color: var(--color-muted);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .document-card dt {
@@ -147,12 +150,11 @@ defineEmits<{
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: auto;
+  margin: 0;
 }
 
 .preview-hint {
-  color: var(--color-muted);
-  font-size: 13px;
+  display: none;
 }
 
 .document-actions {
@@ -163,9 +165,41 @@ defineEmits<{
 }
 
 @media (max-width: 640px) {
-  .document-card footer {
-    display: grid;
+  .document-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 0;
+    gap: 8px 10px;
+    padding: 13px;
   }
 
+  .document-card dl,
+  .document-card footer {
+    grid-column: 1 / -1;
+  }
+
+  .document-card dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--color-line);
+    border-left: 0;
+    padding: 9px 0 0;
+  }
+
+  .document-card dl div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .document-card dd {
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .document-card footer {
+    display: flex;
+    border-top: 0;
+    padding-top: 0;
+  }
 }
 </style>

@@ -56,11 +56,6 @@ a {
     color 160ms ease;
 }
 
-.portal-back-link::before {
-  margin-right: 7px;
-  content: "←";
-}
-
 .portal-back-link:hover {
   border-color: var(--color-cau-green);
   background: var(--color-eco-green);
@@ -487,5 +482,16 @@ a {
 
   .list-panel .content-list-scroll {
     max-height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

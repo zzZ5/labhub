@@ -22,8 +22,7 @@
           菜单
         </button>
         <div class="topbar-title">
-          <small>中国农业大学资源与环境学院生态系</small>
-          <strong>{{ title }}</strong>
+          <h1>{{ title }}</h1>
         </div>
         <div class="topbar-actions">
           <el-dropdown v-if="session.isAuthenticated" trigger="click" placement="bottom-end" @command="handleAccountCommand">
@@ -47,6 +46,7 @@
         </div>
       </header>
 
+      <button v-if="menuOpen" class="mobile-menu-backdrop" type="button" aria-label="关闭菜单" @click="menuOpen = false"></button>
       <nav class="mobile-menu" :class="{ open: menuOpen }" aria-label="移动端内部平台导航">
         <RouterLink v-for="item in menu" :key="item.path" :to="item.path" @click="menuOpen = false">
           <component :is="item.icon" />
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown, Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
 
@@ -91,10 +91,24 @@ const menu = computed(() => baseMenu.filter((item) => !item.roles || session.has
 const isStudentIdentity = computed(() => ['undergraduate', 'master', 'phd'].includes(session.user?.profile?.school_identity || ''))
 
 onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
   if (!session.isAuthenticated) {
     void session.loadCurrentUser()
   }
   void brand.load()
+})
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') menuOpen.value = false
+}
+
+watch(menuOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  document.body.style.overflow = ''
 })
 
 async function handleLogout() {
@@ -118,7 +132,7 @@ async function handleAccountCommand(command: string) {
 <style scoped>
 .internal-shell {
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
   overflow-x: hidden;
   background:
@@ -133,7 +147,7 @@ async function handleAccountCommand(command: string) {
   overflow-y: auto;
   border-right: 1px solid var(--color-border);
   background: rgba(255, 255, 255, 0.96);
-  padding: 22px 16px;
+  padding: 20px 14px;
 }
 
 .internal-brand {
@@ -229,9 +243,9 @@ async function handleAccountCommand(command: string) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 74px;
+  min-height: 66px;
   border-bottom: 1px solid var(--color-border);
-  padding: 0 34px;
+  padding: 0 28px;
   background: #fff;
   box-shadow: 0 1px 0 rgba(31, 61, 43, 0.03);
 }
@@ -240,22 +254,17 @@ async function handleAccountCommand(command: string) {
   min-width: 0;
 }
 
-.internal-topbar small,
-.internal-topbar strong {
+.internal-topbar h1 {
+  margin: 0;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.internal-topbar small {
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.internal-topbar strong {
+.internal-topbar h1 {
   color: var(--color-deep-green);
-  font-size: 23px;
+  font-size: 21px;
   font-weight: 650;
 }
 
@@ -312,9 +321,14 @@ async function handleAccountCommand(command: string) {
   display: none;
 }
 
+.mobile-menu-backdrop {
+  display: none;
+}
+
 .internal-content {
-  width: min(1440px, 100%);
-  padding: 30px 34px 42px;
+  width: min(var(--internal-container), 100%);
+  margin: 0 auto;
+  padding: 24px 28px 40px;
 }
 
 @media (max-width: 860px) {
@@ -337,11 +351,7 @@ async function handleAccountCommand(command: string) {
     flex: 0 0 auto;
   }
 
-  .internal-topbar small {
-    display: none;
-  }
-
-  .internal-topbar strong {
+  .internal-topbar h1 {
     font-size: 17px;
   }
 
@@ -359,26 +369,40 @@ async function handleAccountCommand(command: string) {
   }
 
   .mobile-menu {
-    position: sticky;
+    position: fixed;
     top: 62px;
-    z-index: 8;
-    border-bottom: 1px solid var(--color-border);
-    padding: 8px 12px 10px;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 8px 18px rgba(31, 61, 43, 0.08);
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-menu);
+    width: min(320px, 86vw);
+    overflow-y: auto;
+    border-right: 1px solid var(--color-border);
+    padding: 14px;
+    background: #fff;
+    box-shadow: 12px 0 30px rgba(31, 61, 43, 0.1);
   }
 
   .mobile-menu.open {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    grid-template-columns: 1fr;
     gap: 8px;
   }
 
   .mobile-menu a {
-    justify-content: center;
-    min-height: 38px;
-    padding: 0 9px;
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 0 12px;
     white-space: nowrap;
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 62px 0 0;
+    z-index: var(--z-overlay);
+    display: block;
+    border: 0;
+    background: rgba(17, 31, 23, 0.28);
   }
 
   .mobile-menu a.router-link-active {

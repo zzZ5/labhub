@@ -133,6 +133,44 @@ def test_undergraduate_account_can_be_bound_to_student_profile(client, admin_use
 
 
 @pytest.mark.django_db
+def test_one_account_cannot_have_multiple_student_profiles(client, admin_user, student_user, student_profile):
+    client.login(username="archive-admin", password="pass12345")
+
+    response = client.post(
+        reverse("student-profile-list"),
+        {
+            "user": student_user.id,
+            "name": "重复档案",
+            "degree_type": StudentProfile.DegreeType.MASTER,
+        },
+    )
+
+    assert response.status_code == 400
+    assert StudentProfile.objects.filter(user=student_user).count() == 1
+
+
+@pytest.mark.django_db
+def test_student_profile_supports_multiple_advisors(client, admin_user, pi_user, student_profile):
+    second_advisor = User.objects.create_user(username="second-pi", email="second-pi@example.com", password="pass12345")
+    second_advisor.profile.real_name = "第二导师"
+    second_advisor.profile.school_identity = UserProfile.SchoolIdentity.PI
+    second_advisor.profile.is_approved = True
+    second_advisor.profile.save()
+    client.login(username="archive-admin", password="pass12345")
+
+    response = client.patch(
+        reverse("student-profile-detail", args=[student_profile.id]),
+        {"advisors": [pi_user.id, second_advisor.id]},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    student_profile.refresh_from_db()
+    assert set(student_profile.advisors.values_list("id", flat=True)) == {pi_user.id, second_advisor.id}
+    assert set(response.json()["advisor_names"]) == {"pi", "第二导师"}
+
+
+@pytest.mark.django_db
 def test_student_without_system_permission_can_update_own_profile(client, student_user, student_profile):
     client.login(username="student", password="pass12345")
 

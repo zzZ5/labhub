@@ -1,6 +1,12 @@
+from io import BytesIO
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.urls import reverse
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image as WorksheetImage
+from PIL import Image as PillowImage
 from apps.accounts.models import Role, RoleCode, UserRole
 
 from .models import Instrument, InstrumentCategory
@@ -103,3 +109,60 @@ def test_removed_instrument_workflow_endpoints_return_not_found(client, manager)
     for path in ("training-records/", "maintenance-records/", "fault-reports/"):
         response = client.get(f"/api/instruments/{path}")
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_instrument_import_updates_matching_name_without_duplicate(client, manager, instrument):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "仪器分工表"
+    sheet.append(["序号", "仪器名称", "型号", "状态", "详细位置", "使用说明"])
+    sheet.append([1, "总有机碳分析仪", "TOC-L", "维护中", "环境分析实验室 B113", "校准后使用。"])
+    buffer = BytesIO()
+    workbook.save(buffer)
+    client.force_login(manager)
+
+    response = client.post(
+        reverse("instrument-import-excel"),
+        {"file": ContentFile(buffer.getvalue(), name="instruments.xlsx")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 0
+    assert response.json()["updated"] == 1
+    assert Instrument.objects.filter(name="总有机碳分析仪").count() == 1
+    instrument.refresh_from_db()
+    assert instrument.model == "TOC-L"
+    assert instrument.status == Instrument.Status.MAINTENANCE
+    assert instrument.location_detail == "环境分析实验室 B113"
+
+
+@pytest.mark.django_db
+def test_instrument_import_keeps_embedded_equipment_image(client, manager):
+    workbook = Workbook()
+    assignment = workbook.active
+    assignment.title = "仪器分工表"
+    assignment.append(["序号", "仪器名称", "型号", "状态", "详细位置", "使用说明"])
+    assignment.append([1, "堆肥呼吸仪", "CR-01", "正常", "环境楼 201", "使用后清洁气路。"])
+    images = workbook.create_sheet("仪器图片")
+    images.append(["仪器名称", "图片"])
+    images.append(["堆肥呼吸仪", ""])
+    image_buffer = BytesIO()
+    PillowImage.new("RGB", (12, 9), color=(0, 135, 60)).save(image_buffer, format="PNG")
+    image_buffer.seek(0)
+    images.add_image(WorksheetImage(PillowImage.open(image_buffer)), "B2")
+    workbook_buffer = BytesIO()
+    workbook.save(workbook_buffer)
+    client.force_login(manager)
+
+    response = client.post(
+        reverse("instrument-import-excel"),
+        {"file": ContentFile(workbook_buffer.getvalue(), name="instruments-with-image.xlsx")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 1
+    assert response.json()["images"] == 1
+    instrument = Instrument.objects.get(name="堆肥呼吸仪")
+    assert instrument.image
+    assert instrument.image.size > 0

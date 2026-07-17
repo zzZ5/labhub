@@ -1,25 +1,26 @@
 ﻿<template>
   <PortalLayout>
-    <section class="portal-page-head">
-      <div class="container">
-        <h1>团队成员</h1>
-        <p>汇聚不同研究背景的师生，在开放交流与协作实践中共同推进科研工作。</p>
-      </div>
-    </section>
+    <PortalPageHeader title="团队成员" description="汇聚不同研究背景的师生，在开放交流与协作实践中共同推进科研工作。" />
     <section class="page-section">
       <div class="container">
+        <div class="role-filter" role="group" aria-label="按身份头衔筛选">
+          <button type="button" :class="{ active: !roleFilter }" @click="roleFilter = ''">全部成员</button>
+          <button v-for="role in roleOptions" :key="role.value" type="button" :class="{ active: roleFilter === role.value }" @click="roleFilter = role.value">
+            {{ role.label }}
+          </button>
+        </div>
         <div class="team-filter card">
           <el-input v-model="keyword" clearable placeholder="搜索姓名、头衔或研究方向">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
-          <el-select v-model="roleFilter" clearable placeholder="身份头衔">
-            <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
-          </el-select>
-          <span class="result-count">{{ filteredMembers.length }} 位成员</span>
+          <span class="result-count">共 {{ filteredMembers.length }} 位</span>
         </div>
         <div class="member-grid">
           <RouterLink v-for="member in pagedMembers" :key="member.name" class="card member-card" :to="member.to">
-            <div class="member-photo"><img :src="member.avatar || '/site-icon.png'" :alt="member.name" /></div>
+            <div class="member-photo">
+              <img v-if="member.avatar && !imageErrors.has(member.id)" :src="member.avatar" :alt="member.name" @error="imageErrors.add(member.id)" />
+              <ImagePlaceholder v-else :label="`${member.name}暂无头像`" :initial="member.name" />
+            </div>
             <div class="member-content">
               <div class="member-name-row">
                 <h2>{{ member.name }}</h2>
@@ -27,7 +28,6 @@
               </div>
               <span class="member-role">{{ member.role_label || '团队成员' }}</span>
               <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
-              <small v-if="member.email">{{ member.email }}</small>
             </div>
           </RouterLink>
         </div>
@@ -39,12 +39,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ArrowRight, Search } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchMembers, type Member } from '../../api/publicPortal'
 import AppPagination from '../../components/AppPagination.vue'
+import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
+import PortalPageHeader from '../../components/PortalPageHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 
 const members = ref<Member[]>([])
@@ -56,6 +58,7 @@ const keyword = ref(queryText(route.query.q))
 const roleFilter = ref(queryText(route.query.role))
 const page = ref(queryPage(route.query.page))
 const pageSize = 12
+const imageErrors = reactive(new Set<number>())
 
 const displayMembers = computed(() => members.value.map((member) => ({
   ...member,
@@ -67,8 +70,16 @@ const roleOptions = computed(() => {
     const title = member.role_label || member.role_type || '团队成员'
     map.set(title, title)
   })
-  return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+  return Array.from(map.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => roleRank(a.label) - roleRank(b.label) || a.label.localeCompare(b.label, 'zh-CN'))
 })
+
+function roleRank(label: string) {
+  const order = ['硕博导师', '博士后', '博士生', '硕士生', '本科生', '其他成员']
+  const index = order.findIndex((item) => label.includes(item))
+  return index < 0 ? order.length : index
+}
 const filteredMembers = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return displayMembers.value.filter((member) => {
@@ -162,9 +173,41 @@ watch(totalPages, (total) => {
   background: var(--color-rice);
 }
 
+.role-filter {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-line);
+  scrollbar-width: none;
+}
+
+.role-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.role-filter button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.role-filter button:hover,
+.role-filter button.active {
+  border-bottom-color: var(--color-cau-green);
+  color: var(--color-cau-green);
+  font-weight: 650;
+}
+
 .team-filter {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   margin-bottom: 24px;
@@ -296,11 +339,12 @@ watch(totalPages, (total) => {
   }
 
   .team-filter {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .result-count {
-    text-align: left;
+    min-width: auto;
+    text-align: right;
   }
 
   .member-card {

@@ -8,7 +8,7 @@
         @click="$emit('detail', instrument.id)"
       >
         <img v-if="instrument.image" :src="instrument.image" :alt="instrument.name" />
-        <div v-else class="instrument-image-placeholder">暂无图片</div>
+        <ImagePlaceholder v-else class="instrument-image-placeholder" :label="`${instrument.name}暂无设备图片`" text="暂无设备图片" />
         <div class="instrument-body">
           <div class="instrument-title">
             <h2>{{ instrument.name }}</h2>
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import AppPagination from '../../../components/AppPagination.vue'
+import ImagePlaceholder from '../../../components/ImagePlaceholder.vue'
 import type { Instrument } from '../../../api/instruments'
 
 defineProps<{
@@ -87,7 +88,7 @@ function statusText(status: string) {
 .instrument-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  gap: 14px;
 }
 
 .instrument-card {
@@ -105,7 +106,7 @@ function statusText(status: string) {
 .instrument-image-placeholder {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   background: #f7f9f7;
 }
 
@@ -117,13 +118,13 @@ function statusText(status: string) {
 .instrument-image-placeholder {
   display: grid;
   place-items: center;
-  background: var(--color-eco-green);
+  background: var(--color-panel-strong);
   color: var(--color-muted);
   font-size: 14px;
 }
 
 .instrument-body {
-  padding: 22px;
+  padding: 16px;
 }
 
 .instrument-title {
@@ -149,9 +150,9 @@ function statusText(status: string) {
 .instrument-card dl {
   display: grid;
   gap: 8px;
-  margin: 18px 0 0;
+  margin: 13px 0 0;
   border-top: 1px solid var(--color-line);
-  padding-top: 16px;
+  padding-top: 12px;
 }
 
 .instrument-card dl div {
@@ -182,9 +183,9 @@ function statusText(status: string) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 13px;
   border-top: 1px solid var(--color-line);
-  padding-top: 14px;
+  padding-top: 10px;
 }
 
 .detail-link {
@@ -228,6 +229,49 @@ function statusText(status: string) {
 @media (max-width: 760px) {
   .instrument-grid {
     grid-template-columns: 1fr;
+  }
+
+  .instrument-card {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    min-height: 156px;
+  }
+
+  .instrument-card img,
+  .instrument-image-placeholder {
+    width: 116px;
+    height: 100%;
+    min-height: 156px;
+    aspect-ratio: auto;
+  }
+
+  .instrument-body {
+    padding: 12px;
+  }
+
+  .instrument-title h2 {
+    font-size: 16px;
+  }
+
+  .instrument-card dl {
+    gap: 3px;
+    margin-top: 9px;
+    padding-top: 8px;
+  }
+
+  .instrument-card dl div {
+    grid-template-columns: 42px 1fr !important;
+    gap: 6px !important;
+    font-size: 12px;
+  }
+
+  .instrument-card dl div:last-child {
+    display: none;
+  }
+
+  .instrument-actions {
+    margin-top: 9px;
+    padding-top: 8px;
   }
 
 }

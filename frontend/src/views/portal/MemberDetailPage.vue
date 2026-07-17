@@ -2,13 +2,20 @@
   <PortalLayout>
     <section class="member-head">
       <div class="container member-head-inner">
-        <RouterLink class="back-link portal-back-link" :to="returnTo">返回团队成员</RouterLink>
-        <img :src="member?.avatar || '/site-icon.png'" :alt="member?.name || '团队成员'" />
+        <ReturnLink class="back-link portal-back-link" :to="returnTo">返回团队成员</ReturnLink>
+        <div class="member-avatar">
+          <img v-if="member?.avatar && !avatarFailed" :src="member.avatar" :alt="member.name" @error="avatarFailed = true" />
+          <ImagePlaceholder v-else :label="`${member?.name || '团队成员'}暂无头像`" :initial="member?.name || '团'" />
+        </div>
         <div>
           <p class="section-kicker">团队成员</p>
           <h1>{{ member?.name || '团队成员' }}</h1>
           <span class="status-tag normal">{{ member?.role_label || '团队成员' }}</span>
-          <p>{{ member?.research_direction || member?.profile || '研究方向待补充。' }}</p>
+          <p class="member-focus">{{ member?.research_direction || member?.profile || '研究方向待补充。' }}</p>
+          <div v-if="member?.email || member?.destination" class="member-meta">
+            <a v-if="member?.email" :href="`mailto:${member.email}`">{{ member.email }}</a>
+            <span v-if="member?.destination">{{ member.destination }}</span>
+          </div>
         </div>
       </div>
     </section>
@@ -51,27 +58,6 @@
             </div>
           </section>
         </main>
-
-        <aside class="card side-card">
-          <dl>
-            <div>
-              <dt>身份头衔</dt>
-              <dd>{{ member?.role_label || '-' }}</dd>
-            </div>
-            <div>
-              <dt>研究方向</dt>
-              <dd>{{ member?.research_direction || '-' }}</dd>
-            </div>
-            <div v-if="member?.email">
-              <dt>邮箱</dt>
-              <dd><a :href="`mailto:${member.email}`">{{ member.email }}</a></dd>
-            </div>
-            <div v-if="member?.destination">
-              <dt>毕业去向</dt>
-              <dd>{{ member.destination }}</dd>
-            </div>
-          </dl>
-        </aside>
       </div>
     </section>
   </PortalLayout>
@@ -84,10 +70,13 @@ import { useRoute } from 'vue-router'
 import { fetchMember, type Member } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import ReturnLink from '../../components/ReturnLink.vue'
+import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/team')
 const member = ref<Member | null>(null)
+const avatarFailed = ref(false)
 
 const sectionHeadings = new Set(['工作经历', '教育经历', '学术与社会服务', '人才与团队项目', '教学工作', '教改项目与论文', '出版书籍与教材', '国际会议报告', '团队与研究生指导'])
 
@@ -122,11 +111,12 @@ onMounted(async () => {
 .member-head {
   border-bottom: 1px solid rgba(31, 61, 43, 0.1);
   padding: 32px 0;
-  background: linear-gradient(90deg, rgba(234, 245, 238, 0.78), rgba(255, 255, 255, 0.96) 54%, rgba(248, 247, 242, 0.9));
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .member-head-inner {
   display: grid;
+  max-width: 900px;
   grid-template-columns: 118px minmax(0, 1fr);
   align-items: center;
   gap: 24px;
@@ -148,37 +138,57 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-.back-link::before {
-  margin-right: 7px;
-  content: "←";
-}
-
 .back-link:hover {
   border-color: var(--color-cau-green);
   background: var(--color-eco-green);
 }
 
-.member-head img {
+.member-avatar {
   width: 118px;
   height: 118px;
+  overflow: hidden;
   border: 1px solid rgba(31, 61, 43, 0.12);
-  border-radius: 18px;
-  object-fit: cover;
+  border-radius: var(--radius-md);
   background: #fff;
+}
+
+.member-avatar img,
+.member-avatar :deep(.image-placeholder) {
+  width: 100%;
+  height: 100%;
+}
+
+.member-avatar img {
+  display: block;
+  object-fit: cover;
+  object-position: center top;
 }
 
 .member-head h1 {
   margin: 0 0 10px;
   color: var(--color-deep-green);
-  font-size: clamp(30px, 3.2vw, 42px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 650;
 }
 
-.member-head p:last-child {
+.member-focus {
   max-width: 860px;
   margin: 14px 0 0;
   color: var(--color-muted);
   line-height: 1.75;
+}
+
+.member-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.member-meta a {
+  color: var(--color-cau-green);
 }
 
 .page-section {
@@ -186,13 +196,10 @@ onMounted(async () => {
 }
 
 .detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 20px;
+  max-width: 900px;
 }
 
-.detail-card,
-.side-card {
+.detail-card {
   box-shadow: none;
 }
 
@@ -262,38 +269,56 @@ onMounted(async () => {
   color: var(--color-muted);
 }
 
-.side-card {
-  position: sticky;
-  top: 96px;
-  align-self: start;
-  padding: 22px;
-}
-
-.side-card dl {
-  display: grid;
-  gap: 16px;
-  margin: 0 0 20px;
-}
-
-.side-card dt {
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.side-card dd {
-  margin: 4px 0 0;
-  color: var(--color-text);
-}
-
 @media (max-width: 860px) {
-  .member-head-inner,
   .detail-layout,
   .timeline-row {
     grid-template-columns: 1fr;
   }
 
-  .side-card {
-    position: static;
+  .member-head-inner {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .member-avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  .member-head h1 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 520px) {
+  .member-head {
+    padding: 24px 0;
+  }
+
+  .member-head-inner {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .member-avatar {
+    width: 82px;
+    height: 82px;
+  }
+
+  .member-head h1 {
+    margin-bottom: 7px;
+    font-size: 25px;
+  }
+
+  .member-focus {
+    margin-top: 10px !important;
+    font-size: 14px;
+    line-height: 1.6 !important;
+  }
+
+  .member-meta {
+    margin-top: 8px;
+    font-size: 13px;
   }
 }
 </style>

@@ -16,18 +16,19 @@
           </div>
           <div class="form-two-col">
             <el-form-item label="Logo">
-              <ImageCropField v-model="siteForm.logo" :disabled="saving" :existing-url="logo" :aspect-ratio="1" :output-width="1000" :output-height="1000" :max-size-mb="5" preview-shape="circle" hint="按正方形裁剪，支持透明背景" />
+              <ImageCropField v-model="siteForm.logo" :disabled="saving" :existing-url="logo" :existing-size="logoSize" :aspect-ratio="1" :output-width="1000" :output-height="1000" :max-size-mb="5" preview-shape="circle" hint="按正方形裁剪，支持透明背景" />
             </el-form-item>
             <el-form-item label="网站图标">
-              <ImageCropField v-model="siteForm.favicon" :disabled="saving" :existing-url="favicon" :aspect-ratio="1" :output-width="512" :output-height="512" :max-size-mb="2" preview-shape="circle" hint="按正方形裁剪，用于浏览器图标" />
+              <ImageCropField v-model="siteForm.favicon" :disabled="saving" :existing-url="favicon" :existing-size="faviconSize" :aspect-ratio="1" :output-width="512" :output-height="512" :max-size-mb="2" preview-shape="circle" hint="按正方形裁剪，用于浏览器图标" />
             </el-form-item>
           </div>
           <el-form-item label="默认横幅图">
-            <ImageCropField v-model="siteForm.hero_image" :disabled="saving" :existing-url="heroImage" :aspect-ratio="12 / 5" :output-width="1920" :output-height="800" :max-size-mb="20" hint="没有轮播横幅时首页使用此图" />
+            <ImageCropField v-model="siteForm.hero_image" :disabled="saving" :existing-url="heroImage" :existing-size="heroImageSize" :aspect-ratio="12 / 5" :output-width="1920" :output-height="800" :max-size-mb="20" hint="没有轮播横幅时首页使用此图" />
           </el-form-item>
         </div>
         <div class="form-section">
           <div class="subsection-heading"><strong>页脚信息</strong><span>用于公开网站底部展示。</span></div>
+          <el-form-item label="页脚简介"><el-input v-model="siteForm.footer_text" type="textarea" :rows="3" /></el-form-item>
           <el-form-item label="地址"><el-input v-model="siteForm.address" /></el-form-item>
         </div>
         <div class="external-link-editor">
@@ -56,6 +57,9 @@ defineProps<{
   logo: string
   favicon: string
   heroImage: string
+  logoSize: number
+  faviconSize: number
+  heroImageSize: number
   saving: boolean
   progress: number
   displayFileLabel: (value: string) => string

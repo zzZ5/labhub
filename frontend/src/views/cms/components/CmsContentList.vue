@@ -111,12 +111,16 @@ watch(debouncedKeyword, resetPage)
 .content-list-scroll {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .content-row {
   display: grid;
   gap: 4px;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   padding: 10px 11px;

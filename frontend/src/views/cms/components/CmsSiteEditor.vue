@@ -12,13 +12,13 @@
         <div class="form-section">
           <div class="subsection-heading">
             <strong>基础信息</strong>
-            <span>用于导航栏、页脚和默认横幅文字。</span>
+            <span>用于导航栏、页脚和没有单独标题的默认横幅。</span>
           </div>
           <div class="form-two-col">
             <el-form-item label="实验室名称"><el-input v-model="siteForm.site_name" /></el-form-item>
             <el-form-item label="归属单位"><el-input v-model="siteForm.site_subtitle" /></el-form-item>
           </div>
-          <el-form-item label="副标题"><el-input v-model="siteForm.keywords" /></el-form-item>
+          <el-form-item label="横幅副标题"><el-input v-model="siteForm.hero_subtitle" /></el-form-item>
           <el-form-item label="横幅切换间隔">
             <el-input-number v-model="siteForm.banner_interval_seconds" :min="3" :max="30" />
             <small>单位：秒。仅首页横幅有多张图片时生效。</small>
@@ -57,4 +57,3 @@ defineProps<{
 
 defineEmits<{ save: [] }>()
 </script>
-

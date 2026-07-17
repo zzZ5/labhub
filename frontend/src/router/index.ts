@@ -27,7 +27,12 @@ import { useSessionStore } from '../stores/session'
 
 const router = createRouter({
   history: createWebHistory(),
-  scrollBehavior(_to, _from, savedPosition) {
+  scrollBehavior(to, _from, savedPosition) {
+    const storedPosition = consumeScrollPosition(to.fullPath)
+    if (storedPosition !== null) {
+      restoreScrollPosition(storedPosition)
+      return false
+    }
     return savedPosition || { top: 0 }
   },
   routes: [
@@ -164,7 +169,37 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+const scrollStoragePrefix = 'labhub:list-scroll:'
+
+function rememberScrollPosition(fullPath: string) {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem(`${scrollStoragePrefix}${fullPath}`, String(window.scrollY))
+}
+
+function consumeScrollPosition(fullPath: string) {
+  if (typeof window === 'undefined') return null
+  const key = `${scrollStoragePrefix}${fullPath}`
+  const value = window.sessionStorage.getItem(key)
+  if (value === null) return null
+  window.sessionStorage.removeItem(key)
+  const position = Number(value)
+  return Number.isFinite(position) ? Math.max(0, position) : null
+}
+
+function restoreScrollPosition(position: number, attempts = 30) {
+  if (typeof window === 'undefined') return
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: position, behavior: 'auto' })
+    if (attempts > 1 && Math.abs(window.scrollY - position) > 2) {
+      window.setTimeout(() => restoreScrollPosition(position, attempts - 1), 100)
+    }
+  })
+}
+
+router.beforeEach(async (to, from) => {
+  const source = Array.isArray(to.query.from) ? to.query.from[0] : to.query.from
+  if (source === from.fullPath) rememberScrollPosition(from.fullPath)
+
   const session = useSessionStore()
   const requiresAuth = Boolean(to.meta.requiresAuth)
 
