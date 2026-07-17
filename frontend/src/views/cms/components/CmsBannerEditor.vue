@@ -21,8 +21,10 @@
         </div>
       </div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>文字内容</strong><span>显示在横幅安全区域内</span></div>
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="副标题"><el-input v-model="form.subtitle" type="textarea" :rows="2" /></el-form-item>
+        <div class="form-section-label"><strong>横幅图片</strong><span>裁剪并核对桌面与手机显示效果</span></div>
         <el-form-item label="横幅图片">
           <ImageCropField v-model="form.image" :disabled="saving" :existing-url="currentImage" :existing-size="currentImageSize" :aspect-ratio="12 / 5" :output-width="1920" :output-height="800" :max-size-mb="20" hint="按首页横幅比例裁剪，主体尽量居中" @preview="bannerPreview = $event" />
         </el-form-item>
@@ -48,6 +50,7 @@
             </figure>
           </div>
         </div>
+        <div class="form-section-label"><strong>展示设置</strong><span>跳转链接、顺序和启用状态</span></div>
         <el-form-item label="跳转链接"><el-input v-model="form.link" placeholder="可选，https://..." /></el-form-item>
         <div class="form-two-col">
           <el-form-item label="排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>

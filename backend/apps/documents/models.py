@@ -47,6 +47,7 @@ class Document(models.Model):
     category = models.ForeignKey(DocumentCategory, on_delete=models.SET_NULL, related_name="documents", verbose_name="分类", null=True, blank=True)
     tags = models.ManyToManyField(DocumentTag, related_name="documents", verbose_name="标签", blank=True)
     description = models.TextField("说明", blank=True)
+    external_url = models.URLField("外部视频链接", max_length=500, blank=True)
     allow_download = models.BooleanField("允许下载", default=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="owned_documents", verbose_name="所有者", null=True, blank=True)
     file = models.FileField("文件", storage=protected_storage, upload_to="documents/", blank=True)

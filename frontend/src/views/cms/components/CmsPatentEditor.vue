@@ -7,13 +7,16 @@
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '专利成果' }}</h2></div></div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>专利名称、编号和发明人</span></div>
         <el-form-item label="专利名称"><el-input v-model="form.title" /></el-form-item>
         <div class="form-two-col"><el-form-item label="专利号"><el-input v-model="form.patent_number" /></el-form-item><el-form-item label="状态"><el-input v-model="form.status" /></el-form-item></div>
         <el-form-item label="发明人"><el-input v-model="form.inventors" type="textarea" :rows="2" /></el-form-item>
+        <div class="form-section-label"><strong>媒体与附件</strong><span>公开查看的专利文件</span></div>
         <el-form-item label="PDF 附件">
           <UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :max-size-mb="200" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" />
         </el-form-item>
         <div class="form-two-col"><el-form-item label="申请日期"><el-date-picker v-model="form.application_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item><el-form-item label="授权日期"><el-date-picker v-model="form.authorization_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item></div>
+        <div class="form-section-label"><strong>展示设置</strong><span>可见范围与首页顺序</span></div>
         <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>

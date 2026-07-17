@@ -219,6 +219,28 @@ def test_approved_member_can_upload_and_manage_own_document(client, approved_use
 
 
 @pytest.mark.django_db
+def test_approved_member_can_create_external_video_document(client, approved_user):
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-list"),
+        {
+            "title": "堆肥微生物实验视频",
+            "external_url": "https://www.bilibili.com/video/BV1example",
+            "status": DocumentStatus.ACTIVE,
+            "allow_download": False,
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["external_url"] == "https://www.bilibili.com/video/BV1example"
+    assert payload["can_preview"] is True
+    document = Document.objects.get(title="堆肥微生物实验视频")
+    assert not document.file
+
+
+@pytest.mark.django_db
 def test_member_cannot_edit_or_delete_another_members_document(client, approved_user, active_document):
     client.force_login(approved_user)
 

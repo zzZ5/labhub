@@ -47,7 +47,6 @@
       <div class="container intro-grid">
         <div :class="['intro-main', { 'is-empty': !introDescription }]">
           <div class="intro-heading">
-            <span v-if="siteName">{{ siteName }}</span>
             <h2>课题组简介</h2>
           </div>
           <div v-if="introDescription" class="intro-body">
@@ -662,22 +661,21 @@ onUnmounted(() => {
   padding: 28px 0 26px;
 }
 
-.intro-heading span {
-  display: block;
-  width: fit-content;
-  border-top: 3px solid var(--color-cau-green);
-  padding-top: 12px;
-  color: var(--color-cau-green);
-  font-size: 14px;
-  font-weight: 700;
-}
-
 .intro-heading h2 {
-  margin: 12px 0 0;
+  margin: 0;
   color: var(--color-deep-green);
   font-size: clamp(28px, 3vw, 34px);
   font-weight: 650;
   line-height: 1.18;
+}
+
+.intro-heading::before {
+  display: block;
+  width: 44px;
+  height: 3px;
+  margin-bottom: 12px;
+  background: var(--color-cau-green);
+  content: "";
 }
 
 .intro-body {

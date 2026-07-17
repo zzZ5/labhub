@@ -18,7 +18,14 @@
       <div><dt>更新</dt><dd>{{ formatDate(document.updated_at) }}</dd></div>
       <div v-if="document.description"><dt>说明</dt><dd>{{ document.description }}</dd></div>
     </dl>
+    <ExternalVideoCard
+      v-if="document.external_url"
+      class="reader-video"
+      :url="document.external_url"
+      :title="document.title"
+    />
     <FilePreview
+      v-else
       :url="canEmbed ? previewUrl : ''"
       :title="document.title"
       :filename="document.original_filename"
@@ -36,6 +43,7 @@
 <script setup lang="ts">
 import type { LabDocument } from '../../../api/documents'
 import FilePreview from '../../../components/FilePreview.vue'
+import ExternalVideoCard from '../../../components/ExternalVideoCard.vue'
 import { categoryName, currentFileLabel, formatDate } from '../documentPresentation'
 
 defineProps<{ document: LabDocument; previewUrl: string; canEmbed: boolean }>()
@@ -129,6 +137,7 @@ defineEmits<{
 }
 
 .embedded-reader :deep(.file-preview) { margin-top: 9px; }
+.reader-video { margin-top: 12px; }
 
 @media (max-width: 640px) {
   .reader-heading {

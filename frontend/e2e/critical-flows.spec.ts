@@ -96,6 +96,13 @@ test('仪器搜索、分页、详情返回和编辑入口可用', async ({ page 
   await page.goto('/instruments')
   await expect(page.getByText('堆肥设备 01')).toBeVisible()
 
+  await page.getByRole('button', { name: '批量导入' }).click()
+  const importDialog = page.getByRole('dialog', { name: '批量导入仪器设备' })
+  await expect(importDialog.getByRole('link', { name: '下载仪器设备导入模板' })).toHaveAttribute('href', '/templates/instruments-import-template.xlsx')
+  await expect(importDialog.getByText('仪器清单（.xlsx）')).toBeVisible()
+  await expect(importDialog.getByRole('button', { name: '开始导入' })).toBeVisible()
+  await importDialog.getByRole('button', { name: '取消' }).click()
+
   await page.getByRole('button', { name: '新建设备' }).click()
   const instrumentDialog = page.getByRole('dialog', { name: '新建设备' })
   await instrumentDialog.getByLabel('仪器名称').fill('E2E 堆肥设备')
@@ -190,11 +197,12 @@ test('门户新闻切换不串联 Word 文件状态，成果 Excel 可导入', a
     expect(height).toBeLessThan(80)
   }
   await newsPane.getByRole('button', { name: /Word 新闻稿/ }).click()
-  await expect(page.getByText('first.docx')).toBeVisible()
+  await expect(newsPane.getByRole('status').getByText(/first\.docx/)).toBeVisible()
   const mobileBack = newsPane.getByRole('button', { name: '返回内容列表' })
   if (await mobileBack.isVisible()) await mobileBack.click()
   await newsPane.getByRole('button', { name: /普通新闻稿/ }).click()
-  await expect(page.getByText('first.docx')).toHaveCount(0)
+  await expect(newsPane.getByRole('status')).toHaveCount(0)
+  await expect(newsPane.getByText(/first\.docx/)).toHaveCount(0)
   await expect(page.locator('.rich-editor')).toContainText('第二条新闻')
   await newsPane.getByLabel('标题', { exact: true }).fill('更新后的普通新闻稿')
   const saveRequest = page.waitForRequest((request) => request.url().includes('/api/cms/news-articles/plain-news/') && request.method() === 'PATCH')

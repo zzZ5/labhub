@@ -7,13 +7,16 @@
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '获奖成果' }}</h2></div></div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>奖项、日期和参与人员</span></div>
         <el-form-item label="奖项名称"><el-input v-model="form.title" /></el-form-item>
         <div class="form-two-col"><el-form-item label="奖项等级"><el-input v-model="form.award_level" /></el-form-item><el-form-item label="获奖日期"><el-date-picker v-model="form.award_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item></div>
         <el-form-item label="参与人员"><el-input v-model="form.participants" type="textarea" :rows="2" /></el-form-item>
+        <div class="form-section-label"><strong>媒体与附件</strong><span>获奖图片和证明文件</span></div>
         <div class="form-two-col">
           <el-form-item label="获奖图片"><ImageCropField v-model="form.image" :disabled="saving" :existing-url="currentImage" :existing-size="currentImageSize" :aspect-ratio="4 / 3" :output-width="1600" :output-height="1200" :max-size-mb="20" /></el-form-item>
           <el-form-item label="附件"><UploadFileField v-model="form.attachment" :disabled="saving" accept="application/pdf,image/*,.pdf" :max-size-mb="200" :existing-label="currentAttachment ? displayFileLabel(currentAttachment) : ''" /></el-form-item>
         </div>
+        <div class="form-section-label"><strong>说明与展示</strong><span>公开说明、权限和首页顺序</span></div>
         <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
         <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>

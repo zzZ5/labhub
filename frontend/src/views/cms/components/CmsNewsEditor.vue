@@ -5,6 +5,7 @@
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingSlug ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '新闻活动' }}</h2></div></div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>标题、日期、分类和发布状态</span></div>
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <div class="form-two-col"><el-form-item label="活动日期"><el-date-picker v-model="form.event_date" type="date" value-format="YYYY-MM-DD" /></el-form-item><el-form-item label="地点"><el-input v-model="form.location" /></el-form-item></div>
         <div class="form-two-col">
@@ -12,10 +13,12 @@
           <el-form-item label="状态"><el-select v-model="form.status"><el-option label="草稿" value="draft" /><el-option label="发布" value="published" /><el-option label="归档" value="archived" /></el-select></el-form-item>
         </div>
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" :rows="2" maxlength="260" show-word-limit /></el-form-item>
+        <div class="form-section-label"><strong>正文</strong><span>编辑新闻内容并在光标处插入图片</span></div>
         <el-form-item label="正文" class="news-body-field">
           <RichTextEditor ref="editorRef" :model-value="form.content" :uploading="uploadingImage" :upload-progress="imageUploadProgress" @update:model-value="form.content = $event" @image-selected="insertNewsBodyImage" />
           <small>插图会放在当前光标位置。上传 Word 后保存，内容会转入这里并可继续编辑。</small>
         </el-form-item>
+        <div class="form-section-label"><strong>媒体与稿件</strong><span>Word 正文和新闻封面</span></div>
         <div class="news-assets-grid">
           <div class="news-asset-field">
             <strong>Word 稿件</strong>
@@ -26,7 +29,9 @@
             <ImageCropField v-model="form.cover_image" :disabled="saving" :existing-url="currentCover" :existing-size="currentCoverSize" :aspect-ratio="32 / 17" :output-width="1600" :output-height="850" :max-size-mb="20" hint="用于新闻列表；未上传时使用正文首图" />
           </div>
         </div>
+        <FeedbackPanel v-if="form.word_file || currentWordFile" type="success" title="已关联 Word 稿件" :description="form.word_file ? `待保存：${form.word_file.name}` : displayFileLabel(currentWordFile)" />
         <UploadProgress :active="saving" :progress="progress" uploading-text="正在上传并保存…" processing-text="上传完成，正在处理正文。" />
+        <div class="form-section-label"><strong>展示设置</strong><span>公开范围和置顶状态</span></div>
         <div class="form-two-col">
           <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
           <el-form-item label="置顶"><el-switch v-model="form.is_pinned" /></el-form-item>
@@ -48,6 +53,7 @@ import RichTextEditor from '../../../components/RichTextEditor.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
+import FeedbackPanel from '../../../components/FeedbackPanel.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'

@@ -18,59 +18,28 @@
         </select>
       </template>
       <template v-if="canManage" #actions>
-        <input ref="excelInput" class="hidden-file-input" type="file" accept=".xlsx" @change="selectExcel" />
         <el-button type="primary" @click="$emit('create')">新建设备</el-button>
-        <el-dropdown trigger="click">
-          <button class="more-action" type="button" aria-label="更多仪器操作"><el-icon><MoreFilled /></el-icon>更多</button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item><a class="dropdown-link" href="/templates/instruments-import-template.xlsx" download>下载导入模板</a></el-dropdown-item>
-              <el-dropdown-item @click="excelInput?.click()">导入 Excel</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <el-button plain @click="$emit('import')">批量导入</el-button>
       </template>
-      <template v-if="canManage" #note>模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入，Excel 不超过 50 MB。</template>
     </FilterToolbar>
-    <UploadProgress :active="importing" :progress="progress" uploading-text="正在上传设备表，请不要关闭页面。" processing-text="上传完成，正在解析仪器和图片。" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { MoreFilled } from '@element-plus/icons-vue'
-import UploadProgress from '../../../components/UploadProgress.vue'
 import FilterToolbar from '../../../components/FilterToolbar.vue'
-import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
 
 defineProps<{
   keyword: string
   status: string
   canManage: boolean
-  importing: boolean
-  progress: number
 }>()
 
 const emit = defineEmits<{
   'update:keyword': [value: string]
   'update:status': [value: string]
   create: []
-  import: [file: File]
+  import: []
 }>()
-
-const excelInput = ref<HTMLInputElement | null>(null)
-
-function selectExcel(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (file) {
-    const message = validateUploadFile(file, UPLOAD_LIMIT.spreadsheet)
-    if (message) ElMessage.warning(message)
-    else emit('import', file)
-  }
-}
 </script>
 
 <style scoped>
@@ -100,42 +69,6 @@ function selectExcel(event: Event) {
   border-color: rgba(0, 135, 60, 0.35);
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 135, 60, 0.08);
-}
-
-.toolbar-link,
-.instrument-toolbar .more-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-cau-green);
-  border-radius: var(--radius-sm);
-  min-height: 38px;
-  padding: 0 14px;
-  background: var(--color-cau-green);
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.toolbar-link,
-.instrument-toolbar .more-action {
-  border-color: rgba(0, 135, 60, 0.22);
-  background: #fff;
-  color: var(--color-cau-green);
-}
-
-.toolbar-link:hover,
-.instrument-toolbar .more-action:hover {
-  background: var(--color-eco-green);
-}
-
-.more-action { gap: 5px; }
-.dropdown-link { display: block; width: 100%; color: inherit; }
-
-.hidden-file-input {
-  display: none;
 }
 
 </style>

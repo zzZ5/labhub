@@ -8,10 +8,8 @@
           v-model:keyword="keyword"
           v-model:status="statusFilter"
           :can-manage="canManageInstruments"
-          :importing="importing"
-          :progress="importProgress"
           @create="openCreate"
-          @import="handleExcelImport"
+          @import="openImport"
         />
         <ListSkeleton v-if="loading" :rows="6" thumbnail />
         <InstrumentList
@@ -34,6 +32,13 @@
         :progress="uploadProgress"
         @save="saveInstrument"
       />
+      <InstrumentImportDialog
+        v-model:open="importVisible"
+        :saving="importing"
+        :progress="importProgress"
+        :result="importResult"
+        @import="handleExcelImport"
+      />
     </section>
   </InternalLayout>
 </template>
@@ -53,12 +58,14 @@ import {
   updateInstrument,
   type Instrument,
   type InstrumentFormPayload,
+  type InstrumentImportResult,
 } from '../../api/instruments'
 import { useSessionStore } from '../../stores/session'
 import { requestErrorMessage } from '../../utils/requestErrors'
 import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InstrumentFormDialog from './components/InstrumentFormDialog.vue'
+import InstrumentImportDialog from './components/InstrumentImportDialog.vue'
 import InstrumentList from './components/InstrumentList.vue'
 import InstrumentToolbar from './components/InstrumentToolbar.vue'
 
@@ -80,6 +87,8 @@ const saving = ref(false)
 const uploadProgress = ref(0)
 const importing = ref(false)
 const importProgress = ref(0)
+const importVisible = ref(false)
+const importResult = ref<InstrumentImportResult | null>(null)
 
 const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'instrument_manager'])))
 const filteredInstruments = computed(() => {
@@ -117,6 +126,12 @@ function openEdit(instrument: Instrument) {
   formVisible.value = true
 }
 
+function openImport() {
+  importProgress.value = 0
+  importResult.value = null
+  importVisible.value = true
+}
+
 function clampInstrumentPage() {
   if (instrumentPage.value > instrumentTotalPages.value) instrumentPage.value = instrumentTotalPages.value
   if (instrumentPage.value < 1) instrumentPage.value = 1
@@ -140,11 +155,13 @@ async function handleExcelImport(file: File) {
   }
   importing.value = true
   importProgress.value = 0
+  importResult.value = null
   try {
     const result = await importInstrumentsExcel(file, (event) => {
       if (event.total) importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
     })
     importProgress.value = 100
+    importResult.value = result
     ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，匹配图片 ${result.images} 张。`)
     await loadInstruments()
     clampInstrumentPage()

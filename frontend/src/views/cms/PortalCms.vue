@@ -275,6 +275,19 @@ onMounted(loadAll)
   display: block;
 }
 
+.form-section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-line);
+  margin: 8px 0 16px;
+  padding-bottom: 8px;
+}
+
+.form-section-label:not(:first-child) { margin-top: 22px; }
+.form-section-label strong { color: var(--color-deep-green); font-size: 14px; }
+.form-section-label span { color: var(--color-muted); font-size: 12px; }
+
 .form-panel small {
   color: var(--color-muted);
   font-size: 13px;

@@ -26,6 +26,10 @@
   --color-border-faint: rgba(31, 61, 43, 0.08);
   --color-warning: #75502b;
   --color-warning-border: #ead7b7;
+  --color-info: #365f72;
+  --color-info-soft: #edf4f6;
+  --color-success-soft: #eaf5ee;
+  --color-success-border: rgba(0, 135, 60, 0.22);
 
   --font-sans: "Inter", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, Helvetica, sans-serif;
   --font-page-title: clamp(28px, 3vw, 38px);
@@ -45,6 +49,8 @@
   --surface-white-strong: rgba(255, 255, 255, 0.96);
   --border-subtle: 1px solid #eef1ef;
   --border-default: 1px solid #e5e7eb;
+  --border-strong: 1px solid rgba(31, 61, 43, 0.18);
+  --border-focus: 1px solid var(--color-cau-green);
 
   --container: 1240px;
   --content-reading: 820px;
@@ -72,6 +78,12 @@
   --shadow-overlay: 0 8px 22px rgba(31, 61, 43, 0.1);
   --shadow-drawer: 12px 0 30px rgba(31, 61, 43, 0.1);
   --shadow-drawer-left: -12px 0 30px rgba(31, 61, 43, 0.1);
+
+  --breakpoint-phone: 390px;
+  --breakpoint-mobile: 720px;
+  --breakpoint-tablet: 1024px;
+  --breakpoint-desktop: 1440px;
+  --breakpoint-wide: 1920px;
 
   --nav-height: 72px;
   --section-y: 86px;

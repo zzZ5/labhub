@@ -1,14 +1,14 @@
 <template>
   <div class="file-preview">
-    <div v-if="status === 'pending'" class="preview-state"><el-icon class="is-loading"><Loading /></el-icon><strong>正在生成预览</strong><p>文件转换完成后会自动刷新。</p></div>
-    <div v-else-if="status === 'failed'" class="preview-state"><strong>预览生成失败</strong><p>{{ error || '可以下载原文件查看，或重新上传 PDF、DOCX、PPTX 文件。' }}</p><slot name="fallback" /></div>
+    <div v-if="status === 'pending'" class="preview-state"><FeedbackPanel type="processing" title="正在生成预览" description="文件转换完成后会自动刷新。" /></div>
+    <div v-else-if="status === 'failed'" class="preview-state"><FeedbackPanel type="error" title="预览生成失败" :description="error || '可以下载原文件查看，或重新上传 PDF、DOCX、PPTX 文件。'"><slot name="fallback" /></FeedbackPanel></div>
     <button v-else-if="kind === 'image' && url" class="image-preview-trigger" type="button" aria-label="查看原图" @click="openImage">
       <img :src="url" :alt="title" />
       <span><el-icon><ZoomIn /></el-icon>查看原图</span>
     </button>
     <video v-else-if="kind === 'video' && url" :src="url" controls preload="metadata" />
     <iframe v-else-if="url" :src="url" :title="title" />
-    <div v-else class="preview-state"><strong>当前文件暂不能在线查看</strong><p>可以下载原文件查看，或转换为 PDF 后重新上传。</p><slot name="fallback" /></div>
+    <div v-else class="preview-state"><FeedbackPanel type="warning" title="当前文件暂不能在线查看" description="可以下载原文件查看，或转换为 PDF 后重新上传。"><slot name="fallback" /></FeedbackPanel></div>
     <Teleport to="body">
       <div v-if="imageOpen" ref="lightbox" class="image-lightbox" role="dialog" aria-modal="true" :aria-label="`${title}原图`" tabindex="-1" @click.self="closeImage" @keydown.esc="closeImage">
         <button class="lightbox-close" type="button" aria-label="关闭原图" @click="closeImage"><el-icon><Close /></el-icon></button>
@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { Close, Loading, ZoomIn } from '@element-plus/icons-vue'
+import { Close, ZoomIn } from '@element-plus/icons-vue'
+import FeedbackPanel from './FeedbackPanel.vue'
 
 const props = withDefaults(defineProps<{ url?: string; title: string; filename?: string; mimeType?: string; status?: string; error?: string }>(), {
   url: '', filename: '', mimeType: '', status: '', error: '',
@@ -55,10 +56,8 @@ function closeImage() {
 .image-lightbox { position: fixed; z-index: 5000; inset: 0; display: grid; place-items: center; padding: 32px; background: rgba(10, 18, 13, .9); outline: none; }
 .image-lightbox img { display: block; max-width: 96vw; max-height: 92dvh; object-fit: contain; touch-action: pinch-zoom; }
 .lightbox-close { position: fixed; z-index: 1; top: 20px; right: 20px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; background: rgba(0,0,0,.28); color: #fff; cursor: pointer; font-size: 22px; }
-.preview-state { display: grid; min-height: 420px; place-items: center; align-content: center; gap: 10px; padding: 32px; color: var(--color-muted); text-align: center; }
-.preview-state .el-icon { color: var(--color-cau-green); font-size: 28px; }
-.preview-state strong { color: var(--color-deep-green); font-size: 20px; }
-.preview-state p { max-width: 480px; margin: 0; line-height: 1.65; }
+.preview-state { display: grid; min-height: 420px; place-items: center; align-content: center; padding: 32px; }
+.preview-state :deep(.feedback-panel) { width: min(100%, 620px); text-align: left; }
 @media (max-width: 640px) {
   .file-preview iframe { height: 68dvh; min-height: 440px; }
   .file-preview img, .file-preview video { max-height: 68dvh; }

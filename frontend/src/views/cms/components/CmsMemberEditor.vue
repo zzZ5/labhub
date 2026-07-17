@@ -9,16 +9,19 @@
         <div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.name || '团队成员' }}</h2></div>
       </div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>姓名、头衔与联系方式</span></div>
         <el-form-item label="姓名"><el-input v-model="form.name" /></el-form-item>
         <div class="form-two-col">
           <el-form-item label="身份头衔"><el-input v-model="form.role_type" placeholder="如：副教授 / 博士生导师、博士研究生、硕士研究生" /></el-form-item>
           <el-form-item label="邮箱"><el-input v-model="form.email" /></el-form-item>
         </div>
         <el-form-item label="研究方向"><el-input v-model="form.research_direction" /></el-form-item>
+        <div class="form-section-label"><strong>头像与简介</strong><span>用于团队列表和个人详情</span></div>
         <el-form-item label="头像">
           <ImageCropField v-model="form.avatar" :disabled="saving" :existing-url="currentAvatar" :existing-size="currentAvatarSize" :aspect-ratio="4 / 5" :output-width="800" :output-height="1000" :max-size-mb="10" hint="按团队成员照片比例裁剪，人物面部尽量居中" />
         </el-form-item>
         <el-form-item label="简介"><el-input v-model="form.profile" type="textarea" :rows="4" /></el-form-item>
+        <div class="form-section-label"><strong>展示设置</strong><span>控制公开网站的顺序</span></div>
         <el-form-item label="展示排序">
           <el-input-number v-model="form.sort_order" :min="0" />
           <small>0 表示不在公开网站展示；大于 0 时按数字从小到大排序。</small>

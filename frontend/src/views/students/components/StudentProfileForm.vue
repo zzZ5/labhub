@@ -110,9 +110,13 @@ function handleOpenChange(value: boolean) {
   if (!value) emit('cancel')
 }
 
-watch(() => props.open, (open) => {
-  if (open) resetForm()
-})
+watch(
+  [() => props.open, () => props.student],
+  ([open]) => {
+    if (open) resetForm()
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>

@@ -40,7 +40,6 @@
         </section>
         <section class="footer-contact">
           <strong>联系信息</strong>
-          <span>{{ footerUnit }}</span>
           <address>{{ footerAddress }}</address>
         </section>
         <nav v-if="footerLinks.length" class="footer-resources" aria-label="相关链接">
@@ -64,7 +63,6 @@ const menuPanel = ref<HTMLElement | null>(null)
 const brand = useSiteBrandStore()
 
 const siteSetting = computed(() => brand.setting)
-const footerUnit = computed(() => brand.siteSubtitle)
 const footerAddress = computed(() => brand.address)
 const footerName = computed(() => brand.siteName)
 const footerDescription = computed(() => brand.footerDescription)
@@ -326,7 +324,6 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.78);
 }
 
-.footer-contact span,
 .footer-contact address {
   display: block;
   margin: 0;

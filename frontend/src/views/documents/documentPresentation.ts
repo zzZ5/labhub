@@ -14,16 +14,19 @@ export function currentFilename(document: LabDocument) {
 }
 
 export function currentFileSizeLabel(document: LabDocument) {
+  if (document.external_url) return '外部链接'
   return document.file_size ? formatFileSize(document.file_size) : '-'
 }
 
 export function currentFileLabel(document: LabDocument) {
+  if (document.external_url) return /bilibili\.com|b23\.tv/i.test(document.external_url) ? '哔哩哔哩视频' : '外部视频资料'
   return document.file_size
     ? `${currentFilename(document)}（${formatFileSize(document.file_size)}）`
     : currentFilename(document)
 }
 
 export function fileTypeLabel(document: LabDocument) {
+  if (document.external_url) return '视频'
   const filename = currentFilename(document).toLowerCase()
   if (filename.endsWith('.pdf')) return 'PDF'
   if (filename.endsWith('.docx') || filename.endsWith('.doc')) return 'Word'

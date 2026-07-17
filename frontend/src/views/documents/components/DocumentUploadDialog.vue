@@ -13,6 +13,10 @@
         </el-select>
       </el-form-item>
       <el-form-item label="资料说明"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
+      <el-form-item label="视频链接（可选）">
+        <el-input v-model="form.external_url" placeholder="支持哔哩哔哩或其他公开视频链接" />
+        <small class="field-help">视频资料可只填写链接；普通文档继续上传文件。</small>
+      </el-form-item>
       <el-form-item :label="document ? '替换文件（可选）' : '文件'">
         <UploadFileField v-model="form.file" :disabled="saving" :max-size-mb="200" :existing-label="document ? currentFileLabel(document) : ''" />
       </el-form-item>
@@ -45,21 +49,22 @@ const emit = defineEmits<{
   save: [payload: DocumentFormPayload]
 }>()
 
-const form = reactive<DocumentFormPayload>({ title: '', category_id: undefined, description: '', file: undefined })
+const form = reactive<DocumentFormPayload>({ title: '', category_id: undefined, description: '', external_url: '', file: undefined })
 
 function reset() {
   Object.assign(form, {
     title: props.document?.title || '',
     category_id: props.document?.category?.id,
     description: props.document?.description || '',
+    external_url: props.document?.external_url || '',
     file: undefined,
   })
 }
 
 function submit() {
   const title = form.title.trim()
-  if (!title || (!props.document && !form.file)) {
-    ElMessage.warning('请填写资料标题并选择文件。')
+  if (!title || (!props.document && !form.file && !form.external_url?.trim())) {
+    ElMessage.warning('请填写资料标题，并上传文件或填写视频链接。')
     return
   }
   emit('save', { ...form, title })
@@ -69,3 +74,7 @@ watch(() => props.open, (open) => {
   if (open) reset()
 })
 </script>
+
+<style scoped>
+.field-help { display: block; margin-top: 6px; color: var(--color-muted); font-size: 12px; line-height: 1.5; }
+</style>

@@ -7,6 +7,7 @@
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '科研项目' }}</h2></div></div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>项目名称、编号和来源</span></div>
         <el-form-item label="项目名称"><el-input v-model="form.title" /></el-form-item>
         <div class="form-two-col">
           <el-form-item label="项目编号"><el-input v-model="form.project_number" /></el-form-item>
@@ -24,7 +25,9 @@
           <el-form-item label="开始日期"><el-date-picker v-model="form.start_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
           <el-form-item label="结束日期"><el-date-picker v-model="form.end_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
         </div>
+        <div class="form-section-label"><strong>项目说明</strong><span>公开展示的简要内容</span></div>
         <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
+        <div class="form-section-label"><strong>展示设置</strong><span>控制首页展示顺序</span></div>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>
       <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="saveProject" @delete="deleteProject" />

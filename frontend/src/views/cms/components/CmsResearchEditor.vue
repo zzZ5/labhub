@@ -10,9 +10,12 @@
         </div>
       </div>
       <el-form label-position="top">
+        <div class="form-section-label"><strong>基础信息</strong><span>用于列表和详情页标题</span></div>
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" :rows="3" /></el-form-item>
+        <div class="form-section-label"><strong>正文</strong><span>研究方向的详细介绍</span></div>
         <el-form-item label="详细内容"><el-input v-model="form.content" type="textarea" :rows="5" /></el-form-item>
+        <div class="form-section-label"><strong>媒体与展示</strong><span>封面与首页展示顺序</span></div>
         <el-form-item label="封面图">
           <ImageCropField v-model="form.cover_image" :disabled="saving" :existing-url="currentCover" :existing-size="currentCoverSize" :aspect-ratio="4 / 3" :output-width="1600" :output-height="1200" :max-size-mb="20" />
         </el-form-item>

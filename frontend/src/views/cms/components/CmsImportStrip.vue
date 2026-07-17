@@ -8,13 +8,16 @@
       </button>
       <input ref="inputRef" type="file" accept=".xlsx" @change="handleFile" />
     </div>
-    <UploadProgress :active="loading" :progress="progress" :uploading-text="uploadingText" :processing-text="processingText" />
+    <FeedbackPanel v-if="loading" type="processing" title="正在导入" description="上传和写入完成前请保持当前页面打开。">
+      <UploadProgress :active="loading" :progress="progress" :uploading-text="uploadingText" :processing-text="processingText" />
+    </FeedbackPanel>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
+import FeedbackPanel from '../../../components/FeedbackPanel.vue'
 import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
 import { ElMessage } from 'element-plus'
 

@@ -41,6 +41,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             "category",
             "tags",
             "description",
+            "external_url",
             "allow_download",
             "status",
             "status_label",
@@ -69,7 +70,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return can_download_document(getattr(request, "user", None), obj)
 
     def get_can_preview(self, obj):
-        return bool(obj.file and self.get_can_view(obj))
+        return bool((obj.file or obj.external_url) and self.get_can_view(obj))
 
     def get_can_edit(self, obj):
         request = self.context.get("request")
@@ -96,6 +97,7 @@ class DocumentWriteSerializer(serializers.ModelSerializer):
             "title",
             "category_id",
             "description",
+            "external_url",
             "allow_download",
             "status",
             "file",

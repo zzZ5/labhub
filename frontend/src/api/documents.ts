@@ -15,6 +15,7 @@ export interface LabDocument {
   title: string
   category: DocumentCategory | null
   description: string
+  external_url: string
   allow_download: boolean
   status: string
   status_label: string
@@ -44,6 +45,7 @@ export interface DocumentFormPayload {
   title: string
   category_id?: number
   description?: string
+  external_url?: string
   file?: File
 }
 
@@ -77,6 +79,7 @@ export async function createDocument(
   formData.append('allow_download', String(payload.allow_download))
   if (payload.category_id) formData.append('category_id', String(payload.category_id))
   if (payload.description) formData.append('description', payload.description)
+  if (payload.external_url) formData.append('external_url', payload.external_url)
   if (payload.file) formData.append('file', payload.file)
 
   const response = await http.post<LabDocument>('/documents/documents/', formData, {
@@ -98,6 +101,7 @@ export async function updateDocument(
   formData.append('allow_download', String(payload.allow_download))
   if (payload.category_id) formData.append('category_id', String(payload.category_id))
   if (payload.description) formData.append('description', payload.description)
+  formData.append('external_url', payload.external_url || '')
   if (payload.file) formData.append('file', payload.file)
 
   const response = await http.patch<LabDocument>(`/documents/documents/${documentId}/`, formData, {

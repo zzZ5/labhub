@@ -370,6 +370,8 @@ async function handleAccountCommand(command: string) {
   .mobile-menu-button {
     display: inline-flex;
     flex: 0 0 auto;
+    min-width: var(--control-touch);
+    min-height: var(--control-touch);
   }
 
   .internal-topbar h1 {

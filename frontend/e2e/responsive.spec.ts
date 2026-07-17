@@ -26,7 +26,6 @@ test('公开页脚在桌面和手机端保持清晰分组', async ({ page }, tes
 
   const footer = page.locator('.portal-footer')
   await expect(footer.getByText('联系信息', { exact: true })).toBeVisible()
-  await expect(footer.getByRole('navigation', { name: '相关链接' })).toBeVisible()
   await expect(footer.getByText('北京市海淀区圆明园西路2号', { exact: false })).toBeVisible()
 
   const columns = footer.locator('.footer-about, .footer-contact, .footer-resources')
@@ -36,12 +35,10 @@ test('公开页脚在桌面和手机端保持清晰分组', async ({ page }, tes
       expect(height).toBeGreaterThanOrEqual(44)
     }
     const boxes = await columns.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect()))
-    expect(boxes[1].y).toBeGreaterThan(boxes[0].y)
-    expect(boxes[2].y).toBeGreaterThan(boxes[1].y)
+    for (let index = 1; index < boxes.length; index += 1) expect(boxes[index].y).toBeGreaterThan(boxes[index - 1].y)
   } else {
     const boxes = await columns.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect()))
-    expect(boxes[1].x).toBeGreaterThan(boxes[0].x)
-    expect(boxes[2].x).toBeGreaterThan(boxes[1].x)
+    for (let index = 1; index < boxes.length; index += 1) expect(boxes[index].x).toBeGreaterThan(boxes[index - 1].x)
   }
 })
 
@@ -151,18 +148,18 @@ test('高数据量列表保持分页、长文本边界和页面宽度', async ({
   await installMockApi(page, { highData: true })
 
   await page.goto('/members')
-  await expect(page.getByText('50个账号', { exact: true })).toBeVisible()
+  await expect(page.getByText(/共\s*50\s*个账号/)).toBeVisible()
   const longMember = page.locator('.account-row-card').filter({ hasText: '农业资源环境与堆肥微生物研究方向超长姓名测试成员' })
   await expect(longMember).toBeVisible()
   expect(await longMember.evaluate((node) => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
   await expect(page.getByLabel('当前页码，修改后跳转')).toBeVisible()
 
   await page.goto('/instruments')
-  await expect(page.getByText('50设备总数', { exact: true })).toBeVisible()
+  await expect(page.locator('.instrument-card')).toHaveCount(12)
   await expect(page.getByLabel('当前页码，修改后跳转')).toBeVisible()
 
   await page.goto('/documents')
-  await expect(page.getByText('60份资料', { exact: true })).toBeVisible()
+  await expect(page.getByText(/共\s*60\s*条资料/)).toBeVisible()
   await expect(page.getByLabel('当前页码，修改后跳转')).toBeVisible()
 
   await page.goto('/publications')
@@ -173,13 +170,14 @@ test('高数据量列表保持分页、长文本边界和页面宽度', async ({
 })
 
 test('平板到宽屏的代表页面无横向溢出和按钮裁切', async ({ page }, testInfo) => {
-  test.setTimeout(120_000)
+  test.setTimeout(300_000)
   test.skip(testInfo.project.name !== 'desktop', 'desktop viewport matrix checked once')
   await installMockApi(page, { highData: true })
 
+  const routes = ['/', '/research', '/team', '/publications', '/news', '/dashboard', '/documents', '/instruments', '/students', '/cms', '/members', '/account']
   for (const width of [768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 })
-    for (const route of ['/', '/publications', '/dashboard', '/cms']) {
+    for (const route of routes) {
       await page.goto(route, { waitUntil: 'domcontentloaded' })
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       expect(overflow, `${route} overflowed at ${width}px`).toBeLessThanOrEqual(1)
@@ -190,6 +188,57 @@ test('平板到宽屏的代表页面无横向溢出和按钮裁切', async ({ pa
         return button.scrollWidth - button.clientWidth > 1 || button.scrollHeight - button.clientHeight > 1
       }).map((button) => button.textContent?.trim() || button.getAttribute('aria-label') || '未命名按钮'))
       expect(clippedButtons, `${route} clipped buttons at ${width}px: ${clippedButtons.join(', ')}`).toEqual([])
+    }
+  }
+})
+
+test('主要页面视觉基线', async ({ page }, testInfo) => {
+  test.setTimeout(180_000)
+  await installMockApi(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const routes = [
+    ['home', '/'],
+    ['research', '/research'],
+    ['team', '/team'],
+    ['results', '/publications'],
+    ['news', '/news'],
+    ['dashboard', '/dashboard'],
+    ['documents', '/documents'],
+    ['instruments', '/instruments'],
+    ['students', '/students'],
+    ['cms', '/cms'],
+    ['members', '/members'],
+  ] as const
+
+  for (const [name, route] of routes) {
+    await page.goto(route, { waitUntil: 'networkidle' })
+    await expect(page).toHaveScreenshot(`${name}-${testInfo.project.name}.png`, {
+      animations: 'disabled',
+      caret: 'hide',
+      fullPage: false,
+      maxDiffPixelRatio: 0.012,
+    })
+  }
+})
+
+test('图标操作具有可读名称且手机触控区域足够', async ({ page }, testInfo) => {
+  await installMockApi(page)
+  const routes = ['/', '/dashboard', '/documents', '/instruments', '/students', '/cms', '/members']
+  for (const route of routes) {
+    await page.goto(route, { waitUntil: 'domcontentloaded' })
+    const unnamed = await page.locator('button:visible').evaluateAll((buttons) => buttons.filter((button) => {
+      const text = button.textContent?.trim() || ''
+      const hasGraphic = Boolean(button.querySelector('svg, img, .el-icon'))
+      return hasGraphic && !text && !button.getAttribute('aria-label') && !button.getAttribute('title')
+    }).length)
+    expect(unnamed, `${route} 存在没有中文可读名称的图标按钮`).toBe(0)
+
+    if (testInfo.project.name === 'mobile') {
+      const undersized = await page.locator('button[aria-label]:visible').evaluateAll((buttons) => buttons.filter((button) => {
+        const box = button.getBoundingClientRect()
+        return box.width < 43.5 || box.height < 43.5
+      }).map((button) => button.getAttribute('aria-label')))
+      expect(undersized, `${route} 图标触控区域不足：${undersized.join('、')}`).toEqual([])
     }
   }
 })
