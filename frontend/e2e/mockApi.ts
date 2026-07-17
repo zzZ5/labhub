@@ -71,7 +71,22 @@ export const students = Array.from({ length: 13 }, (_, index) => ({
   advisor_details: [],
   can_edit: true,
   can_delete: true,
-  archive_files: [],
+  archive_files: index === 0 ? [{
+    id: 1,
+    student: 1,
+    file_type: 'proposal',
+    file_type_label: '开题报告',
+    title: '开题报告',
+    file: '/media/students/proposal.pdf',
+    file_size: 2_048_000,
+    preview_pdf: '/media/students/proposal-preview.pdf',
+    preview_status: 'ready',
+    preview_error: '',
+    original_filename: '2025级学生01农业有机废弃物堆肥微生物过程研究开题报告最终归档版本.pdf',
+    uploaded_at: '2026-07-17T10:00:00Z',
+    description: '开题报告归档文件',
+    can_delete: true,
+  }] : [],
 }))
 
 export const documents = Array.from({ length: 13 }, (_, index) => ({
@@ -252,7 +267,11 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
       }
       return json(route, instrumentState.find((item) => item.id === id) || instrumentState[0])
     }
-    if (path === '/publications/publications/') return json(route, pageResult(publications, url))
+    if (path === '/publications/publications/') {
+      const year = Number(url.searchParams.get('year')) || 0
+      const rows = year ? publications.filter((item) => item.year === year) : publications
+      return json(route, pageResult(rows, url))
+    }
     if (path === '/publications/projects/') return json(route, pageResult(projects, url))
     if (path === '/publications/patents/') return json(route, pageResult(patents, url))
     if (path === '/publications/awards/') return json(route, pageResult(awards, url))

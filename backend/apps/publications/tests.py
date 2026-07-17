@@ -54,6 +54,18 @@ def test_publication_search_and_pagination(client):
 
 
 @pytest.mark.django_db
+def test_publication_year_filter(client):
+    Publication.objects.create(title="2026 年论文", authors="A", journal="J", year=2026)
+    Publication.objects.create(title="2025 年论文", authors="A", journal="J", year=2025)
+
+    response = client.get(reverse("public-publication-list"), {"year": 2025})
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+    assert response.json()["results"][0]["title"] == "2025 年论文"
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("route_name", "model", "create_kwargs", "search"),
     [

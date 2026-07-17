@@ -8,7 +8,7 @@
           <p>维护首页基础文案、课题组简介和加入我们；网站标识与页脚内容请到“页脚设置”维护。</p>
         </div>
       </div>
-      <el-form label-position="top">
+      <el-form class="site-home-form" label-position="top">
         <div class="form-section">
           <div class="subsection-heading">
             <strong>基础信息</strong>

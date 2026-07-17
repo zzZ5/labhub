@@ -1,4 +1,5 @@
 from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
@@ -37,7 +38,7 @@ class PublicationViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     serializer_class = PublicationSerializer
     pagination_class = PublicResultsPagination
     filterset_fields = ["year", "is_representative"]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "authors", "journal", "doi", "abstract"]
     ordering_fields = ["year", "sort_order", "created_at"]
     ordering = ["-year", "-created_at"]

@@ -5,6 +5,7 @@
       <el-button type="primary" @click="$emit('create')">{{ actionLabel }}</el-button>
     </div>
     <input v-model="keyword" class="list-search" :placeholder="`搜索${title}`" @input="page = 1" />
+    <div v-if="$slots.tools" class="list-extra"><slot name="tools" /></div>
     <div v-if="filteredItems.length" class="content-list-scroll">
       <button
         v-for="item in pagedItems"
@@ -110,9 +111,20 @@ watch(debouncedKeyword, resetPage)
 
 .content-list-scroll {
   display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 8px;
   min-width: 0;
+  max-height: 440px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 3px;
 }
+
+.list-extra { min-width: 0; margin-bottom: 12px; }
+.list-extra :deep(.cms-import-block) { display: grid; gap: 8px; }
+.list-extra :deep(.import-strip) { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 10px; }
+.list-extra :deep(.import-strip span) { grid-column: 1 / -1; white-space: normal; line-height: 1.5; }
 
 .content-row {
   display: grid;
@@ -162,6 +174,12 @@ watch(debouncedKeyword, resetPage)
   padding: 28px 8px;
   color: var(--color-muted);
   text-align: center;
+}
+
+@media (max-width: 720px) {
+  .content-list-scroll {
+    max-height: 320px;
+  }
 }
 
 </style>

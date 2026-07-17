@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import tempfile
@@ -46,23 +47,47 @@ def refresh_file_preview_pdf(instance, *, source_field="file", preview_field="pr
     suffix = Path(filename).suffix.lower()
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
+        profile_path = temp_path / "libreoffice-profile"
+        profile_path.mkdir()
         source_path = temp_path / f"source{suffix}"
         with file_field.open("rb") as file_obj:
             source_path.write_bytes(file_obj.read())
 
+        conversion_source = source_path
+        if suffix == ".docx":
+            try:
+                from docx import Document as WordDocument
+
+                normalized_dir = temp_path / "normalized"
+                normalized_dir.mkdir()
+                conversion_source = normalized_dir / source_path.name
+                WordDocument(source_path).save(conversion_source)
+            except Exception:
+                conversion_source = source_path
+
         command = [
             soffice,
+            f"-env:UserInstallation={profile_path.as_uri()}",
             "--headless",
             "--nologo",
+            "--nodefault",
+            "--nolockcheck",
             "--nofirststartwizard",
+            "--norestore",
             "--convert-to",
             "pdf",
             "--outdir",
             str(temp_path),
-            str(source_path),
+            str(conversion_source),
         ]
         try:
-            completed = subprocess.run(command, check=False, capture_output=True, timeout=90)
+            completed = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                timeout=90,
+                env={**os.environ, "HOME": str(temp_path), "SAL_USE_VCLPLUGIN": "svp"},
+            )
         except subprocess.TimeoutExpired:
             instance.preview_status = "failed"
             instance.preview_error = "PDF 预览生成超时，请下载原文件查看。"
@@ -72,6 +97,9 @@ def refresh_file_preview_pdf(instance, *, source_field="file", preview_field="pr
         output_pdf = temp_path / "source.pdf"
         if completed.returncode != 0 or not output_pdf.exists():
             message = (completed.stderr or completed.stdout or b"").decode("utf-8", errors="ignore").strip()
+            message = "\n".join(line for line in message.splitlines() if "javaldx" not in line.lower()).strip()
+            if "source file could not be loaded" in message.lower():
+                message = "源文件无法读取，请确认文件完整后重新上传。"
             instance.preview_status = "failed"
             instance.preview_error = (message or "PDF 预览生成失败，请下载原文件查看。")[:240]
             instance.save(update_fields=["preview_status", "preview_error"])

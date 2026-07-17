@@ -8,7 +8,7 @@
         <strong>{{ brand.siteName }}</strong>
       </RouterLink>
       <nav class="internal-menu" aria-label="内部平台导航">
-        <RouterLink v-for="item in menu" :key="item.path" :to="item.path">
+        <RouterLink v-for="item in menu" :key="item.path" :to="item.path" :title="item.label">
           <component :is="item.icon" />
           <span>{{ item.label }}</span>
         </RouterLink>
@@ -326,9 +326,22 @@ async function handleAccountCommand(command: string) {
 }
 
 .internal-content {
-  width: min(var(--internal-container), 100%);
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 24px 28px 40px;
+}
+
+@media (min-width: 861px) and (max-width: 1100px) {
+  .internal-shell { grid-template-columns: 76px minmax(0, 1fr); }
+  .internal-sidebar { padding: 16px 10px; }
+  .internal-brand { justify-content: center; margin-bottom: 14px; padding: 0 0 16px; }
+  .internal-brand strong,
+  .internal-menu a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .internal-menu a { justify-content: center; min-height: 44px; padding: 0; }
+  .internal-menu a.router-link-active { box-shadow: inset 3px 0 0 var(--color-cau-green); }
+  .internal-topbar { padding: 0 20px; }
+  .internal-content { padding: 20px 20px 36px; }
 }
 
 @media (max-width: 860px) {

@@ -74,18 +74,20 @@
               <div class="account-avatar"><img v-if="user.profile?.avatar" :src="user.profile.avatar" :alt="displayUser(user)" /><span v-else>{{ initials(displayUser(user)) }}</span></div>
               <div><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
             </div>
-            <div class="compact-tags">
+            <div class="compact-tags member-status-cell" data-label="状态与身份">
               <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">{{ user.profile?.is_approved ? '已审核' : '待审核' }}</span>
               <span :class="['status-tag', user.is_active ? 'normal' : 'rejected']">{{ user.is_active ? '可登录' : '已停用' }}</span>
               <span class="status-tag archived">{{ roleLabel(schoolIdentity(user)) }}</span>
               <span :class="['status-tag', membershipStatus(user) === 'active' ? 'normal' : 'archived']">{{ membershipStatusLabel(membershipStatus(user)) }}</span>
             </div>
-            <div class="permission-chips compact-permissions">
-              <span v-if="systemRoles(user).length" class="status-tag archived" :title="systemRoles(user).map(roleLabel).join('、')">已分配 {{ systemRoles(user).length }} 项</span>
+            <div class="permission-chips compact-permissions" data-label="系统权限">
+              <el-tooltip v-if="systemRoles(user).length" :content="systemRoles(user).map(roleLabel).join('、')" placement="top">
+                <span class="status-tag archived">已分配 {{ systemRoles(user).length }} 项</span>
+              </el-tooltip>
               <span v-else class="status-tag archived">无管理权限</span>
             </div>
-            <div class="student-link-cell"><RouterLink v-if="studentByUserId[user.id]" to="/students" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
-            <div class="account-actions">
+            <div class="student-link-cell" data-label="学生档案"><RouterLink v-if="studentByUserId[user.id]" :to="{ path: '/students', query: { student: studentByUserId[user.id].id } }" class="student-link">{{ studentByUserId[user.id].name }}</RouterLink><button v-else-if="isStudentRole(user)" class="archive-create-button" type="button" :disabled="savingId === user.id" @click="handleCreateStudentArchive(user)">{{ savingId === user.id ? '生成中' : '生成档案' }}</button><span v-else class="status-tag archived">非学生</span></div>
+            <div class="account-actions" data-label="账号操作">
               <el-button size="small" plain @click="openEditDrawer(user)">编辑</el-button>
               <ActionMenu :items="accountMenuItems(user)" @command="handleAccountMenu($event, user)" />
             </div>
@@ -929,9 +931,11 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 
 @media (max-width: 1180px) {
   .account-row-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(210px, 1.2fr) minmax(0, 1fr) minmax(130px, .7fr);
   }
 
+  .student-link-cell { grid-column: 1 / 2; }
+  .account-actions { grid-column: 2 / -1; }
   .account-actions {
     justify-content: flex-start;
   }
@@ -966,6 +970,38 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   .permission-summary {
     grid-template-columns: 1fr;
   }
+
+  .account-panel { padding: 14px; }
+  .account-row-card {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+    padding: 14px;
+  }
+
+  .member-cell,
+  .member-status-cell {
+    grid-column: 1 / -1;
+  }
+
+  .member-cell { padding-bottom: 10px; border-bottom: 1px solid var(--color-line); }
+  .member-status-cell { gap: 6px; }
+  .compact-permissions,
+  .student-link-cell,
+  .account-actions { display: flex; grid-column: auto; align-items: center; min-width: 0; }
+  .account-actions { justify-content: flex-end; }
+  .compact-permissions::before,
+  .student-link-cell::before,
+  .account-actions::before {
+    display: block;
+    margin-right: auto;
+    color: var(--color-muted);
+    content: attr(data-label);
+    font-size: 12px;
+  }
+
+  .compact-permissions,
+  .student-link-cell { grid-column: 1 / -1; }
+  .account-actions { grid-column: 1 / -1; border-top: 1px solid var(--color-line); padding-top: 10px; }
 
 }
 </style>

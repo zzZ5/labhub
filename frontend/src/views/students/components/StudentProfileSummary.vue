@@ -10,9 +10,9 @@
         <p>{{ student.research_direction || student.research_topic || '研究方向待补充' }}</p>
       </div>
       <div class="profile-actions">
-        <el-button v-if="student.can_edit" plain @click="$emit('edit', student)">编辑档案</el-button>
-        <el-button v-if="student.can_delete" plain type="danger" @click="$emit('delete', student)">删除档案</el-button>
         <el-button v-if="student.can_edit" type="primary" @click="$emit('upload')">上传资料</el-button>
+        <el-button v-if="student.can_edit" plain @click="$emit('edit', student)">编辑档案</el-button>
+        <ActionMenu v-if="student.can_delete" :items="dangerItems" @command="$emit('delete', student)" />
       </div>
     </div>
     <dl class="profile-list">
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StudentProfile } from '../../../api/students'
+import ActionMenu, { type ActionMenuItem } from '../../../components/ActionMenu.vue'
 
 const props = defineProps<{ student: StudentProfile }>()
 defineEmits<{
@@ -39,6 +40,7 @@ const advisorText = computed(() => {
   if (props.student.advisor_names?.length) return props.student.advisor_names.join('、')
   return props.student.supervisor_name || '-'
 })
+const dangerItems: ActionMenuItem[] = [{ command: 'delete', label: '删除档案', danger: true }]
 </script>
 
 <style scoped>
@@ -108,20 +110,19 @@ const advisorText = computed(() => {
 
 .profile-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 22px;
   margin: 14px 0 0;
   border-top: 1px solid var(--color-line);
-  padding-top: 12px;
+  padding-top: 8px;
 }
 
 .profile-list div {
   display: grid;
-  gap: 4px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  padding: 9px 11px;
-  background: var(--color-panel);
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  border-bottom: 1px solid var(--color-line);
+  padding: 8px 0;
 }
 
 .profile-list dt,
@@ -150,5 +151,8 @@ const advisorText = computed(() => {
   .profile-list {
     grid-template-columns: 1fr;
   }
+
+  .profile-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-actions :deep(.el-button) { width: 100%; margin: 0; }
 }
 </style>

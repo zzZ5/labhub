@@ -27,6 +27,17 @@ export function formatOptionalFileSize(size?: number | null, fallback = '大小�
   return size ? formatFileSize(size) : fallback
 }
 
+export function middleEllipsisFilename(filename: string, maxLength = 46) {
+  if (!filename || filename.length <= maxLength) return filename
+  const dotIndex = filename.lastIndexOf('.')
+  const extension = dotIndex > 0 && filename.length - dotIndex <= 12 ? filename.slice(dotIndex) : ''
+  const basename = extension ? filename.slice(0, dotIndex) : filename
+  const available = Math.max(12, maxLength - extension.length - 1)
+  const headLength = Math.ceil(available * 0.62)
+  const tailLength = Math.max(4, available - headLength)
+  return `${basename.slice(0, headLength)}…${basename.slice(-tailLength)}${extension}`
+}
+
 export function validateUploadFile(file: File, maxSize = MAX_UPLOAD_SIZE) {
   if (file.size > maxSize) return `文件不能超过 ${formatFileSize(maxSize)}。`
   return ''

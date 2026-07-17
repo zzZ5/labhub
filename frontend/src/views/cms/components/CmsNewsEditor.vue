@@ -1,6 +1,6 @@
 <template>
   <section class="editor-grid news-editor-grid">
-    <CmsContentList title="新闻活动" action-label="新增新闻" :items="rows" :active-key="editingSlug" @create="resetNews" @edit="editNews" />
+    <CmsContentList class="news-content-list" title="新闻活动" action-label="新增新闻" :items="rows" :active-key="editingSlug" @create="resetNews" @edit="editNews" />
     <article class="card form-panel news-form-panel">
       <div class="form-heading"><div><span>{{ editingSlug ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '新闻活动' }}</h2></div></div>
       <el-form label-position="top">

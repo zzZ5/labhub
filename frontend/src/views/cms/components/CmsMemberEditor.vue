@@ -1,15 +1,8 @@
 <template>
   <section class="editor-grid">
-    <CmsImportStrip
-      description="批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。"
-      template-url="/templates/members-import-template.xlsx"
-      :loading="importing"
-      :progress="importProgress"
-      uploading-text="正在上传团队成员表，请不要关闭页面。"
-      processing-text="上传完成，正在写入团队成员。"
-      @import="emit('import', $event)"
-    />
-    <CmsContentList title="团队成员" action-label="新增成员" :items="rows" :active-key="editingId || ''" @create="resetMember" @edit="editMember" />
+    <CmsContentList title="团队成员" action-label="新增成员" :items="rows" :active-key="editingId || ''" @create="resetMember" @edit="editMember">
+      <template #tools><CmsImportStrip description="批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。" template-url="/templates/members-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传团队成员表，请不要关闭页面。" processing-text="上传完成，正在写入团队成员。" @import="emit('import', $event)" /></template>
+    </CmsContentList>
     <article class="card form-panel">
       <div class="form-heading">
         <div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.name || '团队成员' }}</h2></div>

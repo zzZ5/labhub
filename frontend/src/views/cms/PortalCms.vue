@@ -13,6 +13,13 @@
 
       <LoadErrorNotice v-if="cmsLoadError" :description="cmsLoadError" :retrying="cmsLoading" @retry="loadAll" />
 
+      <label class="cms-mobile-nav">
+        <span>内容栏目</span>
+        <select v-model="activeTab">
+          <option v-for="item in cmsSections" :key="item.value" :value="item.value">{{ item.label }}</option>
+        </select>
+      </label>
+
       <el-tabs v-model="activeTab" v-loading="cmsLoading" class="cms-tabs">
         <el-tab-pane label="站点首页" name="site">
           <CmsSiteEditor :site-form="siteForm" :contact-form="contactForm" :saving="siteSaving" :progress="siteProgress" @save="saveHome" />
@@ -98,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
@@ -117,6 +124,18 @@ import { useCmsImport } from './composables/useCmsImport'
 import { useCmsSiteSettings } from './composables/useCmsSiteSettings'
 
 const activeTab = ref('site')
+const cmsSections = [
+  { value: 'site', label: '站点首页' },
+  { value: 'footer', label: '页脚设置' },
+  { value: 'banners', label: '首页横幅' },
+  { value: 'research', label: '研究方向' },
+  { value: 'members', label: '团队成员' },
+  { value: 'news', label: '新闻活动' },
+  { value: 'publications', label: '论文成果' },
+  { value: 'projects', label: '科研项目' },
+  { value: 'patents', label: '专利成果' },
+  { value: 'awards', label: '获奖成果' },
+]
 const {
   siteForm, contactForm, externalLinks,
   logo: siteLogo, favicon: siteFavicon, heroImage: siteHeroImage,
@@ -260,8 +279,28 @@ onMounted(loadAll)
   box-shadow: none;
 }
 
+.cms-mobile-nav { display: none; }
+
 .site-form-panel {
   min-height: 100%;
+}
+
+@media (min-width: 1280px) {
+  .site-home-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  .site-home-form > .form-section {
+    min-height: 0;
+    margin-bottom: 0;
+  }
+
+  .site-home-form > .form-section:first-child {
+    grid-row: 1 / span 2;
+  }
 }
 
 .form-section {
@@ -620,6 +659,11 @@ onMounted(loadAll)
   padding: 10px 12px;
   background: var(--color-panel);
 }
+
+.news-content-list .content-list-scroll { gap: 4px; }
+.news-content-list .content-row { margin-bottom: 0; padding: 7px 9px; }
+.news-content-list .content-row strong { display: block; overflow: hidden; font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.news-content-list .content-row span { margin-top: 3px; font-size: 11px; line-height: 1.3; }
 
 .cms-import-block {
   grid-column: 1 / -1;
@@ -1072,11 +1116,22 @@ onMounted(loadAll)
     padding: 6px;
   }
 
+  .cms-mobile-nav {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 10px;
+    background: #fff;
+  }
+
+  .cms-mobile-nav span { color: var(--color-deep-green); font-size: 13px; font-weight: 650; }
+  .cms-mobile-nav select { width: 100%; min-height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 10px; background: #fff; color: var(--color-text); font: inherit; }
+
   .cms-tabs .el-tabs__header {
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    margin-bottom: 8px;
+    display: none;
   }
 
   .cms-tabs .el-tabs__nav-wrap {

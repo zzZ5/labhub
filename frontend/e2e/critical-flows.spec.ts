@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 import { installMockApi } from './mockApi'
+
+async function selectCmsSection(page: Page, value: string, label: string) {
+  const mobileSelect = page.locator('.cms-mobile-nav select')
+  if (await mobileSelect.isVisible()) await mobileSelect.selectOption(value)
+  else await page.getByRole('tab', { name: label }).click()
+}
 
 test('未登录访问内部页面后可登录并回到原页面', async ({ page }) => {
   await installMockApi(page, { authenticated: false })
@@ -146,8 +153,13 @@ test('门户新闻切换不串联 Word 文件状态，成果 Excel 可导入', a
   await installMockApi(page)
   await page.goto('/cms')
 
-  await page.getByRole('tab', { name: '新闻活动' }).click()
+  await selectCmsSection(page, 'news', '新闻活动')
   const newsPane = page.locator('#pane-news')
+  const newsRows = newsPane.locator('.content-row')
+  await expect(newsRows).not.toHaveCount(0)
+  for (const height of await newsRows.evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height))) {
+    expect(height).toBeLessThan(80)
+  }
   await newsPane.getByRole('button', { name: /Word 新闻稿/ }).click()
   await expect(page.getByText('first.docx')).toBeVisible()
   await newsPane.getByRole('button', { name: /普通新闻稿/ }).click()
@@ -158,7 +170,7 @@ test('门户新闻切换不串联 Word 文件状态，成果 Excel 可导入', a
   await newsPane.getByRole('button', { name: '保存' }).click()
   expect((await saveRequest).postDataJSON().title).toBe('更新后的普通新闻稿')
 
-  await page.getByRole('tab', { name: '论文成果' }).click()
+  await selectCmsSection(page, 'publications', '论文成果')
   await page.locator('#pane-publications input[type="file"][accept=".xlsx"]').setInputFiles({
     name: 'publications.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -170,7 +182,7 @@ test('门户新闻切换不串联 Word 文件状态，成果 Excel 可导入', a
 test('门户横幅列表可读取当前图片和文件信息', async ({ page }) => {
   await installMockApi(page)
   await page.goto('/cms')
-  await page.getByRole('tab', { name: '首页横幅' }).click()
+  await selectCmsSection(page, 'banners', '首页横幅')
   await page.getByRole('button', { name: /团队合影/ }).click()
   await expect(page.getByRole('img', { name: '图片预览' })).toBeVisible()
   await expect(page.locator('.file-meta').getByText(/8.0 KB/)).toBeVisible()
@@ -179,14 +191,15 @@ test('门户横幅列表可读取当前图片和文件信息', async ({ page }) 
   await expect(page.locator('.banner-safe-area')).toHaveCount(2)
 })
 
-test('门户内容各栏目在窄屏可横向访问且不会被裁掉', async ({ page }) => {
+test('门户内容各栏目在窄屏可完整选择且不会被裁掉', async ({ page }) => {
   await installMockApi(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/cms')
 
-  await expect(page.getByRole('tab', { name: '站点首页' })).toBeVisible()
-  await page.getByRole('tab', { name: '获奖成果' }).scrollIntoViewIfNeeded()
-  await expect(page.getByRole('tab', { name: '获奖成果' })).toBeVisible()
+  const sectionSelect = page.locator('.cms-mobile-nav select')
+  await expect(sectionSelect).toBeVisible()
+  await sectionSelect.selectOption('awards')
+  await expect(page.locator('#pane-awards')).toBeVisible()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(1)
 })

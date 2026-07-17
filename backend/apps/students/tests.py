@@ -1,5 +1,7 @@
 ﻿from django.core.files.base import ContentFile
 import base64
+from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -10,6 +12,7 @@ from django.urls import reverse
 from apps.accounts.models import Role, RoleCode, UserProfile, UserRole
 
 from .models import StudentArchiveFile, StudentProfile
+from .preview import refresh_archive_preview_pdf
 from .services import can_view_student_profile
 
 User = get_user_model()
@@ -270,6 +273,34 @@ def test_approved_member_can_view_and_download_archive_file(client, other_user, 
     assert detail_response.status_code == 200
     assert preview_response.status_code == 200
     assert download_response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_office_preview_uses_isolated_libreoffice_profile(monkeypatch, student_profile):
+    archive = StudentArchiveFile.objects.create(
+        student=student_profile,
+        file_type=StudentArchiveFile.FileType.PROPOSAL_REPORT,
+        title="开题报告",
+        file=ContentFile(b"docx", name="proposal.docx"),
+    )
+    captured = {}
+
+    monkeypatch.setattr("apps.students.preview.shutil.which", lambda _name: "/usr/bin/libreoffice")
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["env"] = kwargs["env"]
+        outdir = Path(command[command.index("--outdir") + 1])
+        (outdir / "source.pdf").write_bytes(b"%PDF-1.4 test")
+        return Mock(returncode=0, stderr=b"", stdout=b"")
+
+    monkeypatch.setattr("apps.students.preview.subprocess.run", fake_run)
+
+    assert refresh_archive_preview_pdf(archive)
+    assert any(item.startswith("-env:UserInstallation=file:") for item in captured["command"])
+    assert captured["env"]["HOME"]
+    archive.refresh_from_db()
+    assert archive.preview_status == "ready"
 
 
 @pytest.mark.django_db

@@ -1,12 +1,8 @@
 <template>
   <section class="editor-grid">
-    <CmsImportStrip
-      description="批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。"
-      template-url="/templates/awards-import-template.xlsx" :loading="importing" :progress="importProgress"
-      uploading-text="正在上传获奖成果表，请不要关闭页面。" processing-text="上传完成，正在写入获奖成果。"
-      @import="emit('import', $event)"
-    />
-    <CmsContentList title="获奖成果" action-label="新增获奖" :items="rows" :active-key="editingId || ''" @create="resetAward" @edit="editAward" />
+    <CmsContentList title="获奖成果" action-label="新增获奖" :items="rows" :active-key="editingId || ''" @create="resetAward" @edit="editAward">
+      <template #tools><CmsImportStrip description="批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。" template-url="/templates/awards-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传获奖成果表，请不要关闭页面。" processing-text="上传完成，正在写入获奖成果。" @import="emit('import', $event)" /></template>
+    </CmsContentList>
     <article class="card form-panel">
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '获奖成果' }}</h2></div></div>
       <el-form label-position="top">

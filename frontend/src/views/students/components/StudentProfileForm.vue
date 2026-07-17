@@ -40,11 +40,6 @@
       </div>
     </el-form>
 
-    <div v-else class="relation-note">
-      <strong>账号与档案</strong>
-      <p>成员账号用于登录，学生档案保存学生信息和个人资料。</p>
-      <el-button v-if="currentStudent?.can_edit" plain @click="$emit('editCurrent')">编辑当前档案</el-button>
-    </div>
   </aside>
 </template>
 

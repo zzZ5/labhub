@@ -3,7 +3,12 @@
     <div :class="['file-kind-icon', kind]"><el-icon><component :is="icon" /></el-icon></div>
     <div class="file-info-copy">
       <div class="file-title-line"><strong :title="title">{{ title }}</strong><span>{{ typeLabel }}</span></div>
-      <div class="file-meta"><span v-if="filename" :title="filename">{{ filename }}</span><span v-if="size">{{ formatFileSize(size) }}</span></div>
+      <div class="file-meta">
+        <span v-if="filename" :title="filename">{{ displayFilename }}</span>
+        <span v-if="size">{{ formatFileSize(size) }}</span>
+        <time v-if="uploadedAt" :datetime="uploadedAt">{{ formatDate(uploadedAt) }}</time>
+        <span v-if="status">{{ status }}</span>
+      </div>
       <p v-if="description">{{ description }}</p>
     </div>
     <div class="file-info-actions"><slot name="actions" /></div>
@@ -13,11 +18,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Document, Files, PictureFilled, VideoCamera } from '@element-plus/icons-vue'
-import { formatFileSize } from '../utils/files'
+import { formatFileSize, middleEllipsisFilename } from '../utils/files'
 
-const props = withDefaults(defineProps<{ title: string; filename?: string; size?: number; description?: string; mimeType?: string }>(), {
-  filename: '', size: 0, description: '', mimeType: '',
+const props = withDefaults(defineProps<{ title: string; filename?: string; size?: number; description?: string; mimeType?: string; uploadedAt?: string; status?: string }>(), {
+  filename: '', size: 0, description: '', mimeType: '', uploadedAt: '', status: '',
 })
+const displayFilename = computed(() => middleEllipsisFilename(props.filename))
 const kind = computed(() => {
   const value = `${props.filename} ${props.mimeType}`.toLowerCase()
   if (/\.pdf\b|application\/pdf/.test(value)) return 'pdf'
@@ -29,6 +35,12 @@ const kind = computed(() => {
 })
 const typeLabel = computed(() => ({ pdf: 'PDF', word: 'Word', ppt: 'PPT', image: '图片', video: '视频', file: '文件' })[kind.value])
 const icon = computed(() => kind.value === 'image' ? PictureFilled : kind.value === 'video' ? VideoCamera : kind.value === 'ppt' ? Files : Document)
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+}
 </script>
 
 <style scoped>
@@ -54,6 +66,7 @@ const icon = computed(() => kind.value === 'image' ? PictureFilled : kind.value 
 .file-title-line strong, .file-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-title-line strong { color: var(--color-deep-green); font-size: 14px; }
 .file-title-line span, .file-meta { color: var(--color-muted); font-size: 12px; }
+.file-meta > * + *::before { margin-right: 8px; color: var(--color-border); content: '·'; }
 .file-info-copy p { overflow: hidden; margin: 3px 0 0; color: var(--color-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .file-info-actions { justify-content: flex-end; white-space: nowrap; }
 

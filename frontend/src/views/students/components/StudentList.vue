@@ -26,7 +26,7 @@
       <span class="student-list-copy">
         <strong>{{ student.name }}</strong>
         <span>{{ student.degree_label }} · {{ student.grade || '未填写年级' }}</span>
-        <small>{{ student.user_email || student.user_username || '未绑定账号' }}</small>
+        <small>{{ student.research_direction || student.research_topic || '研究方向待补充' }}</small>
       </span>
     </button>
     <div v-if="!total" class="empty-note">{{ allCount ? '没有找到匹配学生。' : '暂无学生档案。' }}</div>
@@ -63,7 +63,7 @@ defineEmits<{
   top: 96px;
   max-height: calc(100vh - 120px);
   overflow: auto;
-  padding: 16px;
+  padding: 14px;
 }
 
 .student-list:hover {
@@ -116,8 +116,8 @@ defineEmits<{
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  padding: 9px 11px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
   background: #fff;
   color: var(--color-text);
   text-align: left;

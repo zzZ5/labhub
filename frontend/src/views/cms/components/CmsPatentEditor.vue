@@ -1,12 +1,8 @@
 <template>
   <section class="editor-grid">
-    <CmsImportStrip
-      description="批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。"
-      template-url="/templates/patents-import-template.xlsx" :loading="importing" :progress="importProgress"
-      uploading-text="正在上传专利成果表，请不要关闭页面。" processing-text="上传完成，正在写入专利成果。"
-      @import="emit('import', $event)"
-    />
-    <CmsContentList title="专利成果" action-label="新增专利" :items="rows" :active-key="editingId || ''" @create="resetPatent" @edit="editPatent" />
+    <CmsContentList title="专利成果" action-label="新增专利" :items="rows" :active-key="editingId || ''" @create="resetPatent" @edit="editPatent">
+      <template #tools><CmsImportStrip description="批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。" template-url="/templates/patents-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传专利成果表，请不要关闭页面。" processing-text="上传完成，正在写入专利成果。" @import="emit('import', $event)" /></template>
+    </CmsContentList>
     <article class="card form-panel">
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '专利成果' }}</h2></div></div>
       <el-form label-position="top">

@@ -11,7 +11,8 @@
     <div v-if="files.length" class="file-grid">
       <FileInfoRow
         v-for="file in files" :key="file.id" :title="file.title" :filename="file.original_filename"
-        :size="file.file_size" :description="file.description || file.file_type_label"
+        :size="file.file_size" :description="file.description || file.file_type_label" :uploaded-at="file.uploaded_at"
+        :status="archivePreviewStatusLabel(file)"
       >
         <template #actions>
           <a v-if="canPreviewArchive(file)" class="file-primary-action" :href="previewStudentArchiveFileUrl(file)" target="_blank" rel="noreferrer">
@@ -21,7 +22,7 @@
           <a class="file-secondary-action" :href="downloadStudentArchiveFileUrl(file)">
             <el-icon><Download /></el-icon>下载原文件
           </a>
-          <el-button v-if="file.can_delete" size="small" plain type="danger" @click="$emit('delete', file)">删除</el-button>
+          <ActionMenu v-if="file.can_delete" :items="deleteItems" @command="$emit('delete', file)" />
         </template>
       </FileInfoRow>
     </div>
@@ -32,6 +33,7 @@
 <script setup lang="ts">
 import { Download, View } from '@element-plus/icons-vue'
 import FileInfoRow from '../../../components/FileInfoRow.vue'
+import ActionMenu, { type ActionMenuItem } from '../../../components/ActionMenu.vue'
 import {
   downloadStudentArchiveFileUrl,
   previewStudentArchiveFileUrl,
@@ -40,6 +42,7 @@ import {
 
 defineProps<{ files: StudentArchiveFile[] }>()
 defineEmits<{ delete: [file: StudentArchiveFile] }>()
+const deleteItems: ActionMenuItem[] = [{ command: 'delete', label: '删除资料', danger: true }]
 
 function archiveFilename(file: StudentArchiveFile) {
   return (file.original_filename || file.file || file.title).toLowerCase()
@@ -72,6 +75,13 @@ function archivePreviewStatus(file: StudentArchiveFile) {
   if (file.preview_status === 'failed') return '预览生成失败'
   if (archiveKind(file) === 'ppt' || archiveKind(file) === 'word') return '暂无在线预览'
   return '不可查看'
+}
+
+function archivePreviewStatusLabel(file: StudentArchiveFile) {
+  if (file.preview_status === 'pending') return '预览处理中'
+  if (file.preview_status === 'failed') return '预览失败'
+  if (file.preview_status === 'ready') return '可在线查看'
+  return file.file_type_label || ''
 }
 
 </script>

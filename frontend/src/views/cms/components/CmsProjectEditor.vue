@@ -1,13 +1,8 @@
 <template>
   <section class="editor-grid">
-    <CmsImportStrip
-      description="批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。"
-      template-url="/templates/projects-import-template.xlsx"
-      :loading="importing" :progress="importProgress"
-      uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。"
-      @import="emit('import', $event)"
-    />
-    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="resetProject" @edit="editProject" />
+    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="resetProject" @edit="editProject">
+      <template #tools><CmsImportStrip description="批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。" template-url="/templates/projects-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。" @import="emit('import', $event)" /></template>
+    </CmsContentList>
     <article class="card form-panel">
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '科研项目' }}</h2></div></div>
       <el-form label-position="top">

@@ -8,7 +8,7 @@
 
       <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="reloadStudentsPage" />
 
-      <section :class="['student-workspace', { 'show-mobile-detail': mobileDetailOpen }]">
+      <section :class="['student-workspace', { 'show-mobile-detail': mobileDetailOpen, 'is-editing': formVisible }]">
         <StudentList
           class="student-directory"
           v-model:keyword="studentKeyword"
@@ -36,6 +36,7 @@
         </main>
 
         <StudentProfileForm
+          v-if="formVisible"
           class="student-editor"
           :open="formVisible"
           :student="editingStudent"
@@ -258,7 +259,8 @@ async function confirmDeleteArchiveFile(file: StudentArchiveFile) {
 async function loadStudents(preferredId?: number) {
   students.value = await fetchStudentProfiles()
   const ownStudent = route.query.mine === '1' ? students.value.find((student) => student.user === session.user?.id) : undefined
-  reconcileSelection(preferredId || ownStudent?.id)
+  const queryStudentId = Math.max(0, Number(route.query.student) || 0)
+  reconcileSelection(preferredId || ownStudent?.id || queryStudentId)
 }
 
 async function loadUsers() {
@@ -292,6 +294,11 @@ watch(() => route.query.mine, (mine) => {
   if (ownStudent) selectStudent(ownStudent.id)
 })
 
+watch(() => route.query.student, (value) => {
+  const id = Math.max(0, Number(value) || 0)
+  if (id && students.value.some((student) => student.id === id)) selectStudent(id)
+})
+
 watch(filteredStudents, (matches) => {
   if (!studentKeyword.value.trim() || matches.length !== 1) return
   selectDirectoryStudent(matches[0].id)
@@ -317,16 +324,21 @@ watch(filteredStudents, (matches) => {
 
 .student-workspace {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 330px;
+  grid-template-columns: 286px minmax(0, 1fr);
   gap: 18px;
+  align-items: start;
 }
 
-@media (max-width: 1280px) {
+.student-workspace.is-editing {
+  grid-template-columns: 270px minmax(0, 1fr) 340px;
+}
+
+@media (max-width: 1400px) {
   .student-workspace {
     grid-template-columns: 260px minmax(0, 1fr);
   }
 
-  .edit-panel {
+  .student-editor {
     grid-column: 1 / -1;
   }
 }
@@ -346,6 +358,9 @@ watch(filteredStudents, (matches) => {
   .student-workspace.show-mobile-detail .student-directory {
     display: none !important;
   }
+
+  .student-workspace.is-editing .archive-panel { display: none; }
+  .student-workspace.is-editing .student-editor { display: block; grid-column: auto; }
 
   .mobile-directory-back {
     display: inline-flex;
