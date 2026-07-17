@@ -1,7 +1,8 @@
 <template>
-  <section class="editor-grid news-editor-grid">
-    <CmsContentList class="news-content-list" title="新闻活动" action-label="新增新闻" :items="rows" :active-key="editingSlug" @create="resetNews" @edit="editNews" />
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList class="news-content-list" title="新闻活动" action-label="新增新闻" :items="rows" :active-key="editingSlug" @create="createNews" @edit="openNews" />
     <article class="card form-panel news-form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingSlug ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '新闻活动' }}</h2></div></div>
       <el-form label-position="top">
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
@@ -49,6 +50,7 @@ import ImageCropField from '../../../components/ImageCropField.vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
@@ -60,6 +62,7 @@ defineProps<{
 const emit = defineEmits<{ changed: [] }>()
 
 const editorRef = ref<{ insertImage: (src: string, alt?: string) => void } | null>(null)
+const mobileEditorOpen = ref(false)
 const editingSlug = ref('')
 const editingId = ref<number | null>(null)
 const currentWordFile = ref('')
@@ -98,6 +101,16 @@ function resetNews() {
     title: '', summary: '', content: '', cover_image: undefined, word_file: undefined, event_date: '', location: '',
     category_id: null, status: 'published', visibility: 'public', is_pinned: false,
   })
+}
+
+function createNews() {
+  resetNews()
+  mobileEditorOpen.value = true
+}
+
+function openNews(item: CmsNewsArticle) {
+  editNews(item)
+  mobileEditorOpen.value = true
 }
 
 function editNews(item: CmsNewsArticle) {
@@ -139,7 +152,10 @@ async function deleteNews() {
   const slug = editingSlug.value
   if (!slug) return
   const succeeded = await remove('确定删除这条新闻吗？', () => cmsApi.deleteNews(slug))
-  if (succeeded) resetNews()
+  if (succeeded) {
+    resetNews()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function ensureNewsDraft() {

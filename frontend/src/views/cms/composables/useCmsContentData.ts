@@ -41,10 +41,15 @@ export function useCmsContentData(onBaseContentLoaded?: BaseContentLoaded) {
   const awardItems = ref<Award[]>([])
 
   const researchRows = computed<CmsListRow<ResearchDirection>[]>(() =>
-    researchItems.value.map((item) => ({ key: item.slug, title: item.title, meta: item.summary || item.slug, source: item })),
+    prioritizeSortedItems(researchItems.value).map((item) => ({
+      key: item.slug,
+      title: item.title,
+      meta: compactMeta([homepageSortText(item.sort_order), item.summary || item.slug]),
+      source: item,
+    })),
   )
   const bannerRows = computed<CmsListRow<HomeBanner>[]>(() =>
-    bannerItems.value.map((item) => ({
+    prioritizeSortedItems(bannerItems.value).map((item) => ({
       key: item.id,
       title: item.title || '未命名横幅',
       meta: `${item.is_active === false ? '停用' : '启用'} · 排序 ${item.sort_order || 0} · ${displayFileLabel(item.image) || '未上传图片'}`,
@@ -52,10 +57,10 @@ export function useCmsContentData(onBaseContentLoaded?: BaseContentLoaded) {
     })),
   )
   const memberRows = computed<CmsListRow<Member>[]>(() =>
-    memberItems.value.map((item) => ({
+    prioritizeSortedItems(memberItems.value).map((item) => ({
       key: item.id,
       title: item.name,
-      meta: `${item.sort_order ? `排序 ${item.sort_order}` : '不展示'} · ${roleText(item.role_type) || '身份头衔待补充'} · ${item.research_direction || '研究方向待补充'}`,
+      meta: compactMeta([item.sort_order ? `排序 ${item.sort_order}` : '不展示', roleText(item.role_type), item.research_direction]),
       source: item,
     })),
   )
@@ -68,16 +73,16 @@ export function useCmsContentData(onBaseContentLoaded?: BaseContentLoaded) {
     })),
   )
   const publicationRows = computed<CmsListRow<Publication>[]>(() =>
-    publicationItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.year} · ${item.journal || '期刊待补充'}`, source: item })),
+    prioritizeSortedItems(publicationItems.value).map((item) => ({ key: item.id, title: item.title, meta: compactMeta([homepageSortText(item.sort_order), visibilityText(item.visibility), item.year, item.journal]), source: item })),
   )
   const projectRows = computed<CmsListRow<Project>[]>(() =>
-    projectItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.funding_source || '资助来源待补充'} · ${item.status || '状态待补充'}`, source: item })),
+    prioritizeSortedItems(projectItems.value).map((item) => ({ key: item.id, title: item.title, meta: compactMeta([homepageSortText(item.sort_order), visibilityText(item.visibility), item.funding_source, item.status]), source: item })),
   )
   const patentRows = computed<CmsListRow<Patent>[]>(() =>
-    patentItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.patent_number || '专利号待补充'} · ${item.status || '状态待补充'}`, source: item })),
+    prioritizeSortedItems(patentItems.value).map((item) => ({ key: item.id, title: item.title, meta: compactMeta([homepageSortText(item.sort_order), visibilityText(item.visibility), item.patent_number, item.status]), source: item })),
   )
   const awardRows = computed<CmsListRow<Award>[]>(() =>
-    awardItems.value.map((item) => ({ key: item.id, title: item.title, meta: `${visibilityText(item.visibility)} · ${item.award_level || '等级待补充'} · ${item.award_date || '日期待补充'}`, source: item })),
+    prioritizeSortedItems(awardItems.value).map((item) => ({ key: item.id, title: item.title, meta: compactMeta([homepageSortText(item.sort_order), visibilityText(item.visibility), item.award_level, item.award_date]), source: item })),
   )
 
   const cmsOverview = computed(() => [
@@ -228,9 +233,36 @@ function roleText(role: string) {
 }
 
 function statusText(status: string) {
-  return status === 'published' ? '已发布' : status === 'draft' ? '草稿' : status || '状态待补充'
+  return status === 'published' ? '已发布' : status === 'draft' ? '草稿' : status === 'archived' ? '已归档' : status
 }
 
 function visibilityText(visibility?: string) {
-  return visibility === 'internal' ? '组内可见' : '公开展示'
+  const labels: Record<string, string> = {
+    public: '公开',
+    members: '成员可见',
+    admins: '管理员可见',
+  }
+  return visibility ? labels[visibility] || visibility : ''
+}
+
+function compactMeta(values: Array<string | number | null | undefined>) {
+  return values.filter((value) => value !== '' && value !== null && value !== undefined).join(' · ')
+}
+
+function homepageSortText(value?: number | null) {
+  const order = Number(value) || 0
+  return order > 0 ? `首页排序 ${order}` : '首页默认'
+}
+
+function prioritizeSortedItems<T extends { sort_order?: number | null }>(items: T[]) {
+  return items
+    .map((item, index) => ({ item, index, order: Number(item.sort_order) || 0 }))
+    .sort((a, b) => {
+      const aPrioritized = a.order > 0
+      const bPrioritized = b.order > 0
+      if (aPrioritized !== bPrioritized) return aPrioritized ? -1 : 1
+      if (aPrioritized && a.order !== b.order) return a.order - b.order
+      return a.index - b.index
+    })
+    .map(({ item }) => item)
 }

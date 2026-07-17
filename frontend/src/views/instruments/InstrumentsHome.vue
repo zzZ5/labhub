@@ -1,13 +1,6 @@
 <template>
   <InternalLayout title="仪器平台">
     <section class="instrument-page">
-      <InternalPageHeader>
-        <p>查看课题组仪器设备状态、位置、图片和使用说明，便于组内成员快速了解设备情况。</p>
-        <template #summary><div class="compact-summary">
-          <span v-for="item in statusSummary" :key="item.label"><strong>{{ item.value }}</strong>{{ item.label }}</span>
-        </div></template>
-      </InternalPageHeader>
-
       <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="loadInstruments" />
 
       <section class="content-grid">
@@ -20,7 +13,9 @@
           @create="openCreate"
           @import="handleExcelImport"
         />
+        <ListSkeleton v-if="loading" :rows="6" thumbnail />
         <InstrumentList
+          v-else
           :instruments="pagedInstruments"
           :total="filteredInstruments.length"
           :page="instrumentPage"
@@ -49,8 +44,8 @@ import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import ListSkeleton from '../../components/ListSkeleton.vue'
 import {
   createInstrument,
   fetchInstruments,
@@ -97,11 +92,6 @@ const filteredInstruments = computed(() => {
 const instrumentTotal = computed(() => filteredInstruments.value.length)
 const { totalPages: instrumentTotalPages, paginate: paginateInstruments } = useListPagination(instrumentTotal, { page: instrumentPage })
 const pagedInstruments = computed(() => paginateInstruments(filteredInstruments.value))
-const statusSummary = computed(() => [
-  { label: '设备总数', value: instruments.value.length, note: '当前台账设备' },
-  { label: '正常设备', value: instruments.value.filter((item) => item.status === 'normal').length, note: '可按线下台账使用' },
-  { label: '维护/停用', value: instruments.value.filter((item) => item.status !== 'normal').length, note: '需联系负责人确认' },
-])
 
 async function loadInstruments() {
   loading.value = true

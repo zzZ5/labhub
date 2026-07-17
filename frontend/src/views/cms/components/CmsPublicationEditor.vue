@@ -1,9 +1,10 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="论文成果" action-label="新增论文" :items="rows" :active-key="editingId || ''" @create="resetPublication" @edit="editPublication">
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="论文成果" action-label="新增论文" :items="rows" :active-key="editingId || ''" @create="createPublication" @edit="openPublication">
       <template #tools><CmsImportStrip description="批量导入论文成果，优先按 DOI 更新；没有 DOI 时按题目和年份匹配。" template-url="/templates/publications-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传论文成果表，请不要关闭页面。" processing-text="上传完成，正在写入论文成果。" @import="emit('import', $event)" /></template>
     </CmsContentList>
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '论文成果' }}</h2></div></div>
       <el-form label-position="top">
         <el-form-item label="GB/T 7714-2025格式引文"><el-input v-model="form.citation_text" type="textarea" :rows="4" placeholder="例：作者. 论文题目. 期刊, 2026, 14(5): 123765. DOI: 10.xxxx/xxxxx" /></el-form-item>
@@ -40,6 +41,7 @@ import type { Publication } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
@@ -70,6 +72,7 @@ type PublicationPreview = Omit<Pick<ParsedPublicationCitation, 'authors' | 'titl
 }
 
 const editingId = ref<number | null>(null)
+const mobileEditorOpen = ref(false)
 const currentPdf = ref('')
 const form = reactive<PublicationForm>({
   citation_text: '', title: '', authors: '', journal: '', year: new Date().getFullYear(), volume: '', issue: '', pages: '', doi: '',
@@ -104,6 +107,16 @@ function resetPublication() {
     impact_factor: '', jcr_partition: '', cas_partition: '', abstract: '', pdf_file: undefined, visibility: 'public', sort_order: 0,
   })
   clearPreview()
+}
+
+function createPublication() {
+  resetPublication()
+  mobileEditorOpen.value = true
+}
+
+function openPublication(item: Publication) {
+  editPublication(item)
+  mobileEditorOpen.value = true
 }
 
 function editPublication(item: Publication) {
@@ -162,13 +175,19 @@ async function savePublication() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updatePublication(id, payload(), onUploadProgress) : cmsApi.createPublication(payload(), onUploadProgress),
   )
-  if (succeeded) resetPublication()
+  if (succeeded) {
+    resetPublication()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deletePublication() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这篇论文吗？', () => cmsApi.deletePublication(id))
-  if (succeeded) resetPublication()
+  if (succeeded) {
+    resetPublication()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

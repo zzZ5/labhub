@@ -22,7 +22,7 @@ const { progress, showLabel, visible } = useNetworkActivity()
 .global-loading {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-loading);
   pointer-events: none;
   visibility: hidden;
 }
@@ -60,11 +60,11 @@ const { progress, showLabel, visible } = useNetworkActivity()
   align-items: center;
   gap: 9px;
   min-height: 36px;
-  border: 1px solid rgba(0, 135, 60, 0.16);
+  border: 1px solid var(--color-border-accent);
   border-radius: 7px;
   padding: 0 13px;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 8px 22px rgba(31, 61, 43, 0.1);
+  box-shadow: var(--shadow-overlay);
   color: var(--color-deep-green);
   font-size: 13px;
   font-weight: 600;

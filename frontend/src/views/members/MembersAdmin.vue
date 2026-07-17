@@ -1,19 +1,6 @@
 ﻿<template>
   <InternalLayout title="成员管理">
     <section class="member-page">
-      <InternalPageHeader class="member-heading">
-        <p>学校身份、成员状态和系统权限分别维护。毕业或离组不会自动删除账号和历史档案。</p>
-        <template #summary><div class="compact-summary member-summary">
-            <span><strong>{{ users.length }}</strong>个账号</span>
-            <span v-if="pendingUsers.length"><strong>{{ pendingUsers.length }}</strong>个待审核</span>
-            <span v-if="studentMissingArchiveCount"><strong>{{ studentMissingArchiveCount }}</strong>名学生待建档</span>
-        </div></template>
-        <template #actions>
-          <el-button plain :loading="loading" @click="reload">刷新</el-button>
-          <el-button type="primary" @click="openCreateDrawer">新建账号</el-button>
-        </template>
-      </InternalPageHeader>
-
       <LoadErrorNotice v-if="errorMessage" :description="errorMessage" :retrying="loading" @retry="reload" />
 
       <section class="member-grid">
@@ -55,7 +42,7 @@
         <div class="panel-heading account-toolbar">
           <div>
             <h2>全部成员</h2>
-            <p>本科生、硕士生、博士生账号可一键生成学生档案；已有档案的账号不会重复创建。</p>
+            <p>共 {{ users.length }} 个账号<span v-if="studentMissingArchiveCount">，{{ studentMissingArchiveCount }} 名学生待建档</span></p>
           </div>
           <FilterToolbar has-filters>
             <template #primary><el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" /></template>
@@ -65,14 +52,19 @@
               <el-select v-model="schoolFilter" placeholder="学校身份"><el-option label="全部身份" value="all" /><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select>
               <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
             </template>
+            <template #actions>
+              <el-button plain :loading="loading" @click="reload">刷新</el-button>
+              <el-button type="primary" @click="openCreateDrawer">新建账号</el-button>
+            </template>
           </FilterToolbar>
         </div>
 
-        <div class="account-list">
+        <ListSkeleton v-if="loading && !users.length" :rows="8" thumbnail />
+        <div v-else class="account-list">
           <article v-for="user in pagedUsers" :key="user.id" class="account-row-card">
             <div class="member-cell">
               <div class="account-avatar"><img v-if="user.profile?.avatar" :src="user.profile.avatar" :alt="displayUser(user)" /><span v-else>{{ initials(displayUser(user)) }}</span></div>
-              <div><strong>{{ displayUser(user) }}</strong><small>{{ user.email || user.username }}</small></div>
+              <div><strong :title="displayUser(user)">{{ displayUser(user) }}</strong><small :title="user.email || user.username">{{ user.email || user.username }}</small></div>
             </div>
             <div class="compact-tags member-status-cell" data-label="状态与身份">
               <span :class="['status-tag', user.profile?.is_approved ? 'normal' : 'pending']">{{ user.profile?.is_approved ? '已审核' : '待审核' }}</span>
@@ -93,12 +85,13 @@
             </div>
           </article>
         </div>
-        <div v-if="!filteredUsers.length" class="empty-note">没有符合条件的成员。</div>
+        <EmptyState v-if="!loading && !filteredUsers.length" compact title="没有匹配成员" description="请调整搜索词或筛选条件。" />
         <AppPagination :page="memberPage" :total-pages="memberTotalPages" @change="memberPage = $event" />
       </article>
 
-      <el-drawer v-model="accountDrawerVisible" :title="editingUserId ? '编辑成员账号' : '新建成员账号'" size="440px">
-        <el-form label-position="top" class="create-form">
+      <el-drawer v-model="accountDrawerVisible" class="entity-form-drawer" :title="editingUserId ? '编辑账号' : '新建账号'" size="min(520px, 100%)" destroy-on-close>
+        <p class="entity-form-intro">维护登录信息、学校身份、成员状态和系统权限。</p>
+        <el-form label-position="top" class="entity-form create-form">
           <el-form-item label="姓名"><el-input v-model="accountForm.real_name" placeholder="请输入成员姓名" /></el-form-item>
           <el-form-item label="头像">
             <ImageCropField v-model="accountForm.avatar" :existing-url="accountAvatarPreview" :existing-size="accountAvatarSize" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="accountAvatarPreview = $event" />
@@ -113,7 +106,7 @@
           <el-form-item label="账号状态"><el-switch v-model="accountForm.is_approved" active-text="已审核" inactive-text="待审核" /></el-form-item>
           <el-form-item v-if="editingUserId" label="登录状态"><el-switch v-model="accountForm.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
         </el-form>
-        <template #footer><div class="drawer-footer"><el-button @click="accountDrawerVisible = false">取消</el-button><el-button type="primary" :loading="accountSaving" @click="submitAccountForm">{{ editingUserId ? '保存账号' : '创建账号' }}</el-button></div></template>
+        <template #footer><div class="entity-form-footer"><el-button @click="accountDrawerVisible = false">取消</el-button><el-button type="primary" :loading="accountSaving" @click="submitAccountForm">{{ editingUserId ? '保存修改' : '创建账号' }}</el-button></div></template>
       </el-drawer>
 
       <el-dialog v-model="passwordVisible" title="重置密码" width="420px">
@@ -147,8 +140,9 @@ import AppPagination from '../../components/AppPagination.vue'
 import ActionMenu, { type ActionMenuItem } from '../../components/ActionMenu.vue'
 import FilterToolbar from '../../components/FilterToolbar.vue'
 import ImageCropField from '../../components/ImageCropField.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import ListSkeleton from '../../components/ListSkeleton.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
@@ -595,14 +589,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 <style scoped>
 .member-page {
   display: grid;
-  gap: 20px;
-}
-
-.member-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
 }
 
 .heading-actions,
@@ -621,10 +608,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 
 .panel:hover {
   transform: none;
-}
-
-.member-summary {
-  margin-top: 6px;
 }
 
 .member-grid {
@@ -700,8 +683,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 .panel-heading p,
 .panel-heading span,
 .review-card span,
-.member-cell small,
-.empty-note {
+.member-cell small {
   margin: 4px 0 0;
   color: var(--color-muted);
   font-size: 14px;
@@ -737,6 +719,15 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   align-items: center;
   gap: 11px;
   min-width: 0;
+}
+
+.member-cell > div:last-child { min-width: 0; }
+
+.member-cell strong,
+.member-cell small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .account-avatar {
@@ -826,6 +817,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   border-radius: var(--radius-md);
   padding: 14px 16px;
   background: var(--color-panel);
+  min-width: 0;
 }
 
 .account-row-card:hover {
@@ -867,6 +859,8 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 .student-link {
+  max-width: 100%;
+  overflow: hidden;
   border: 1px solid rgba(0, 135, 60, 0.18);
   border-radius: 999px;
   padding: 5px 10px;
@@ -874,6 +868,8 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   color: var(--color-cau-green);
   font-size: 13px;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .archive-create-button {
@@ -896,10 +892,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   opacity: 0.62;
 }
 
-.empty-note {
-  padding: 14px 0 2px;
-}
-
 .create-form {
   display: grid;
 }
@@ -912,12 +904,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 .create-form :deep(.el-checkbox-group) {
   display: grid;
   gap: 8px;
-}
-
-.drawer-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 .password-alert {
@@ -942,7 +928,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 @media (max-width: 980px) {
-  .member-heading,
   .account-toolbar {
     display: grid;
   }

@@ -1,7 +1,7 @@
 <template>
   <header class="internal-page-header">
-    <div class="internal-page-header__copy">
-      <div class="internal-page-header__description"><slot /></div>
+    <div v-if="$slots.default || $slots.summary" class="internal-page-header__copy">
+      <div v-if="$slots.default" class="internal-page-header__description"><slot /></div>
       <div v-if="$slots.summary" class="internal-page-header__summary"><slot name="summary" /></div>
     </div>
     <div v-if="$slots.actions" class="internal-page-header__actions"><slot name="actions" /></div>
@@ -13,16 +13,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
-  border-bottom: 1px solid var(--color-line);
-  padding: 2px 0 var(--space-3);
+  min-height: 36px;
 }
 
 .internal-page-header__copy {
-  display: grid;
+  display: flex;
+  align-items: center;
   min-width: 0;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .internal-page-header__description :deep(p) {
@@ -38,6 +38,14 @@
   min-width: 0;
 }
 
+.internal-page-header__summary :deep(.compact-summary) {
+  gap: 8px 18px;
+}
+
+.internal-page-header__summary :deep(.compact-summary strong) {
+  font-size: 15px;
+}
+
 .internal-page-header__actions {
   display: flex;
   align-items: center;
@@ -48,9 +56,8 @@
 
 @media (max-width: 720px) {
   .internal-page-header {
-    display: grid;
-    gap: var(--space-3);
-    padding-bottom: var(--space-3);
+    gap: var(--space-2);
+    min-height: 36px;
   }
 
   .internal-page-header__actions {

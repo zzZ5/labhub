@@ -3,12 +3,14 @@
     <PortalPageHeader title="新闻活动" description="汇集组内动态、学术交流、科研进展、成果荣誉与招生招聘信息。" />
     <section class="page-section">
       <div class="container">
-        <div class="filter-row">
-          <button :class="{ active: !activeCategory }" @click="activeCategory = ''">全部</button>
+        <div class="filter-row" role="group" aria-label="按新闻分类筛选">
+          <button type="button" :class="{ active: !activeCategory }" :aria-pressed="!activeCategory" @click="activeCategory = ''">全部</button>
           <button
             v-for="category in categories"
             :key="category.slug"
             :class="{ active: activeCategory === category.slug }"
+            :aria-pressed="activeCategory === category.slug"
+            type="button"
             @click="activeCategory = category.slug"
           >
             {{ category.name }}
@@ -208,11 +210,6 @@ onMounted(async () => {
   overflow: hidden;
   padding: 0;
   background: var(--color-panel-strong);
-}
-
-.news-media.is-empty,
-.news-media.is-empty .news-image-placeholder {
-  aspect-ratio: 16 / 4.5;
 }
 
 .news-card img {

@@ -1,9 +1,10 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="团队成员" action-label="新增成员" :items="rows" :active-key="editingId || ''" @create="resetMember" @edit="editMember">
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="团队成员" action-label="新增成员" :items="rows" :active-key="editingId || ''" @create="createMember" @edit="openMember">
       <template #tools><CmsImportStrip description="批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。" template-url="/templates/members-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传团队成员表，请不要关闭页面。" processing-text="上传完成，正在写入团队成员。" @import="emit('import', $event)" /></template>
     </CmsContentList>
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading">
         <div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.name || '团队成员' }}</h2></div>
       </div>
@@ -38,6 +39,7 @@ import ImageCropField from '../../../components/ImageCropField.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
@@ -62,6 +64,7 @@ type MemberForm = Record<string, unknown> & {
   sort_order: number
 }
 const editingId = ref<number | null>(null)
+const mobileEditorOpen = ref(false)
 const currentAvatar = ref('')
 const currentAvatarSize = ref(0)
 const form = reactive<MemberForm>({ name: '', role_type: '', research_direction: '', email: '', avatar: undefined, profile: '', sort_order: 0 })
@@ -72,6 +75,16 @@ function resetMember() {
   currentAvatar.value = ''
   currentAvatarSize.value = 0
   Object.assign(form, { name: '', role_type: '', research_direction: '', email: '', avatar: undefined, profile: '', sort_order: 0 })
+}
+
+function createMember() {
+  resetMember()
+  mobileEditorOpen.value = true
+}
+
+function openMember(item: Member) {
+  editMember(item)
+  mobileEditorOpen.value = true
 }
 
 function editMember(item: Member) {
@@ -98,13 +111,19 @@ async function saveMember() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updateMember(id, form, onUploadProgress) : cmsApi.createMember(form, onUploadProgress),
   )
-  if (succeeded) resetMember()
+  if (succeeded) {
+    resetMember()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deleteMember() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这个团队成员吗？', () => cmsApi.deleteMember(id))
-  if (succeeded) resetMember()
+  if (succeeded) {
+    resetMember()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

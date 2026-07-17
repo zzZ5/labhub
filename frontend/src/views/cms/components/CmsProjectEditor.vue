@@ -1,9 +1,10 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="resetProject" @edit="editProject">
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="createProject" @edit="openProject">
       <template #tools><CmsImportStrip description="批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。" template-url="/templates/projects-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。" @import="emit('import', $event)" /></template>
     </CmsContentList>
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '科研项目' }}</h2></div></div>
       <el-form label-position="top">
         <el-form-item label="项目名称"><el-input v-model="form.title" /></el-form-item>
@@ -40,6 +41,7 @@ import type { Project } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
@@ -60,6 +62,7 @@ type ProjectForm = Record<string, unknown> & {
   sort_order: number
 }
 const editingId = ref<number | null>(null)
+const mobileEditorOpen = ref(false)
 const form = reactive<ProjectForm>({
   title: '', project_number: '', funding_source: '', principal_investigator: '', start_date: '', end_date: '',
   amount: '', status: '', visibility: 'public', description: '', sort_order: 0,
@@ -72,6 +75,16 @@ function resetProject() {
     title: '', project_number: '', funding_source: '', principal_investigator: '', start_date: '', end_date: '',
     amount: '', status: '', visibility: 'public', description: '', sort_order: 0,
   })
+}
+
+function createProject() {
+  resetProject()
+  mobileEditorOpen.value = true
+}
+
+function openProject(item: Project) {
+  editProject(item)
+  mobileEditorOpen.value = true
 }
 
 function editProject(item: Project) {
@@ -100,13 +113,19 @@ async function saveProject() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updateProject(id, form, onUploadProgress) : cmsApi.createProject(form, onUploadProgress),
   )
-  if (succeeded) resetProject()
+  if (succeeded) {
+    resetProject()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deleteProject() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这个科研项目吗？', () => cmsApi.deleteProject(id))
-  if (succeeded) resetProject()
+  if (succeeded) {
+    resetProject()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

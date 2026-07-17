@@ -19,9 +19,9 @@
       </template>
       <template v-if="canManage" #actions>
         <input ref="excelInput" class="hidden-file-input" type="file" accept=".xlsx" @change="selectExcel" />
-        <button type="button" @click="$emit('create')">新建设备</button>
+        <el-button type="primary" @click="$emit('create')">新建设备</el-button>
         <el-dropdown trigger="click">
-          <button class="secondary-action more-action" type="button" aria-label="更多仪器操作"><el-icon><MoreFilled /></el-icon>更多</button>
+          <button class="more-action" type="button" aria-label="更多仪器操作"><el-icon><MoreFilled /></el-icon>更多</button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item><a class="dropdown-link" href="/templates/instruments-import-template.xlsx" download>下载导入模板</a></el-dropdown-item>
@@ -102,8 +102,8 @@ function selectExcel(event: Event) {
   box-shadow: 0 0 0 3px rgba(0, 135, 60, 0.08);
 }
 
-.instrument-toolbar button,
-.toolbar-link {
+.toolbar-link,
+.instrument-toolbar .more-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -120,14 +120,14 @@ function selectExcel(event: Event) {
 }
 
 .toolbar-link,
-.instrument-toolbar .secondary-action {
+.instrument-toolbar .more-action {
   border-color: rgba(0, 135, 60, 0.22);
   background: #fff;
   color: var(--color-cau-green);
 }
 
 .toolbar-link:hover,
-.instrument-toolbar .secondary-action:hover {
+.instrument-toolbar .more-action:hover {
   background: var(--color-eco-green);
 }
 

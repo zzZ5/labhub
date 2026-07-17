@@ -3,7 +3,7 @@
     <RouterLink class="back-link" to="/">返回官网</RouterLink>
     <div class="login-card card">
       <div>
-        <p class="section-kicker">中农雨磷内部平台</p>
+        <p class="section-kicker">{{ brand.siteName ? `${brand.siteName}内部平台` : '内部平台' }}</p>
         <h1>内部科研管理平台</h1>
         <p>请使用课题组账号登录。新账号通过管理员审核后即可访问内部平台。</p>
       </div>
@@ -22,14 +22,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useSessionStore } from '../../stores/session'
+import { useSiteBrandStore } from '../../stores/siteBrand'
 
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+const brand = useSiteBrandStore()
 const username = ref('')
 const password = ref('')
 const error = ref('')
@@ -38,6 +40,8 @@ const redirectTo = computed(() => {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
   return redirect.startsWith('/') ? redirect : '/dashboard'
 })
+
+onMounted(() => brand.load())
 
 async function submit() {
   error.value = ''

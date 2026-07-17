@@ -1,7 +1,8 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="首页横幅" action-label="新增横幅" :items="rows" :active-key="editingId || ''" @create="resetBanner" @edit="editBanner" />
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="首页横幅" action-label="新增横幅" :items="rows" :active-key="editingId || ''" @create="createBanner" @edit="openBanner" />
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading">
         <div>
           <span>{{ editingId ? '正在编辑' : '新增内容' }}</span>
@@ -13,7 +14,7 @@
         <img :src="defaultHero" alt="默认横幅预览" />
         <div>
           <strong>默认横幅</strong>
-          <span>{{ siteName || '中农雨磷' }}</span>
+          <span v-if="siteName">{{ siteName }}</span>
           <small v-if="siteSubtitle">{{ siteSubtitle }}</small>
           <small>{{ displayFileLabel(defaultHero) }}</small>
           <small>没有轮播横幅时首页使用此图；新增横幅后优先展示列表中的横幅。</small>
@@ -66,6 +67,7 @@ import { cmsApi } from '../../../api/cms'
 import type { HomeBanner } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
@@ -79,6 +81,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
+const mobileEditorOpen = ref(false)
 const editingId = ref<number | null>(null)
 const currentImage = ref('')
 const currentImageSize = ref(0)
@@ -109,6 +112,16 @@ function resetBanner() {
   Object.assign(form, { title: '', subtitle: '', image: undefined, link: '', sort_order: 0, is_active: true })
 }
 
+function createBanner() {
+  resetBanner()
+  mobileEditorOpen.value = true
+}
+
+function openBanner(item: HomeBanner) {
+  editBanner(item)
+  mobileEditorOpen.value = true
+}
+
 function editBanner(item: HomeBanner) {
   editingId.value = item.id
   currentImage.value = item.image || ''
@@ -133,14 +146,20 @@ async function saveBanner() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updateHomeBanner(id, form, onUploadProgress) : cmsApi.createHomeBanner(form, onUploadProgress),
   )
-  if (succeeded) resetBanner()
+  if (succeeded) {
+    resetBanner()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deleteBanner() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这张首页横幅吗？', () => cmsApi.deleteHomeBanner(id))
-  if (succeeded) resetBanner()
+  if (succeeded) {
+    resetBanner()
+    mobileEditorOpen.value = false
+  }
 }
 </script>
 

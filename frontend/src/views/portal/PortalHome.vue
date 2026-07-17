@@ -19,7 +19,7 @@
           />
           <ImagePlaceholder v-else class="hero-fallback" label="横幅图片暂不可用" text="横幅图片暂不可用" />
         </div>
-        <div class="hero-caption">
+        <div v-if="activeHeroTitle || activeHeroSubtitle" class="hero-caption">
           <h1>{{ activeHeroTitle }}</h1>
           <span v-if="activeHeroSubtitle">{{ activeHeroSubtitle }}</span>
         </div>
@@ -47,14 +47,11 @@
       <div class="container intro-grid">
         <div :class="['intro-main', { 'is-empty': !introDescription }]">
           <div class="intro-heading">
-            <span>{{ siteName }}</span>
+            <span v-if="siteName">{{ siteName }}</span>
             <h2>课题组简介</h2>
           </div>
           <div v-if="introDescription" class="intro-body">
             <p v-if="introDescription">{{ introDescription }}</p>
-          </div>
-          <div class="intro-actions">
-            <RouterLink class="primary-action" to="/research">研究方向</RouterLink>
           </div>
         </div>
       </div>
@@ -65,9 +62,8 @@
         <SectionHeader title="研究方向" />
         <div class="research-grid">
           <RouterLink v-for="item in displayResearchDirections" :key="item.title" class="card research-card" :to="{ path: item.to, query: { from: route.fullPath } }">
-            <component :is="item.icon" />
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
+            <span class="research-card-icon"><component :is="item.icon" /></span>
+            <div><h3>{{ item.title }}</h3><p v-if="item.description">{{ item.description }}</p></div>
           </RouterLink>
         </div>
         <RouterLink class="section-link" to="/research">查看全部研究方向</RouterLink>
@@ -76,7 +72,7 @@
 
     <section class="page-section publication-section">
       <div class="container publication-grid">
-        <div>
+        <div class="publication-summary">
           <SectionHeader title="科研成果" description="展示课题组近期公开发表和授权、立项、获奖等成果动态；完整论文、项目、专利与获奖信息可进入科研成果页查看。" />
           <div class="stats-row compact-stats">
             <div v-for="item in displayStats" :key="item.label">
@@ -125,8 +121,8 @@
                 <h3>{{ member.name }}</h3>
                 <ArrowRight class="member-arrow" />
               </div>
-              <span class="member-role">{{ member.role }}</span>
-              <p>{{ member.focus }}</p>
+              <span v-if="member.role" class="member-role">{{ member.role }}</span>
+              <p v-if="member.focus">{{ member.focus }}</p>
             </div>
           </RouterLink>
         </div>
@@ -148,9 +144,9 @@
               <ImagePlaceholder v-else class="news-image-placeholder" :label="`${item.title}暂无封面`" text="暂无封面" />
             </div>
             <div class="news-card-content">
-              <span>{{ item.date }} · {{ item.category }}</span>
+              <span v-if="item.meta">{{ item.meta }}</span>
               <h3>{{ item.title }}</h3>
-              <p>{{ item.summary }}</p>
+              <p v-if="item.summary">{{ item.summary }}</p>
             </div>
           </RouterLink>
         </div>
@@ -161,7 +157,7 @@
     <section v-if="contactDescription || contactEmail" class="join-section">
       <div class="container join-card">
         <div>
-          <h2>加入我们</h2>
+          <h2 v-if="contactTitle">{{ contactTitle }}</h2>
           <p>{{ contactDescription }}</p>
         </div>
         <a v-if="contactEmail" :href="`mailto:${contactEmail}`">联系实验室</a>
@@ -233,11 +229,15 @@ type HomeAchievement = {
   dateRank: number
 }
 
-const siteName = computed(() => siteSetting.value.site_name || '中农雨磷')
-const heroSubtitle = computed(() => siteSetting.value.hero_subtitle || '聚焦微生物生态、有机废弃物资源转化与高值产品开发')
+const HOME_SECTION_DEFAULT_COUNT = 4
+const HOME_SECTION_MAX_COUNT = 10
+
+const siteName = computed(() => siteSetting.value.site_name || '')
+const heroSubtitle = computed(() => siteSetting.value.hero_subtitle || '')
 const siteDescription = computed(() => siteSetting.value.description || '')
 const introDescription = computed(() => siteDescription.value)
 const contactDescription = computed(() => contactInfo.value.content || '')
+const contactTitle = computed(() => contactInfo.value.title || '')
 const contactEmail = computed(() => contactInfo.value.email || siteSetting.value.contact_email || '')
 const bannerIntervalMs = computed(() => {
   const seconds = Number(siteSetting.value.banner_interval_seconds || 6)
@@ -321,9 +321,15 @@ const displayStats = computed(() => {
 const displayResearchDirections = computed(() => {
   if (!apiResearchDirections.value.length) return []
   const icons = [Orange, WindPower, MostlyCloudy, DataAnalysis, Cpu, SetUp]
-  return apiResearchDirections.value.slice(0, 6).map((item, index) => ({
+  const ranked = apiResearchDirections.value
+    .filter((item) => (item.sort_order ?? 0) > 0)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const selected = ranked.length
+    ? ranked.slice(0, HOME_SECTION_MAX_COUNT)
+    : apiResearchDirections.value.slice(0, HOME_SECTION_DEFAULT_COUNT)
+  return selected.map((item, index) => ({
     title: item.title,
-    description: item.summary || '研究方向简介待补充。',
+    description: item.summary || '',
     to: `/research/${item.slug}`,
     icon: icons[index % icons.length],
   }))
@@ -357,7 +363,7 @@ const displayAchievements = computed(() => {
       type: 'project' as const,
       badge: '项目',
       title: project.title,
-      source: [project.funding_source || '科研项目', project.status].filter(Boolean).join(' · '),
+      source: [project.funding_source, project.status].filter(Boolean).join(' · '),
       to: `/publications/projects/${project.id}`,
       sortOrder: project.sort_order ?? 0,
       dateRank: dateRank(project.start_date),
@@ -367,7 +373,7 @@ const displayAchievements = computed(() => {
       type: 'patent' as const,
       badge: '专利',
       title: patent.title,
-      source: [patent.patent_number || '专利成果', patent.status].filter(Boolean).join(' · '),
+      source: [patent.patent_number, patent.status].filter(Boolean).join(' · '),
       to: `/publications/patents/${patent.id}`,
       sortOrder: patent.sort_order ?? 0,
       dateRank: dateRank(patent.authorization_date || patent.application_date),
@@ -377,7 +383,7 @@ const displayAchievements = computed(() => {
       type: 'award' as const,
       badge: '获奖',
       title: award.title,
-      source: [award.award_level || '获奖成果', award.award_date].filter(Boolean).join(' · '),
+      source: [award.award_level, award.award_date].filter(Boolean).join(' · '),
       to: `/publications/awards/${award.id}`,
       sortOrder: award.sort_order ?? 0,
       dateRank: dateRank(award.award_date),
@@ -387,52 +393,34 @@ const displayAchievements = computed(() => {
   const visibleItems = items.filter((item) => item.sortOrder > 0)
   if (!visibleItems.length) {
     return items
-      .filter((item) => item.type === 'paper' && item.sortOrder === 0)
       .sort((a, b) => b.dateRank - a.dateRank || b.id - a.id)
-      .slice(0, 4)
+      .slice(0, HOME_SECTION_DEFAULT_COUNT)
   }
-  const typeOrder: HomeAchievement['type'][] = ['paper', 'project', 'patent', 'award']
-  const sortOrders = Array.from(new Set(visibleItems.map((item) => item.sortOrder))).sort((a, b) => a - b)
-  const ordered: HomeAchievement[] = []
-
-  sortOrders.forEach((sortOrder) => {
-    const buckets = typeOrder.map((type) =>
-      visibleItems
-        .filter((item) => item.sortOrder === sortOrder && item.type === type)
-        .sort((a, b) => b.dateRank - a.dateRank),
-    )
-    const maxLength = Math.max(...buckets.map((bucket) => bucket.length))
-    for (let index = 0; index < maxLength; index += 1) {
-      buckets.forEach((bucket) => {
-        if (bucket[index]) ordered.push(bucket[index])
-      })
-    }
-  })
-
-  return ordered.slice(0, 4)
+  return visibleItems
+    .sort((a, b) => a.sortOrder - b.sortOrder || b.dateRank - a.dateRank || b.id - a.id)
+    .slice(0, HOME_SECTION_MAX_COUNT)
 })
 
 const displayMembers = computed(() => {
   return apiMembers.value.slice(0, 6).map((member) => ({
     name: member.name,
     role: memberIdentity(member),
-    focus: member.research_direction || '农业生态环境过程',
+    focus: member.research_direction || '',
     avatar: member.avatar || '',
     to: `/team/${member.id}`,
   }))
 })
 
 function memberIdentity(member: Member) {
-  return member.role_label || member.role_type || '团队成员'
+  return member.role_label || member.role_type || ''
 }
 
 const displayNews = computed(() => {
   return apiNews.value.slice(0, 3).map((item) => ({
     slug: item.slug,
-    date: item.event_date || '近期',
-    category: item.category?.name || '新闻活动',
+    meta: [item.event_date, item.category?.name].filter(Boolean).join(' · '),
     title: item.title,
-    summary: item.summary || '新闻摘要待补充。',
+    summary: item.summary || '',
     image: item.cover_image || '',
   }))
 })
@@ -445,10 +433,10 @@ onMounted(async () => {
     fetchResearchDirections(),
     fetchMembers(),
     fetchNews(),
-    fetchPublications({ page_size: 24, ordering: '-sort_order,-year' }),
-    fetchProjects({ page_size: 18, ordering: '-sort_order,-start_date' }),
-    fetchPatents({ page_size: 18, ordering: '-sort_order,-application_date' }),
-    fetchAwards({ page_size: 18, ordering: '-sort_order,-award_date' }),
+    fetchPublications({ page_size: 100, ordering: '-sort_order,-year' }),
+    fetchProjects({ page_size: 100, ordering: '-sort_order,-start_date' }),
+    fetchPatents({ page_size: 100, ordering: '-sort_order,-application_date' }),
+    fetchAwards({ page_size: 100, ordering: '-sort_order,-award_date' }),
     fetchPublicationStats(),
   ])
   if (setting.status === 'fulfilled') siteSetting.value = setting.value
@@ -649,20 +637,6 @@ onUnmounted(() => {
   background: #fff;
 }
 
-.primary-action,
-.secondary-action {
-  min-height: 42px;
-  padding: 10px 20px;
-}
-
-.intro-actions .primary-action {
-  box-shadow: none;
-}
-
-.intro-actions .secondary-action {
-  background: rgba(255, 255, 255, 0.72);
-}
-
 .intro-grid,
 .publication-grid {
   display: grid;
@@ -726,14 +700,6 @@ onUnmounted(() => {
   font-size: 18px;
   font-weight: 650;
   line-height: 1.6;
-}
-
-.intro-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  grid-column: 2;
-  margin-top: -4px;
 }
 
 .intro-detail {
@@ -838,15 +804,10 @@ onUnmounted(() => {
 }
 
 .intro-main.is-empty {
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: 1fr;
   align-items: center;
   padding-top: 20px;
   padding-bottom: 20px;
-}
-
-.intro-main.is-empty .intro-actions {
-  grid-column: auto;
-  margin: 0;
 }
 
 .research-section::before {
@@ -855,6 +816,28 @@ onUnmounted(() => {
 
 .publication-section {
   background: #fff;
+}
+
+.publication-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.publication-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.72fr);
+  align-items: end;
+  gap: 36px;
+}
+
+.publication-summary :deep(.section-header) {
+  margin-bottom: 0;
+}
+
+.publication-summary .compact-stats {
+  width: 100%;
+  max-width: none;
+  margin-top: 0;
 }
 
 .team-section {
@@ -875,6 +858,7 @@ onUnmounted(() => {
 }
 
 .research-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 22px;
 }
 
@@ -891,6 +875,8 @@ onUnmounted(() => {
 
 .latest-paper-panel {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
   gap: 8px;
   border-left: 0;
   padding: 0;
@@ -898,9 +884,14 @@ onUnmounted(() => {
 }
 
 .research-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
   border: 1px solid rgba(31, 61, 43, 0.1);
   border-radius: var(--radius-md);
-  min-height: 154px;
+  min-height: 126px;
+  padding: 18px 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92)),
     #fff;
@@ -918,6 +909,16 @@ onUnmounted(() => {
 
 .latest-paper-panel:hover {
   transform: none;
+}
+
+.research-card-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(0, 135, 60, 0.14);
+  border-radius: 50%;
+  background: var(--color-eco-green);
 }
 
 .research-card svg {
@@ -945,6 +946,10 @@ onUnmounted(() => {
   margin: 0;
   color: var(--color-muted);
   line-height: 1.7;
+}
+
+.research-card h3 {
+  margin-top: 1px;
 }
 
 .research-card p {
@@ -1215,10 +1220,13 @@ onUnmounted(() => {
 }
 
 .section-link.compact {
+  grid-column: 1 / -1;
+  justify-self: start;
   margin-top: 14px;
 }
 
 .empty-inline {
+  grid-column: 1 / -1;
   border: 1px dashed rgba(31, 61, 43, 0.16);
   border-radius: var(--radius-sm);
   padding: 18px;
@@ -1283,6 +1291,11 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .publication-summary {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
   .intro-grid {
     max-width: none;
   }
@@ -1290,11 +1303,6 @@ onUnmounted(() => {
   .intro-main {
     grid-template-columns: 1fr;
     gap: 22px;
-  }
-
-  .intro-actions {
-    grid-column: auto;
-    margin-top: 0;
   }
 
   .research-grid,
@@ -1362,16 +1370,13 @@ onUnmounted(() => {
     width: min(var(--container), calc(100% - 28px));
   }
 
-  .primary-action,
-  .secondary-action {
-    flex: 1 1 140px;
-    min-height: 42px;
-    padding: 10px 14px;
-  }
-
   .research-grid,
   .news-grid,
   .member-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .latest-paper-panel {
     grid-template-columns: 1fr;
   }
 
@@ -1393,7 +1398,7 @@ onUnmounted(() => {
 
   .research-card {
     min-height: 0;
-    padding: 17px;
+    padding: 15px;
   }
 
   .team-heading-row {

@@ -1,14 +1,5 @@
 <template>
   <InternalLayout title="内部资料库">
-    <InternalPageHeader class="library-note">
-      <p>集中管理实验方法、论文写作、项目经费、组会交流和组内制度资料，支持在线阅读和下载。</p>
-      <template #summary><div class="compact-summary">
-        <span><strong>{{ displayDocuments.length }}</strong>份资料</span>
-        <span><strong>{{ displayCategories.length }}</strong>个分类</span>
-        <span><strong>{{ previewableCount }}</strong>份可在线查看</span>
-      </div></template>
-    </InternalPageHeader>
-
     <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="reloadLibrary" />
 
     <section :class="['document-shell', { 'is-reading': previewDocument }]">
@@ -53,7 +44,7 @@
           @download="handleDownload"
         />
 
-        <div v-else-if="loading" class="card loading-panel">正在加载资料...</div>
+        <ListSkeleton v-else-if="loading" :rows="6" />
         <EmptyState
           v-else-if="!displayDocuments.length"
           :icon="Files"
@@ -100,8 +91,8 @@ import { Files } from '@element-plus/icons-vue'
 
 import EmptyState from '../../components/EmptyState.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import ListSkeleton from '../../components/ListSkeleton.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import FilterToolbar from '../../components/FilterToolbar.vue'
 import {
   createDocument,
@@ -169,7 +160,6 @@ const pagedReaderDocuments = computed(() => {
   return displayDocuments.value.slice(start, start + readerPageSize)
 })
 const previewUrl = computed(() => (previewDocument.value ? previewDocumentUrl(previewDocument.value) : ''))
-const previewableCount = computed(() => displayDocuments.value.filter((doc) => doc.can_preview).length)
 const activeCategoryName = computed(() => {
   if (!activeCategory.value) return '全部资料'
   return categoryName(displayCategories.value.find((item) => item.slug === activeCategory.value)) || '当前分类'
@@ -427,10 +417,6 @@ watch(readerTotalPages, (total) => {
 </script>
 
 <style scoped>
-.library-note {
-  margin-bottom: 14px;
-}
-
 .document-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -447,8 +433,7 @@ watch(readerTotalPages, (total) => {
   gap: 14px;
 }
 
-.filter-bar,
-.loading-panel {
+.filter-bar {
   padding: 14px;
 }
 
@@ -476,8 +461,7 @@ watch(readerTotalPages, (total) => {
   white-space: nowrap;
 }
 
-.filter-title span,
-.loading-panel {
+.filter-title span {
   color: var(--color-muted);
   font-size: 13px;
 }

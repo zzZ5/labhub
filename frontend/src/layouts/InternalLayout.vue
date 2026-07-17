@@ -17,7 +17,7 @@
 
     <section class="internal-main">
       <header class="internal-topbar">
-        <button class="mobile-menu-button" type="button" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen">
+        <button ref="menuButton" class="mobile-menu-button" type="button" :aria-expanded="menuOpen" :aria-label="menuOpen ? '关闭内部平台菜单' : '打开内部平台菜单'" @click="menuOpen = !menuOpen">
           <span></span>
           菜单
         </button>
@@ -47,7 +47,7 @@
       </header>
 
       <button v-if="menuOpen" class="mobile-menu-backdrop" type="button" aria-label="关闭菜单" @click="menuOpen = false"></button>
-      <nav class="mobile-menu" :class="{ open: menuOpen }" aria-label="移动端内部平台导航">
+      <nav ref="menuPanel" class="mobile-menu" :class="{ open: menuOpen }" aria-label="移动端内部平台导航">
         <RouterLink v-for="item in menu" :key="item.path" :to="item.path" @click="menuOpen = false">
           <component :is="item.icon" />
           <span>{{ item.label }}</span>
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown, Calendar, EditPen, Files, HomeFilled, Notebook, Odometer, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
 
@@ -74,6 +74,8 @@ defineProps<{
 }>()
 
 const menuOpen = ref(false)
+const menuButton = ref<HTMLButtonElement | null>(null)
+const menuPanel = ref<HTMLElement | null>(null)
 const baseMenu = [
   { label: '工作台', path: '/dashboard', icon: Odometer },
   { label: '内部资料', path: '/documents', icon: Files },
@@ -102,8 +104,14 @@ function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') menuOpen.value = false
 }
 
-watch(menuOpen, (open) => {
+watch(menuOpen, async (open, wasOpen) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  await nextTick()
+  if (open) {
+    menuPanel.value?.querySelector<HTMLElement>('a')?.focus()
+  } else if (wasOpen) {
+    menuButton.value?.focus()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -146,7 +154,7 @@ async function handleAccountCommand(command: string) {
   height: 100vh;
   overflow-y: auto;
   border-right: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--surface-white-strong);
   padding: 20px 14px;
 }
 
@@ -391,8 +399,8 @@ async function handleAccountCommand(command: string) {
     overflow-y: auto;
     border-right: 1px solid var(--color-border);
     padding: 14px;
-    background: #fff;
-    box-shadow: 12px 0 30px rgba(31, 61, 43, 0.1);
+    background: var(--color-white);
+    box-shadow: var(--shadow-drawer);
   }
 
   .mobile-menu.open {

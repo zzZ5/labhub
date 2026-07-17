@@ -9,6 +9,7 @@ export interface ResearchDirection {
   cover_image?: string
   cover_image_size?: number
   sort_order?: number
+  updated_at?: string
 }
 
 export interface SiteSetting {

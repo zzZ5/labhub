@@ -7,12 +7,6 @@ import { useCmsEditorMutation } from './useCmsEditorMutation'
 
 type CmsForm = Record<string, unknown>
 
-const defaultLinks = [
-  { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
-  { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
-  { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
-]
-
 export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
   const siteBrand = useSiteBrandStore()
   const editingSiteId = ref<number | null>(null)
@@ -24,18 +18,18 @@ export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
   const faviconSize = ref(0)
   const heroImageSize = ref(0)
   const siteForm = reactive<CmsForm>({
-    site_name: '中农雨磷',
-    site_subtitle: '中国农业大学资源与环境学院',
-    hero_subtitle: '聚焦微生物生态、有机废弃物资源转化与高值产品开发',
+    site_name: '',
+    site_subtitle: '',
+    hero_subtitle: '',
     banner_interval_seconds: 6,
     description: '', footer_text: '', contact_email: '', contact_phone: '', address: '',
     logo: undefined, favicon: undefined, hero_image: undefined,
   })
   const contactForm = reactive<CmsForm>({
-    title: '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
+    title: '',
     content: '', email: '', phone: '', address: '', map_url: '',
   })
-  const externalLinks = reactive(defaultLinks.map((link) => ({ ...link })))
+  const externalLinks = reactive(Array.from({ length: 3 }, () => ({ label: '', url: '' })))
   const { saving, progress, save } = useCmsEditorMutation(async () => {
     await afterChange()
     await siteBrand.load(true)
@@ -51,10 +45,10 @@ export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
     faviconSize.value = setting?.favicon_size || 0
     heroImageSize.value = setting?.hero_image_size || 0
     Object.assign(siteForm, {
-      site_name: setting?.site_name || '中农雨磷',
-      site_subtitle: setting?.site_subtitle || '中国农业大学资源与环境学院',
-      hero_subtitle: setting?.hero_subtitle || '聚焦微生物生态、有机废弃物资源转化与高值产品开发',
-      banner_interval_seconds: setting?.banner_interval_seconds || 6,
+      site_name: setting?.site_name || '',
+      site_subtitle: setting?.site_subtitle || '',
+      hero_subtitle: setting?.hero_subtitle || '',
+      banner_interval_seconds: setting?.banner_interval_seconds ?? 6,
       description: setting?.description || '',
       footer_text: setting?.footer_text || '',
       contact_email: setting?.contact_email || '',
@@ -66,7 +60,7 @@ export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
     })
     fillExternalLinks(setting?.external_links)
     Object.assign(contactForm, {
-      title: contact?.title || '欢迎对微生物生态与农业资源循环感兴趣的同学加入',
+      title: contact?.title || '',
       content: contact?.content || '',
       email: contact?.email || setting?.contact_email || '',
       phone: contact?.phone || setting?.contact_phone || '',
@@ -76,7 +70,7 @@ export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
   }
 
   function fillExternalLinks(links?: SiteSetting['external_links']) {
-    const nextLinks = links?.length ? links : defaultLinks
+    const nextLinks = links || []
     externalLinks.splice(0, externalLinks.length, ...nextLinks.slice(0, 5).map((link) => ({ label: link.label || '', url: link.url || '' })))
     while (externalLinks.length < 3) externalLinks.push({ label: '', url: '' })
   }
@@ -93,7 +87,6 @@ export function useCmsSiteSettings(afterChange: () => void | Promise<void>) {
 
   async function saveHome() {
     siteForm.contact_email = contactForm.email || siteForm.contact_email || ''
-    contactForm.title = '加入我们'
     contactForm.phone = ''
     contactForm.address = siteForm.address || ''
     contactForm.map_url = ''

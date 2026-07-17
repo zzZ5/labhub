@@ -1,9 +1,10 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="专利成果" action-label="新增专利" :items="rows" :active-key="editingId || ''" @create="resetPatent" @edit="editPatent">
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="专利成果" action-label="新增专利" :items="rows" :active-key="editingId || ''" @create="createPatent" @edit="openPatent">
       <template #tools><CmsImportStrip description="批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。" template-url="/templates/patents-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传专利成果表，请不要关闭页面。" processing-text="上传完成，正在写入专利成果。" @import="emit('import', $event)" /></template>
     </CmsContentList>
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '专利成果' }}</h2></div></div>
       <el-form label-position="top">
         <el-form-item label="专利名称"><el-input v-model="form.title" /></el-form-item>
@@ -30,6 +31,7 @@ import type { Patent } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
@@ -49,6 +51,7 @@ type PatentForm = Record<string, unknown> & {
   sort_order: number
 }
 const editingId = ref<number | null>(null)
+const mobileEditorOpen = ref(false)
 const currentPdf = ref('')
 const form = reactive<PatentForm>({ title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
 const { saving, progress, save, remove } = useCmsEditorMutation(async () => emit('changed'))
@@ -57,6 +60,16 @@ function resetPatent() {
   editingId.value = null
   currentPdf.value = ''
   Object.assign(form, { title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
+}
+
+function createPatent() {
+  resetPatent()
+  mobileEditorOpen.value = true
+}
+
+function openPatent(item: Patent) {
+  editPatent(item)
+  mobileEditorOpen.value = true
 }
 
 function editPatent(item: Patent) {
@@ -84,13 +97,19 @@ async function savePatent() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updatePatent(id, form, onUploadProgress) : cmsApi.createPatent(form, onUploadProgress),
   )
-  if (succeeded) resetPatent()
+  if (succeeded) {
+    resetPatent()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deletePatent() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这个专利成果吗？', () => cmsApi.deletePatent(id))
-  if (succeeded) resetPatent()
+  if (succeeded) {
+    resetPatent()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

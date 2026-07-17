@@ -2,7 +2,7 @@
 
 
 class SiteSetting(models.Model):
-    site_name = models.CharField("站点名称", max_length=120, default="中农雨磷")
+    site_name = models.CharField("站点名称", max_length=120, blank=True, default="")
     site_subtitle = models.CharField("站点副标题", max_length=200, blank=True)
     logo = models.ImageField("Logo", upload_to="portal/logos/", blank=True)
     favicon = models.ImageField("Favicon", upload_to="portal/favicons/", blank=True)

@@ -1,7 +1,8 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="研究方向" action-label="新增方向" :items="rows" :active-key="editingSlug" @create="resetResearch" @edit="editResearch" />
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="研究方向" action-label="新增方向" :items="rows" :active-key="editingSlug" @create="createResearch" @edit="openResearch" />
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading">
         <div>
           <span>{{ editingSlug ? '正在编辑' : '新增内容' }}</span>
@@ -30,6 +31,7 @@ import { cmsApi } from '../../../api/cms'
 import type { ResearchDirection } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
@@ -37,6 +39,7 @@ import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 defineProps<{ rows: CmsListRow<ResearchDirection>[] }>()
 
 const emit = defineEmits<{ changed: [] }>()
+const mobileEditorOpen = ref(false)
 const editingSlug = ref('')
 const currentCover = ref('')
 const currentCoverSize = ref(0)
@@ -55,6 +58,16 @@ function resetResearch() {
   currentCover.value = ''
   currentCoverSize.value = 0
   Object.assign(form, { title: '', summary: '', content: '', cover_image: undefined, sort_order: 0 })
+}
+
+function createResearch() {
+  resetResearch()
+  mobileEditorOpen.value = true
+}
+
+function openResearch(item: ResearchDirection) {
+  editResearch(item)
+  mobileEditorOpen.value = true
 }
 
 function editResearch(item: ResearchDirection) {
@@ -79,13 +92,19 @@ async function saveResearch() {
   const succeeded = await save((onUploadProgress) =>
     slug ? cmsApi.updateResearch(slug, form, onUploadProgress) : cmsApi.createResearch(form, onUploadProgress),
   )
-  if (succeeded) resetResearch()
+  if (succeeded) {
+    resetResearch()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deleteResearch() {
   const slug = editingSlug.value
   if (!slug) return
   const succeeded = await remove('确定删除这个研究方向吗？', () => cmsApi.deleteResearch(slug))
-  if (succeeded) resetResearch()
+  if (succeeded) {
+    resetResearch()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

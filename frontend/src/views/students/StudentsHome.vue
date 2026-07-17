@@ -1,14 +1,10 @@
 ﻿<template>
   <InternalLayout title="学生档案">
     <section class="student-page">
-      <InternalPageHeader class="student-heading">
-        <p>集中查看学生信息、导师关系和开题、中期、论文、答辩等归档资料。</p>
-        <template #actions><el-button v-if="canManageStudents" type="primary" @click="startCreate">新建学生档案</el-button></template>
-      </InternalPageHeader>
-
       <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="reloadStudentsPage" />
 
-      <section :class="['student-workspace', { 'show-mobile-detail': mobileDetailOpen, 'is-editing': formVisible }]">
+      <ListSkeleton v-if="loading && !students.length" :rows="7" thumbnail />
+      <section v-else :class="['student-workspace', { 'show-mobile-detail': mobileDetailOpen, 'is-editing': formVisible }]">
         <StudentList
           class="student-directory"
           v-model:keyword="studentKeyword"
@@ -19,7 +15,9 @@
           :selected-id="selectedStudent?.id || null"
           :page="studentPage"
           :total-pages="studentTotalPages"
+          :can-create="canManageStudents"
           @select="selectStudent"
+          @create="startCreate"
           @update:page="studentPage = $event"
         />
 
@@ -82,8 +80,8 @@ import {
   uploadStudentArchiveFile,
 } from '../../api/students'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import ListSkeleton from '../../components/ListSkeleton.vue'
 import { useSessionStore } from '../../stores/session'
 import StudentArchiveList from './components/StudentArchiveList.vue'
 import StudentArchiveUploadDialog from './components/StudentArchiveUploadDialog.vue'
@@ -314,10 +312,6 @@ watch(filteredStudents, (matches) => {
   gap: 14px;
 }
 
-.student-heading {
-  align-items: center;
-}
-
 .mobile-directory-back {
   display: none;
 }
@@ -329,28 +323,16 @@ watch(filteredStudents, (matches) => {
   align-items: start;
 }
 
-.student-workspace.is-editing {
-  grid-template-columns: 270px minmax(0, 1fr) 340px;
-}
-
 @media (max-width: 1400px) {
   .student-workspace {
     grid-template-columns: 260px minmax(0, 1fr);
   }
 
-  .student-editor {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 900px) {
-  .student-heading,
   .student-workspace {
     grid-template-columns: 1fr;
-  }
-
-  .student-heading {
-    display: grid;
   }
 
   .student-workspace:not(.show-mobile-detail) .archive-panel,
@@ -360,8 +342,6 @@ watch(filteredStudents, (matches) => {
   }
 
   .student-workspace.is-editing .archive-panel { display: none; }
-  .student-workspace.is-editing .student-editor { display: block; grid-column: auto; }
-
   .mobile-directory-back {
     display: inline-flex;
     align-items: center;

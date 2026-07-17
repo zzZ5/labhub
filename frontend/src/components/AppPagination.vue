@@ -43,7 +43,7 @@ function change(value: number) {
   min-height: 34px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--color-white);
   color: var(--color-deep-green);
   cursor: pointer;
   font: inherit;
@@ -52,8 +52,8 @@ function change(value: number) {
 }
 
 .page-nav:hover:not(:disabled) {
-  border-color: rgba(0, 135, 60, 0.35);
-  background: var(--color-eco-green);
+  border-color: var(--color-border-accent);
+  background: var(--surface-hover);
   color: var(--color-cau-green);
 }
 

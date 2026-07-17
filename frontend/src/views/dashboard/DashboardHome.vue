@@ -1,11 +1,6 @@
 <template>
   <InternalLayout title="内部工作台">
     <section class="dashboard-page">
-      <InternalPageHeader>
-        <p>快速进入常用内部模块，查看近期资料、设备状态和学生归档概况。</p>
-        <template #actions><RouterLink class="outline-action" to="/">返回门户首页</RouterLink></template>
-      </InternalPageHeader>
-
       <section class="quick-grid">
         <RouterLink v-for="item in quickLinks" :key="item.title" class="card quick-card" :to="item.to">
           <span>{{ item.kicker }}</span>
@@ -28,15 +23,13 @@
             <RouterLink to="/documents">进入资料库</RouterLink>
           </div>
           <div v-if="dashboard.latest_documents.length" class="stack-list">
-            <RouterLink v-for="doc in dashboard.latest_documents" :key="doc.id" class="list-row" :to="{ path: '/documents', query: { document: doc.id } }">
-              <div>
-                <strong>{{ doc.title }}</strong>
-                <span>{{ doc.category_name || '未分类' }} · {{ formatDate(doc.updated_at) }}</span>
-              </div>
-              <span class="row-link">查看</span>
+            <RouterLink v-for="doc in dashboard.latest_documents" :key="doc.id" class="compact-row-link" :to="{ path: '/documents', query: { document: doc.id } }">
+              <CompactDataRow :title="doc.title" :description="`${doc.category_name || '未分类'} · ${formatDate(doc.updated_at)}`">
+                <template #trailing><span class="row-link">查看</span></template>
+              </CompactDataRow>
             </RouterLink>
           </div>
-          <div v-else class="empty-note">暂无可查阅资料。</div>
+          <EmptyState v-else compact title="暂无近期资料" description="资料上传后会显示在这里。" />
         </article>
 
         <article class="card panel">
@@ -48,15 +41,13 @@
             <RouterLink to="/instruments">查看仪器平台</RouterLink>
           </div>
           <div v-if="dashboard.instrument_status.length" class="stack-list">
-            <RouterLink v-for="item in dashboard.instrument_status" :key="item.id" class="list-row" :to="`/instruments/${item.id}`">
-              <div>
-                <strong>{{ item.name }}</strong>
-                <span>{{ item.location_detail || '未填写位置' }}</span>
-              </div>
-              <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
+            <RouterLink v-for="item in dashboard.instrument_status" :key="item.id" class="compact-row-link" :to="`/instruments/${item.id}`">
+              <CompactDataRow :title="item.name" :description="item.location_detail || '未填写位置'">
+                <template #trailing><span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span></template>
+              </CompactDataRow>
             </RouterLink>
           </div>
-          <div v-else class="empty-note">当前没有需要关注的设备。</div>
+          <EmptyState v-else compact title="设备状态正常" description="当前没有维护中或停用的设备。" />
         </article>
 
         <article class="card panel wide-panel">
@@ -68,15 +59,13 @@
             <RouterLink to="/students">查看学生档案</RouterLink>
           </div>
           <div v-if="dashboard.student_archives.length" class="stack-list student-list">
-            <RouterLink v-for="student in dashboard.student_archives" :key="student.id" class="list-row student-row" :to="{ path: '/students', query: { student: student.id } }">
-              <div>
-                <strong>{{ student.name }}</strong>
-                <span>{{ degreeText(student.degree_type) }} {{ student.grade || '' }} · {{ student.latest_file_title || student.research_direction || '暂无近期材料' }}</span>
-              </div>
-              <span class="archive-count">{{ student.file_count }} 份资料</span>
+            <RouterLink v-for="student in dashboard.student_archives" :key="student.id" class="compact-row-link" :to="{ path: '/students', query: { student: student.id } }">
+              <CompactDataRow :title="student.name" :description="`${degreeText(student.degree_type)} ${student.grade || ''} · ${student.latest_file_title || student.research_direction || '暂无近期材料'}`">
+                <template #trailing><span class="archive-count">{{ student.file_count }} 份资料</span></template>
+              </CompactDataRow>
             </RouterLink>
           </div>
-          <div v-else class="empty-note">暂无可见学生档案。</div>
+          <EmptyState v-else compact title="暂无学生档案" description="建档后会显示最近更新的档案。" />
         </article>
       </section>
     </section>
@@ -88,7 +77,8 @@ import { computed, onMounted, reactive } from 'vue'
 
 import { fetchDashboard, type DashboardData } from '../../api/dashboard'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
+import CompactDataRow from '../../components/CompactDataRow.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()
@@ -174,8 +164,7 @@ function degreeText(degree: string) {
 }
 
 .quick-card p,
-.panel-heading p,
-.list-row div span {
+.panel-heading p {
   margin: 0;
   color: var(--color-muted);
   line-height: 1.55;
@@ -273,37 +262,21 @@ function degreeText(degree: string) {
   display: grid;
 }
 
-.list-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  min-height: 58px;
-  padding: 12px 0;
+.compact-row-link {
+  display: block;
+  min-width: 0;
   border-top: 1px solid var(--color-line);
   color: inherit;
 }
 
-.list-row:first-child {
+.compact-row-link:first-child {
   border-top: 0;
 }
 
-.list-row strong,
-.list-row span {
-  display: block;
-}
-
-.list-row:hover strong { color: var(--color-cau-green); }
 .row-link,
 .archive-count { flex: 0 0 auto; color: var(--color-cau-green); font-size: 13px; font-weight: 650; }
 .student-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
-.student-list .list-row:nth-child(2) { border-top: 0; }
-
-.empty-note {
-  padding: 14px 0 2px;
-  color: var(--color-muted);
-  font-size: 14px;
-}
+.student-list .compact-row-link:nth-child(2) { border-top: 0; }
 
 @media (max-width: 1080px) {
   .quick-grid {
@@ -324,12 +297,11 @@ function degreeText(degree: string) {
     grid-template-columns: 1fr;
   }
 
-  .student-list .list-row:nth-child(2) { border-top: 1px solid var(--color-line); }
+  .student-list .compact-row-link:nth-child(2) { border-top: 1px solid var(--color-line); }
 
   .wide-panel {
     grid-column: auto;
   }
 
-  .list-row { gap: 12px; }
 }
 </style>

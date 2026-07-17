@@ -7,17 +7,17 @@
         </span>
         <span class="brand-text">
           <strong>{{ footerName }}</strong>
-          <small>{{ siteSetting.site_subtitle || '中国农业大学资源与环境学院' }}</small>
+          <small v-if="siteSetting.site_subtitle">{{ siteSetting.site_subtitle }}</small>
         </span>
       </RouterLink>
 
-      <button class="nav-toggle" type="button" :aria-expanded="menuOpen" aria-label="打开导航菜单" @click="menuOpen = !menuOpen">
+      <button ref="menuButton" class="nav-toggle" type="button" :aria-expanded="menuOpen" :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'" @click="toggleMenu">
         <span></span>
         <span></span>
         <span></span>
       </button>
 
-      <nav class="portal-links" :class="{ open: menuOpen }" aria-label="主导航">
+      <nav ref="menuPanel" class="portal-links" :class="{ open: menuOpen }" aria-label="主导航">
         <RouterLink to="/" @click="closeMenu">首页</RouterLink>
         <RouterLink to="/research" @click="closeMenu">研究方向</RouterLink>
         <RouterLink to="/team" @click="closeMenu">团队成员</RouterLink>
@@ -34,27 +34,33 @@
 
     <footer class="portal-footer">
       <div class="container footer-grid">
-        <div>
+        <section class="footer-about">
           <strong>{{ footerName }}</strong>
           <p>{{ footerDescription }}</p>
-        </div>
-        <div class="footer-address">
+        </section>
+        <section class="footer-contact">
+          <strong>联系信息</strong>
           <span>{{ footerUnit }}</span>
-          <span>{{ footerAddress }}</span>
-          <nav class="footer-links" aria-label="相关链接">
+          <address>{{ footerAddress }}</address>
+        </section>
+        <nav v-if="footerLinks.length" class="footer-resources" aria-label="相关链接">
+          <strong>相关链接</strong>
+          <div class="footer-links">
             <a v-for="link in footerLinks" :key="`${link.label}-${link.url}`" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-          </nav>
-        </div>
+          </div>
+        </nav>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSiteBrandStore } from '../stores/siteBrand'
 
 const menuOpen = ref(false)
+const menuButton = ref<HTMLButtonElement | null>(null)
+const menuPanel = ref<HTMLElement | null>(null)
 const brand = useSiteBrandStore()
 
 const siteSetting = computed(() => brand.setting)
@@ -69,12 +75,22 @@ function closeMenu() {
   menuOpen.value = false
 }
 
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') closeMenu()
 }
 
-watch(menuOpen, (open) => {
+watch(menuOpen, async (open, wasOpen) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  await nextTick()
+  if (open) {
+    menuPanel.value?.querySelector<HTMLElement>('a')?.focus()
+  } else if (wasOpen) {
+    menuButton.value?.focus()
+  }
 })
 
 onMounted(async () => {
@@ -108,9 +124,9 @@ onBeforeUnmount(() => {
   height: var(--nav-height);
   gap: 20px;
   border-top: 2px solid var(--color-cau-green);
-  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
+  border-bottom: 1px solid var(--color-border-quiet);
   padding: 0 max(20px, calc((100vw - var(--container)) / 2));
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface-white-strong);
 }
 
 .portal-main {
@@ -133,9 +149,9 @@ onBeforeUnmount(() => {
   height: 38px;
   flex: 0 0 38px;
   overflow: hidden;
-  border: 1px solid rgba(0, 135, 60, 0.2);
+  border: 1px solid var(--color-border-accent-soft);
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   box-shadow: 0 4px 12px rgba(31, 61, 43, 0.08);
 }
 
@@ -277,50 +293,58 @@ onBeforeUnmount(() => {
 .portal-footer {
   background: var(--color-deep-green);
   color: rgba(255, 255, 255, 0.86);
-  padding: 42px 0;
+  padding: 36px 0 34px;
 }
 
 .footer-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.9fr) minmax(190px, 0.65fr);
+  align-items: start;
+  gap: 28px 52px;
 }
 
 .footer-grid strong {
   display: block;
   color: #fff;
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 650;
 }
 
 .footer-grid p {
-  max-width: 560px;
+  max-width: 620px;
   margin: 8px 0 0;
   color: rgba(255, 255, 255, 0.74);
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
-.footer-address {
+.footer-contact,
+.footer-resources {
   display: grid;
-  align-content: center;
-  gap: 8px;
+  align-content: start;
+  gap: 7px;
   color: rgba(255, 255, 255, 0.78);
 }
 
-.footer-grid span {
+.footer-contact span,
+.footer-contact address {
   display: block;
-  text-align: right;
-  line-height: 1.6;
+  margin: 0;
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.55;
 }
 
 .footer-links {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  margin-top: 8px;
+  display: grid;
+  gap: 2px;
 }
 
 .footer-links a {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 30px;
   color: rgba(255, 255, 255, 0.86);
   font-size: 13px;
   text-decoration: none;
@@ -358,8 +382,8 @@ onBeforeUnmount(() => {
     border-left: 1px solid var(--color-border);
     border-radius: 0;
     padding: 14px;
-    background: #fff;
-    box-shadow: -12px 0 30px rgba(31, 61, 43, 0.1);
+    background: var(--color-white);
+    box-shadow: var(--shadow-drawer-left);
     font-size: 15px;
   }
 
@@ -384,6 +408,23 @@ onBeforeUnmount(() => {
 
   .portal-links a.router-link-active {
     background: var(--color-eco-green);
+    box-shadow: inset 3px 0 0 var(--color-cau-green);
+    font-weight: 700;
+  }
+
+  .portal-links .internal-entry {
+    border-color: var(--color-line);
+    margin: 8px 0 0;
+    background: var(--color-panel);
+    color: var(--color-deep-green);
+    box-shadow: 0 -9px 0 -8px var(--color-border);
+  }
+
+  .portal-links .internal-entry:hover,
+  .portal-links .internal-entry.router-link-active {
+    border-color: rgba(0, 135, 60, 0.2);
+    background: var(--color-eco-green);
+    color: var(--color-cau-green);
   }
 
   .nav-toggle {
@@ -438,15 +479,22 @@ onBeforeUnmount(() => {
   }
 
   .footer-grid {
-    flex-direction: column;
-  }
-
-  .footer-grid span {
-    text-align: left;
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .footer-links {
-    justify-content: flex-start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 12px;
+  }
+
+  .portal-footer {
+    padding: 28px 0 24px;
+  }
+
+  .footer-links a {
+    width: 100%;
+    min-height: 44px;
   }
 }
 </style>

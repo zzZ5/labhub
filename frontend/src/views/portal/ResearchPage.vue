@@ -142,10 +142,6 @@ onMounted(async () => {
   background: var(--color-panel-strong);
 }
 
-.research-media.is-empty {
-  aspect-ratio: 16 / 4.5;
-}
-
 .research-media img,
 .research-media :deep(.image-placeholder) {
   width: 100%;

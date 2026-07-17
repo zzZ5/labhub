@@ -12,14 +12,14 @@
         </aside>
 
         <main class="output-main card">
-          <div class="result-tabs">
-            <button :class="{ active: activeTab === 'papers' }" type="button" @click="activeTab = 'papers'">论文</button>
-            <button :class="{ active: activeTab === 'projects' }" type="button" @click="activeTab = 'projects'">项目</button>
-            <button :class="{ active: activeTab === 'patents' }" type="button" @click="activeTab = 'patents'">专利</button>
-            <button :class="{ active: activeTab === 'awards' }" type="button" @click="activeTab = 'awards'">获奖</button>
+          <div class="result-tabs" role="tablist" aria-label="科研成果类型" @keydown="handleTabKeydown">
+            <button id="result-tab-papers" role="tab" aria-controls="result-panel-papers" :aria-selected="activeTab === 'papers'" :tabindex="activeTab === 'papers' ? 0 : -1" :class="{ active: activeTab === 'papers' }" type="button" @click="activeTab = 'papers'">论文</button>
+            <button id="result-tab-projects" role="tab" aria-controls="result-panel-projects" :aria-selected="activeTab === 'projects'" :tabindex="activeTab === 'projects' ? 0 : -1" :class="{ active: activeTab === 'projects' }" type="button" @click="activeTab = 'projects'">项目</button>
+            <button id="result-tab-patents" role="tab" aria-controls="result-panel-patents" :aria-selected="activeTab === 'patents'" :tabindex="activeTab === 'patents' ? 0 : -1" :class="{ active: activeTab === 'patents' }" type="button" @click="activeTab = 'patents'">专利</button>
+            <button id="result-tab-awards" role="tab" aria-controls="result-panel-awards" :aria-selected="activeTab === 'awards'" :tabindex="activeTab === 'awards' ? 0 : -1" :class="{ active: activeTab === 'awards' }" type="button" @click="activeTab = 'awards'">获奖</button>
           </div>
 
-          <section v-if="activeTab === 'papers'" class="result-block">
+          <section v-if="activeTab === 'papers'" id="result-panel-papers" role="tabpanel" aria-labelledby="result-tab-papers" class="result-block">
             <div class="block-heading">
               <div>
                 <h2>论文发表</h2>
@@ -51,7 +51,7 @@
             <AppPagination :page="paperPage" :total-pages="Math.max(1, Math.ceil(paperTotal / pageSize))" @change="loadPapers" />
           </section>
 
-          <section v-else-if="activeTab === 'projects'" class="result-block">
+          <section v-else-if="activeTab === 'projects'" id="result-panel-projects" role="tabpanel" aria-labelledby="result-tab-projects" class="result-block">
             <div class="block-heading">
               <div>
                 <h2>科研项目</h2>
@@ -87,7 +87,7 @@
             <AppPagination :page="projectPage" :total-pages="Math.max(1, Math.ceil(projectTotal / pageSize))" @change="loadProjects" />
           </section>
 
-          <section v-else-if="activeTab === 'patents'" class="result-block">
+          <section v-else-if="activeTab === 'patents'" id="result-panel-patents" role="tabpanel" aria-labelledby="result-tab-patents" class="result-block">
             <div class="block-heading">
               <div>
                 <h2>专利成果</h2>
@@ -123,7 +123,7 @@
             <AppPagination :page="patentPage" :total-pages="Math.max(1, Math.ceil(patentTotal / pageSize))" @change="loadPatents" />
           </section>
 
-          <section v-else class="result-block">
+          <section v-else id="result-panel-awards" role="tabpanel" aria-labelledby="result-tab-awards" class="result-block">
             <div class="block-heading">
               <div>
                 <h2>获奖成果</h2>
@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -188,6 +188,20 @@ const router = useRouter()
 const tabKeys: TabKey[] = ['papers', 'projects', 'patents', 'awards']
 const queryTab = typeof route.query.tab === 'string' && tabKeys.includes(route.query.tab as TabKey) ? route.query.tab as TabKey : 'papers'
 const queryPage = Math.max(1, Number.parseInt(typeof route.query.page === 'string' ? route.query.page : '', 10) || 1)
+
+async function handleTabKeydown(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  event.preventDefault()
+  const current = tabKeys.indexOf(activeTab.value)
+  const next = event.key === 'Home'
+    ? 0
+    : event.key === 'End'
+      ? tabKeys.length - 1
+      : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabKeys.length) % tabKeys.length
+  activeTab.value = tabKeys[next]
+  await nextTick()
+  document.getElementById(`result-tab-${activeTab.value}`)?.focus()
+}
 const queryKeyword = typeof route.query.q === 'string' ? route.query.q : ''
 const activeTab = ref<TabKey>(queryTab)
 const stats = ref<PublicationStats | null>(null)
@@ -497,7 +511,11 @@ onMounted(async () => {
   font-size: 17px;
   font-weight: 650;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
+
+.paper-row > div,
+.simple-card > div { min-width: 0; }
 
 .paper-row:hover h3,
 .simple-card:hover h3 {

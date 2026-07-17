@@ -1,10 +1,6 @@
 <template>
   <InternalLayout title="个人设置">
     <section class="account-page">
-      <InternalPageHeader class="account-heading">
-        <p>维护个人资料和账号安全。学校身份、成员状态和系统权限由管理员维护。</p>
-      </InternalPageHeader>
-
       <div class="account-layout">
         <aside class="card account-summary">
           <div class="profile-avatar large">
@@ -73,7 +69,6 @@ import { ElMessage } from 'element-plus'
 import { changeCurrentUserPassword, updateCurrentUserProfile } from '../../api/accounts'
 import ImageCropField from '../../components/ImageCropField.vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import { useSessionStore } from '../../stores/session'
 
 const session = useSessionStore()

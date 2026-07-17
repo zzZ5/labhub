@@ -1,8 +1,11 @@
 <template>
   <aside class="card student-list">
     <div class="side-heading">
-      <h2>学生列表</h2>
-      <span>{{ total }} / {{ allCount }} 人</span>
+      <div>
+        <h2>学生列表</h2>
+        <span>{{ total === allCount ? `共 ${allCount} 人` : `${total} / ${allCount} 人` }}</span>
+      </div>
+      <el-button v-if="canCreate" type="primary" @click="$emit('create')">新建档案</el-button>
     </div>
     <div class="student-list-tools">
       <el-input :model-value="keyword" size="small" clearable placeholder="搜索姓名、年级、方向" @update:model-value="$emit('update:keyword', String($event))" />
@@ -47,6 +50,7 @@ defineProps<{
   degree: string
   page: number
   totalPages: number
+  canCreate: boolean
 }>()
 
 defineEmits<{
@@ -54,6 +58,7 @@ defineEmits<{
   'update:keyword': [value: string]
   'update:degree': [value: string]
   'update:page': [page: number]
+  create: []
 }>()
 </script>
 
@@ -72,12 +77,17 @@ defineEmits<{
 
 .side-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 10px;
   border-bottom: 1px solid var(--color-line);
   padding-bottom: 10px;
+}
+
+.side-heading > div {
+  display: grid;
+  gap: 3px;
 }
 
 .side-heading h2 {

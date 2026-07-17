@@ -1,26 +1,42 @@
 <template>
   <PortalLayout>
-    <section class="portal-page-head">
-      <div class="container">
-        <ReturnLink class="back-link portal-back-link" :to="returnTo">返回研究方向</ReturnLink>
-        <p class="section-kicker">研究方向</p>
-        <h1>{{ direction?.title || '研究方向' }}</h1>
-        <p>{{ direction?.summary || '研究方向简介待补充。' }}</p>
-      </div>
-    </section>
+    <PortalDetailLayout
+      :return-to="returnTo"
+      return-label="返回研究方向"
+      kicker="研究方向"
+      :title="direction?.title || '研究方向'"
+      aside-title="方向信息"
+    >
+      <template v-if="direction?.summary" #meta><p class="meta-list"><span>{{ direction.summary }}</span></p></template>
 
-    <section class="page-section">
-      <div class="container detail-layout">
-        <article class="card detail-card">
-          <img v-if="direction?.cover_image" :src="direction.cover_image" :alt="direction.title" />
-          <div class="detail-body">
-            <h2>研究内容</h2>
-            <p v-for="paragraph in contentParagraphs" :key="paragraph">{{ paragraph }}</p>
-            <p v-if="!contentParagraphs.length" class="muted">详细内容可在内部平台“门户内容-研究方向”中维护。</p>
-          </div>
-        </article>
+      <div v-if="loading" class="detail-state" role="status" aria-label="正在加载研究方向">
+        <ListSkeleton :rows="4" thumbnail />
       </div>
-    </section>
+      <div v-else-if="loadError" class="detail-state">
+        <LoadErrorNotice :description="loadError" @retry="loadDirection" />
+      </div>
+      <template v-else-if="direction">
+        <div v-if="direction.cover_image" class="detail-media">
+          <img v-if="!imageFailed" :src="direction.cover_image" :alt="direction.title" @error="imageFailed = true" />
+          <ImagePlaceholder v-else :label="`${direction.title}暂无配图`" text="" />
+        </div>
+        <div class="detail-body">
+          <h2>研究内容</h2>
+          <p v-for="paragraph in contentParagraphs" :key="paragraph">{{ paragraph }}</p>
+          <p v-if="!contentParagraphs.length" class="muted">详细内容暂未补充。</p>
+        </div>
+      </template>
+      <EmptyState v-else title="未找到研究方向" description="该内容可能已调整或暂未公开。">
+        <template #action><ReturnLink :to="returnTo">返回研究方向</ReturnLink></template>
+      </EmptyState>
+
+      <template v-if="direction" #aside>
+        <dl>
+          <div><dt>内容类型</dt><dd>研究方向</dd></div>
+          <div v-if="direction.updated_at"><dt>更新时间</dt><dd>{{ direction.updated_at.slice(0, 10) }}</dd></div>
+        </dl>
+      </template>
+    </PortalDetailLayout>
   </PortalLayout>
 </template>
 
@@ -31,118 +47,58 @@ import { useRoute } from 'vue-router'
 import { fetchResearchDirection, type ResearchDirection } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
+import PortalDetailLayout from '../../components/PortalDetailLayout.vue'
 import ReturnLink from '../../components/ReturnLink.vue'
+import EmptyState from '../../components/EmptyState.vue'
+import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
+import ListSkeleton from '../../components/ListSkeleton.vue'
+import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/research')
 const direction = ref<ResearchDirection | null>(null)
+const loading = ref(true)
+const loadError = ref('')
+const imageFailed = ref(false)
 
-const contentParagraphs = computed(() =>
-  (direction.value?.content || '')
-    .split(/\n+/)
-    .map((item) => item.trim())
-    .filter(Boolean),
-)
+const contentParagraphs = computed(() => (direction.value?.content || '').split(/\n+/).map((item) => item.trim()).filter(Boolean))
 
-onMounted(async () => {
+async function loadDirection() {
+  loading.value = true
+  loadError.value = ''
+  imageFailed.value = false
   try {
     direction.value = await fetchResearchDirection(String(route.params.slug))
   } catch {
     direction.value = null
+    loadError.value = '研究方向加载失败，请稍后重试。'
+  } finally {
+    loading.value = false
   }
-})
+}
+
+onMounted(loadDirection)
 </script>
 
 <style scoped>
-.portal-page-head {
-  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
-  padding: 30px 0 26px;
-  background: rgba(255, 255, 255, 0.72);
-}
+.detail-state { padding: 28px; }
 
-.portal-page-head h1 {
-  margin: 0 0 10px;
-  color: var(--color-deep-green);
-  font-size: clamp(28px, 3.2vw, 38px);
-  font-weight: 650;
-}
-
-.portal-page-head p:last-child {
-  max-width: 860px;
-  margin: 0;
-  color: var(--color-muted);
-  line-height: 1.75;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  border: 1px solid rgba(0, 135, 60, 0.24);
-  border-radius: var(--radius-sm);
-  margin-bottom: 14px;
-  padding: 0 13px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--color-cau-green);
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.back-link:hover {
-  border-color: var(--color-cau-green);
-  background: var(--color-eco-green);
-}
-
-.page-section {
-  background: var(--color-rice);
-}
-
-.detail-layout {
-  max-width: 960px;
-}
-
-.detail-card,
-.side-card {
-  box-shadow: none;
-}
-
-.detail-card {
+.detail-media {
+  aspect-ratio: 16 / 7;
   overflow: hidden;
-  padding: 0;
+  background: var(--color-panel-strong);
 }
 
-.detail-card img {
-  width: 100%;
-  max-height: 360px;
-  object-fit: cover;
-}
+.detail-media img,
+.detail-media :deep(.image-placeholder) { width: 100%; height: 100%; }
+.detail-media img { display: block; object-fit: cover; }
 
-.detail-body {
-  padding: 28px;
-}
+.detail-body { padding: 28px 34px 34px; }
+.detail-body h2 { margin: 0 0 18px; color: var(--color-deep-green); font-size: 23px; }
+.detail-body p { margin: 0 0 16px; color: var(--color-text); font-size: 16px; line-height: 1.9; }
+.muted { color: var(--color-muted) !important; }
 
-.detail-body h2 {
-  margin: 0 0 18px;
-  color: var(--color-deep-green);
-  font-size: 24px;
-}
-
-.detail-body p {
-  margin: 0 0 16px;
-  color: var(--color-text);
-  font-size: 16px;
-  line-height: 1.85;
-}
-
-.muted {
-  color: var(--color-muted) !important;
-}
-
-@media (max-width: 860px) {
-  .detail-layout {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 640px) {
+  .detail-body { padding: 24px 22px 28px; }
 }
 </style>

@@ -17,9 +17,9 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
 
 <style scoped>
 .portal-page-header {
-  border-bottom: 1px solid rgba(31, 61, 43, 0.09);
+  border-bottom: 1px solid var(--color-border-quiet);
   padding: 30px 0 26px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface-white-soft);
 }
 
 .portal-page-header .container {

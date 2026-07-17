@@ -39,6 +39,16 @@ const siteSetting = {
   banner_interval_seconds: 6,
 }
 
+const researchDirections = Array.from({ length: 6 }, (_, index) => ({
+  id: index + 1,
+  title: ['堆肥微生物过程', '有机废弃物资源化', '腐殖化调控', '养分循环', '生态环境效应', '过程模型与评价'][index],
+  slug: `research-${index + 1}`,
+  summary: '围绕农业有机废弃物转化过程中的关键科学与技术问题开展研究。',
+  content: '',
+  cover_image: '',
+  sort_order: index + 1,
+}))
+
 export const instruments = Array.from({ length: 14 }, (_, index) => ({
   id: index + 1,
   name: `堆肥设备 ${String(index + 1).padStart(2, '0')}`,
@@ -91,9 +101,11 @@ export const students = Array.from({ length: 13 }, (_, index) => ({
 
 export const documents = Array.from({ length: 13 }, (_, index) => ({
   id: index + 1,
-  title: `实验方法 ${String(index + 1).padStart(2, '0')}`,
+  title: index === 1
+    ? '农业有机废弃物堆肥过程中微生物群落演替与腐殖化调控实验方法完整归档资料'
+    : `实验方法 ${String(index + 1).padStart(2, '0')}`,
   category: { id: 1, name: '实验方法', slug: 'methods', parent: null, description: '', sort_order: 1 },
-  description: '堆肥实验操作方法。',
+  description: index === 1 ? '包含样品预处理、培养条件、关键参数记录与质量控制要求的完整实验说明。' : '堆肥实验操作方法。',
   allow_download: true,
   status: 'active',
   status_label: '有效',
@@ -161,11 +173,36 @@ async function json(route: Route, data: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) })
 }
 
-export async function installMockApi(page: Page, options: { authenticated?: boolean } = {}) {
+export async function installMockApi(page: Page, options: { authenticated?: boolean; highData?: boolean } = {}) {
   let authenticated = options.authenticated ?? true
-  const instrumentState = instruments.map((item) => ({ ...item }))
+  const instrumentRows = options.highData
+    ? Array.from({ length: 50 }, (_, index) => ({
+        ...instruments[index % instruments.length],
+        id: index + 1,
+        name: index === 0 ? '农业有机废弃物堆肥微生物过程综合分析与环境参数连续监测设备' : `堆肥设备 ${String(index + 1).padStart(2, '0')}`,
+        model: `Model-${index + 1}`,
+        location_detail: `实验楼 ${200 + index}`,
+      }))
+    : instruments
+  const documentRows = options.highData
+    ? Array.from({ length: 60 }, (_, index) => ({
+        ...documents[index % documents.length],
+        id: index + 1,
+        title: index === 0 ? '农业有机废弃物堆肥过程中微生物群落演替与腐殖化调控实验方法完整归档资料' : `实验方法 ${String(index + 1).padStart(2, '0')}`,
+        original_filename: `method-${index + 1}.pdf`,
+      }))
+    : documents
+  const publicationRows = options.highData
+    ? Array.from({ length: 200 }, (_, index) => ({
+        ...publications[index % publications.length],
+        id: index + 1,
+        title: index === 0 ? 'Microbial community transformation pathways during agricultural organic waste composting and humification regulation under contrasting process conditions' : `Composting microbial study ${index + 1}`,
+        doi: `10.1000/labhub.${index + 1}`,
+      }))
+    : publications
+  const instrumentState = instrumentRows.map((item) => ({ ...item }))
   const studentState = students.map((item) => ({ ...item }))
-  const userState = [
+  const defaultUsers = [
     adminUser,
     {
       ...adminUser,
@@ -178,9 +215,24 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
       profile: { ...adminUser.profile, real_name: '待建档学生', school_identity: 'master', school_identity_label: '硕士生' },
     },
   ]
+  const userState = options.highData
+    ? Array.from({ length: 50 }, (_, index) => index === 0 ? adminUser : ({
+        ...defaultUsers[1],
+        id: index + 1,
+        username: `member-${index + 1}`,
+        email: index === 1 ? 'very-long-member-account-name-for-layout-regression@resources-environment.cau.edu.cn' : `member${index + 1}@cau.edu.cn`,
+        roles: index % 7 === 0 ? ['editor', 'document_manager', 'instrument_manager'] : [],
+        profile: {
+          ...defaultUsers[1].profile,
+          real_name: index === 1 ? '农业资源环境与堆肥微生物研究方向超长姓名测试成员' : `测试成员 ${String(index + 1).padStart(2, '0')}`,
+          school_identity: index % 3 === 0 ? 'phd' : 'master',
+          school_identity_label: index % 3 === 0 ? '博士生' : '硕士生',
+        },
+      }))
+    : defaultUsers
   const newsItems = [
     {
-      id: 1, title: 'Word 新闻稿', slug: 'word-news', summary: '已上传 Word。', content: '<p>第一条新闻</p>', word_html: '<p>第一条新闻</p>',
+      id: 1, title: 'Word 新闻稿', slug: 'word-news', summary: '已上传 Word。', content: '<p>第一条新闻</p>', word_html: '<h2>实验进展</h2><p>CompostingMicrobialCommunityTransformationPathwaysDuringHumification</p><table><thead><tr><th>处理</th><th>温度</th><th>含水率</th><th>周期</th></tr></thead><tbody><tr><td>对照组</td><td>55 ℃</td><td>60%</td><td>28 d</td></tr></tbody></table>',
       word_file: '/media/news/word/first.docx', word_file_size: 4096, cover_image: '/media/news/cover/first.jpg', cover_image_size: 2048,
       category: { id: 1, name: '科研进展', slug: 'research-progress', description: '', sort_order: 1 }, event_date: '2026-07-17', location: '', status: 'published', visibility: 'public', is_pinned: false, images: [],
     },
@@ -211,8 +263,11 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
     if (path === '/portal/site-setting/') return json(route, siteSetting)
     if (path === '/portal/contact/') return json(route, { email: 'lab@cau.edu.cn', address: siteSetting.address })
     if (path === '/news/articles/') return json(route, newsItems)
+    if (/^\/news\/articles\/[^/]+\/$/.test(path)) return json(route, newsItems.find((item) => item.slug === path.split('/')[3]) || newsItems[0])
     if (path === '/news/categories/') return json(route, [{ id: 1, name: '科研进展', slug: 'research-progress', description: '', sort_order: 1 }])
-    if (path === '/portal/banners/' || path === '/portal/research-directions/' || path === '/members/') return json(route, [])
+    if (path === '/portal/research-directions/') return json(route, researchDirections)
+    if (/^\/portal\/research-directions\/[^/]+\/$/.test(path)) return json(route, researchDirections.find((item) => item.slug === path.split('/')[3]) || researchDirections[0])
+    if (path === '/portal/banners/' || path === '/members/') return json(route, [])
     if (path === '/dashboard/') return json(route, { summary: [], instrument_status: [], latest_documents: [], todos: [], student_archives: [], recent_downloads: [] })
     if (path === '/accounts/roles/') return json(route, [
       { id: 1, name: '系统管理员', code: 'admin', description: '', is_system: true },
@@ -250,8 +305,8 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
       return json(route, created, 201)
     }
     if (path === '/documents/categories/') return json(route, [{ id: 1, name: '实验方法', slug: 'methods', parent: null, description: '', sort_order: 1 }])
-    if (path === '/documents/documents/') return json(route, documents)
-    if (/^\/documents\/documents\/\d+\/$/.test(path)) return json(route, documents.find((item) => item.id === Number(path.split('/')[3])) || documents[0])
+    if (path === '/documents/documents/') return json(route, documentRows)
+    if (/^\/documents\/documents\/\d+\/$/.test(path)) return json(route, documentRows.find((item) => item.id === Number(path.split('/')[3])) || documentRows[0])
     if (path === '/instruments/instruments/' && method === 'GET') return json(route, instrumentState)
     if (path === '/instruments/instruments/' && method === 'POST') {
       const created = { ...instruments[0], id: 99, name: '新建设备' }
@@ -269,14 +324,14 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
     }
     if (path === '/publications/publications/') {
       const year = Number(url.searchParams.get('year')) || 0
-      const rows = year ? publications.filter((item) => item.year === year) : publications
+      const rows = year ? publicationRows.filter((item) => item.year === year) : publicationRows
       return json(route, pageResult(rows, url))
     }
     if (path === '/publications/projects/') return json(route, pageResult(projects, url))
     if (path === '/publications/patents/') return json(route, pageResult(patents, url))
     if (path === '/publications/awards/') return json(route, pageResult(awards, url))
-    if (path === '/publications/stats/') return json(route, { publications: publications.length, projects: projects.length, patents: patents.length, awards: awards.length })
-    if (/^\/publications\/publications\/\d+\/$/.test(path)) return json(route, publications.find((item) => item.id === Number(path.split('/')[3])) || publications[0])
+    if (path === '/publications/stats/') return json(route, { publications: publicationRows.length, projects: projects.length, patents: patents.length, awards: awards.length })
+    if (/^\/publications\/publications\/\d+\/$/.test(path)) return json(route, publicationRows.find((item) => item.id === Number(path.split('/')[3])) || publicationRows[0])
     if (/^\/publications\/projects\/\d+\/$/.test(path)) return json(route, projects.find((item) => item.id === Number(path.split('/')[3])) || projects[0])
     if (/^\/publications\/patents\/\d+\/$/.test(path)) return json(route, patents[0])
     if (/^\/publications\/awards\/\d+\/$/.test(path)) return json(route, awards[0])
@@ -287,6 +342,20 @@ export async function installMockApi(page: Page, options: { authenticated?: bool
         if (path === '/cms/news-categories/') return json(route, [{ id: 1, name: '科研进展', slug: 'research-progress', description: '', sort_order: 1 }])
         if (path === '/cms/news-articles/') return json(route, newsItems)
         if (path === '/cms/home-banners/') return json(route, banners)
+        if (path === '/cms/members/' && options.highData) return json(route, userState.map((user, index) => ({
+          id: user.id,
+          name: user.profile.real_name,
+          name_en: '',
+          role_type: user.profile.school_identity_label,
+          role_label: user.profile.school_identity_label,
+          grade: '',
+          research_direction: '堆肥微生物过程',
+          avatar: '',
+          email: user.email,
+          profile: '团队成员简介。',
+          sort_order: index + 1,
+        })))
+        if (path === '/cms/publications/' && options.highData) return json(route, publicationRows)
         return json(route, [])
       }
       if (path.endsWith('/import-file/')) return json(route, { created: 1, updated: 0, skipped: 0, images: 0, total: 1 })

@@ -1,13 +1,14 @@
 <template>
-  <aside class="card edit-panel">
-    <div class="panel-heading">
-      <div>
-        <h2>{{ student ? '编辑学生档案' : '学生档案设置' }}</h2>
-        <p>{{ canManage ? '管理员可绑定学生账号，导师信息在档案内维护。' : '你可以维护自己的学生档案。' }}</p>
-      </div>
-    </div>
-
-    <el-form v-if="open" label-position="top" class="profile-form">
+  <el-drawer
+    :model-value="open"
+    class="entity-form-drawer"
+    :title="student ? '编辑学生档案' : '新建学生档案'"
+    size="min(520px, 100%)"
+    destroy-on-close
+    @update:model-value="handleOpenChange"
+  >
+    <p class="entity-form-intro">{{ canManage ? '关联学生账号并维护基本档案信息。' : '维护你的基本档案信息。' }}</p>
+    <el-form label-position="top" class="entity-form profile-form">
       <el-form-item label="头像">
         <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :existing-size="student?.avatar_size || currentStudent?.avatar_size || 0" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
       </el-form-item>
@@ -34,13 +35,14 @@
       </el-form-item>
       <el-form-item label="研究方向"><el-input v-model="form.research_direction" /></el-form-item>
       <el-form-item label="研究题目"><el-input v-model="form.research_topic" type="textarea" :rows="3" /></el-form-item>
-      <div class="form-actions">
-        <el-button @click="$emit('cancel')">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">保存档案</el-button>
-      </div>
     </el-form>
-
-  </aside>
+    <template #footer>
+      <div class="entity-form-footer">
+        <el-button @click="$emit('cancel')">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">{{ student ? '保存修改' : '创建档案' }}</el-button>
+      </div>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -104,45 +106,16 @@ function submit() {
   emit('save', { ...form, name: form.name.trim(), advisors, supervisor: advisors[0] || null })
 }
 
+function handleOpenChange(value: boolean) {
+  if (!value) emit('cancel')
+}
+
 watch(() => props.open, (open) => {
   if (open) resetForm()
 })
 </script>
 
 <style scoped>
-.edit-panel {
-  position: sticky;
-  top: 96px;
-  max-height: calc(100vh - 120px);
-  overflow: auto;
-  padding: 16px;
-}
-
-.edit-panel:hover {
-  transform: none;
-}
-
-.panel-heading {
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--color-line);
-  padding-bottom: 10px;
-}
-
-.panel-heading h2 {
-  margin: 0;
-  color: var(--color-deep-green);
-  font-size: 19px;
-  font-weight: 650;
-}
-
-.panel-heading p,
-.relation-note p {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
 .student-avatar-editor {
   display: flex;
   align-items: center;
@@ -194,22 +167,9 @@ watch(() => props.open, (open) => {
   gap: 12px;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .relation-note {
   display: grid;
   gap: 10px;
-}
-
-@media (max-width: 1180px) {
-  .edit-panel {
-    position: static;
-    max-height: none;
-  }
 }
 
 @media (max-width: 520px) {

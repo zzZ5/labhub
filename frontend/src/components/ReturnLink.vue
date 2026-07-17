@@ -31,10 +31,10 @@ function navigate() {
   min-height: 36px;
   align-items: center;
   gap: 7px;
-  border: 1px solid rgba(0, 135, 60, 0.22);
+  border: 1px solid var(--color-border-accent);
   border-radius: var(--radius-sm);
   padding: 0 12px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-white-soft);
   color: var(--color-cau-green);
   font-size: 14px;
   font-weight: 650;

@@ -1,9 +1,10 @@
 <template>
-  <section class="editor-grid">
-    <CmsContentList title="获奖成果" action-label="新增获奖" :items="rows" :active-key="editingId || ''" @create="resetAward" @edit="editAward">
+  <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
+    <CmsContentList title="获奖成果" action-label="新增获奖" :items="rows" :active-key="editingId || ''" @create="createAward" @edit="openAward">
       <template #tools><CmsImportStrip description="批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。" template-url="/templates/awards-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传获奖成果表，请不要关闭页面。" processing-text="上传完成，正在写入获奖成果。" @import="emit('import', $event)" /></template>
     </CmsContentList>
     <article class="card form-panel">
+      <CmsMobileEditorBack @back="mobileEditorOpen = false" />
       <div class="form-heading"><div><span>{{ editingId ? '正在编辑' : '新增内容' }}</span><h2>{{ form.title || '获奖成果' }}</h2></div></div>
       <el-form label-position="top">
         <el-form-item label="奖项名称"><el-input v-model="form.title" /></el-form-item>
@@ -31,6 +32,7 @@ import type { Award } from '../../../api/publicPortal'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
+import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
@@ -51,6 +53,7 @@ type AwardForm = Record<string, unknown> & {
   sort_order: number
 }
 const editingId = ref<number | null>(null)
+const mobileEditorOpen = ref(false)
 const currentImage = ref('')
 const currentImageSize = ref(0)
 const currentAttachment = ref('')
@@ -63,6 +66,16 @@ function resetAward() {
   currentImageSize.value = 0
   currentAttachment.value = ''
   Object.assign(form, { title: '', award_level: '', award_date: '', participants: '', description: '', image: undefined, attachment: undefined, visibility: 'public', sort_order: 0 })
+}
+
+function createAward() {
+  resetAward()
+  mobileEditorOpen.value = true
+}
+
+function openAward(item: Award) {
+  editAward(item)
+  mobileEditorOpen.value = true
 }
 
 function editAward(item: Award) {
@@ -92,13 +105,19 @@ async function saveAward() {
   const succeeded = await save((onUploadProgress) =>
     id ? cmsApi.updateAward(id, form, onUploadProgress) : cmsApi.createAward(form, onUploadProgress),
   )
-  if (succeeded) resetAward()
+  if (succeeded) {
+    resetAward()
+    mobileEditorOpen.value = false
+  }
 }
 
 async function deleteAward() {
   const id = editingId.value
   if (!id) return
   const succeeded = await remove('确定删除这个获奖成果吗？', () => cmsApi.deleteAward(id))
-  if (succeeded) resetAward()
+  if (succeeded) {
+    resetAward()
+    mobileEditorOpen.value = false
+  }
 }
 </script>

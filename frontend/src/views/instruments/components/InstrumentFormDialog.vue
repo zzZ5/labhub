@@ -1,12 +1,14 @@
 <template>
-  <el-dialog
+  <el-drawer
     :model-value="open"
+    class="entity-form-drawer"
     :title="instrument ? '编辑设备' : '新建设备'"
-    width="620px"
-    :fullscreen="isMobile"
+    size="min(520px, 100%)"
+    destroy-on-close
     @update:model-value="$emit('update:open', $event)"
   >
-    <el-form label-position="top" class="instrument-form">
+    <p class="entity-form-intro">维护设备基本信息、位置、图片和使用说明。</p>
+    <el-form label-position="top" class="entity-form instrument-form">
       <el-form-item label="仪器名称"><el-input v-model="form.name" /></el-form-item>
       <div class="form-two-col">
         <el-form-item label="型号"><el-input v-model="form.model" /></el-form-item>
@@ -28,15 +30,16 @@
     </el-form>
     <template #footer>
       <UploadProgress :active="saving" :progress="progress" uploading-text="正在上传设备图片，请不要关闭窗口。" processing-text="上传完成，正在保存设备信息。" />
-      <el-button @click="$emit('update:open', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">{{ instrument ? '保存修改' : '保存设备' }}</el-button>
+      <div class="entity-form-footer">
+        <el-button @click="$emit('update:open', false)">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">{{ instrument ? '保存修改' : '创建设备' }}</el-button>
+      </div>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 
 import ImageCropField from '../../../components/ImageCropField.vue'
@@ -49,8 +52,6 @@ const props = defineProps<{
   saving: boolean
   progress: number
 }>()
-const isMobile = useMediaQuery('(max-width: 620px)')
-
 const emit = defineEmits<{
   'update:open': [value: boolean]
   save: [payload: InstrumentFormPayload]

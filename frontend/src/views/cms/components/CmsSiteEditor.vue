@@ -4,7 +4,7 @@
       <div class="form-heading">
         <div>
           <span>站点首页</span>
-          <h2>{{ siteForm.site_name || '中农雨磷' }}</h2>
+          <h2>{{ siteForm.site_name || '站点首页' }}</h2>
           <p>维护首页基础文案、课题组简介和加入我们；网站标识与页脚内容请到“页脚设置”维护。</p>
         </div>
       </div>
@@ -36,6 +36,7 @@
             <strong>加入我们</strong>
             <span>用于首页底部“加入我们”模块。</span>
           </div>
+          <el-form-item label="模块标题"><el-input v-model="contactForm.title" /></el-form-item>
           <el-form-item label="说明"><el-input v-model="contactForm.content" type="textarea" :rows="3" /></el-form-item>
           <el-form-item label="联系邮箱"><el-input v-model="contactForm.email" /></el-form-item>
         </div>

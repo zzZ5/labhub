@@ -132,10 +132,15 @@ function statusText(status: string) {
 }
 
 .instrument-title h2 {
+  display: -webkit-box;
+  overflow: hidden;
   margin: 0;
   color: var(--color-deep-green);
   font-size: 19px;
   font-weight: 650;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .instrument-card p {
@@ -165,6 +170,7 @@ function statusText(status: string) {
 .instrument-card dd {
   margin: 0;
   color: var(--color-muted);
+  overflow-wrap: anywhere;
 }
 
 .instrument-note-preview {

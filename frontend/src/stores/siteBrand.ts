@@ -3,21 +3,11 @@ import { computed, ref } from 'vue'
 
 import { fetchSiteSetting, type ExternalLink, type SiteSetting } from '../api/publicPortal'
 
-const CACHE_KEY = 'labhub-site-brand'
+const CACHE_KEY = 'labhub-site-brand-v2'
 
 const fallbackSetting: Partial<SiteSetting> = {
-  site_name: '中农雨磷',
-  site_subtitle: '中国农业大学资源与环境学院',
   logo: '/site-icon.png',
   favicon: '/site-icon.png',
-  description: '面向农业绿色发展与资源环境治理，开展微生物生态、有机废弃物资源化与高值产品开发研究。',
-  footer_text: '围绕农业资源循环与生态环境过程开展科研、教学与技术交流。',
-  address: '北京市海淀区圆明园西路2号 中国农业大学西校区',
-  external_links: [
-    { label: '中国农业大学', url: 'https://www.cau.edu.cn/' },
-    { label: '资源与环境学院', url: 'https://zihuan.cau.edu.cn/' },
-    { label: '教师个人主页', url: 'https://faculty.cau.edu.cn/' },
-  ],
 }
 
 function readCache() {
@@ -67,19 +57,16 @@ export const useSiteBrandStore = defineStore('siteBrand', () => {
   const setting = ref<Partial<SiteSetting>>({ ...fallbackSetting, ...readCache() })
   const loading = ref(false)
 
-  const siteName = computed(() => setting.value.site_name || fallbackSetting.site_name || '')
-  const siteSubtitle = computed(() => setting.value.site_subtitle || fallbackSetting.site_subtitle || '')
-  const footerDescription = computed(() => setting.value.footer_text || fallbackSetting.footer_text || '')
-  const address = computed(() => setting.value.address || fallbackSetting.address || '')
-  const externalLinks = computed<ExternalLink[]>(() => {
-    const links = setting.value.external_links?.filter((link) => link.label && link.url) || []
-    return links.length ? links : fallbackSetting.external_links || []
-  })
+  const siteName = computed(() => setting.value.site_name || '')
+  const siteSubtitle = computed(() => setting.value.site_subtitle || '')
+  const footerDescription = computed(() => setting.value.footer_text || '')
+  const address = computed(() => setting.value.address || '')
+  const externalLinks = computed<ExternalLink[]>(() => setting.value.external_links?.filter((link) => link.label && link.url) || [])
   const logoUrl = computed(() => versionedAsset(setting.value.logo || fallbackSetting.logo, setting.value.updated_at))
   const faviconUrl = computed(() => versionedAsset(setting.value.favicon || setting.value.logo || fallbackSetting.favicon, setting.value.updated_at))
 
   function applyBrowserBrand() {
-    document.title = siteName.value
+    if (siteName.value) document.title = siteName.value
     updateFaviconLinks(faviconUrl.value)
   }
 

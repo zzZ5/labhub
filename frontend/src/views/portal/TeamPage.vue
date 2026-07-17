@@ -4,8 +4,8 @@
     <section class="page-section">
       <div class="container">
         <div class="role-filter" role="group" aria-label="按身份头衔筛选">
-          <button type="button" :class="{ active: !roleFilter }" @click="roleFilter = ''">全部成员</button>
-          <button v-for="role in roleOptions" :key="role.value" type="button" :class="{ active: roleFilter === role.value }" @click="roleFilter = role.value">
+          <button type="button" :class="{ active: !roleFilter }" :aria-pressed="!roleFilter" @click="roleFilter = ''">全部成员</button>
+          <button v-for="role in roleOptions" :key="role.value" type="button" :class="{ active: roleFilter === role.value }" :aria-pressed="roleFilter === role.value" @click="roleFilter = role.value">
             {{ role.label }}
           </button>
         </div>

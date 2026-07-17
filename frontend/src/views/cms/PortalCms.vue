@@ -1,24 +1,14 @@
 <template>
   <InternalLayout title="门户内容管理">
     <section class="cms-page">
-      <InternalPageHeader class="cms-heading">
-        <p>维护官网首页、横幅、研究方向、团队、新闻和科研成果。</p>
-        <template #summary><div class="cms-stat-strip">
-            <span v-for="item in cmsOverview" :key="item.label">{{ item.label }} {{ item.value }}</span>
-        </div></template>
-        <template #actions>
-          <RouterLink class="preview-link" to="/">预览官网</RouterLink>
-        </template>
-      </InternalPageHeader>
-
       <LoadErrorNotice v-if="cmsLoadError" :description="cmsLoadError" :retrying="cmsLoading" @retry="loadAll" />
 
-      <label class="cms-mobile-nav">
-        <span>内容栏目</span>
-        <select v-model="activeTab">
+      <div class="cms-mobile-nav">
+        <label for="cms-section-select">内容栏目</label>
+        <select id="cms-section-select" v-model="activeTab">
           <option v-for="item in cmsSections" :key="item.value" :value="item.value">{{ item.label }}</option>
         </select>
-      </label>
+      </div>
 
       <el-tabs v-model="activeTab" v-loading="cmsLoading" class="cms-tabs">
         <el-tab-pane label="站点首页" name="site">
@@ -107,7 +97,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
-import InternalPageHeader from '../../components/InternalPageHeader.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import CmsBannerEditor from './components/CmsBannerEditor.vue'
 import CmsAwardEditor from './components/CmsAwardEditor.vue'
@@ -155,7 +144,6 @@ const {
   projectRows,
   patentRows,
   awardRows,
-  cmsOverview,
   displayFileLabel,
   loadAll,
 } = useCmsContentData(fillSiteForms)
@@ -172,70 +160,23 @@ onMounted(loadAll)
   max-width: 100%;
 }
 
-.cms-heading {
-  align-items: center;
-  box-shadow: none;
-}
-
-.cms-heading > p {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.heading-actions {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 12px;
-}
-
-.cms-stat-strip {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.cms-stat-strip span {
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  padding: 5px 9px;
-  background: var(--color-panel);
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.preview-link {
-  border: 1px solid rgba(0, 135, 60, 0.28);
-  border-radius: var(--radius-sm);
-  padding: 8px 13px;
-  background: #fff;
-  color: var(--color-cau-green);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.preview-link.subtle {
-  border-color: var(--color-border);
-  color: var(--color-muted);
-}
-
 .cms-tabs {
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 10px 14px 16px;
-  background: #fff;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 .cms-tabs .el-tabs__header {
-  margin-bottom: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  padding: 0 14px;
+  background: #fff;
 }
 
 .cms-tabs .el-tabs__nav-wrap::after {
@@ -245,9 +186,9 @@ onMounted(loadAll)
 
 .editor-grid {
   display: grid;
-  grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
-  gap: 16px;
-  align-items: stretch;
+  grid-template-columns: minmax(330px, 380px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
 
 .editor-single {
@@ -260,16 +201,6 @@ onMounted(loadAll)
 .list-panel,
 .form-panel {
   border-radius: var(--radius-md);
-}
-
-.list-panel {
-  position: relative;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  height: 100%;
-  overflow: hidden;
-  padding: 18px;
-  box-shadow: none;
 }
 
 .form-panel {
@@ -288,9 +219,9 @@ onMounted(loadAll)
 @media (min-width: 1280px) {
   .site-home-form {
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
-    align-items: stretch;
+    align-items: start;
   }
 
   .site-home-form > .form-section {
@@ -299,7 +230,7 @@ onMounted(loadAll)
   }
 
   .site-home-form > .form-section:first-child {
-    grid-row: 1 / span 2;
+    grid-column: 1 / -1;
   }
 }
 
@@ -318,8 +249,7 @@ onMounted(loadAll)
   transform: none;
 }
 
-.panel-heading,
-.list-toolbar {
+.panel-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -327,43 +257,6 @@ onMounted(loadAll)
   margin-bottom: 10px;
   border-bottom: 1px solid var(--color-line);
   padding-bottom: 10px;
-}
-
-.list-panel .list-toolbar {
-  align-items: flex-start;
-  border-bottom: 1px solid var(--color-line);
-  margin-bottom: 12px;
-  min-height: 58px;
-  padding-bottom: 12px;
-}
-
-.list-panel .list-toolbar strong,
-.list-panel .list-toolbar span {
-  display: block;
-}
-
-.list-panel .list-toolbar > div {
-  min-width: 0;
-}
-
-.list-panel .list-toolbar strong {
-  color: var(--color-deep-green);
-  font-size: 19px;
-  font-weight: 650;
-}
-
-.list-panel .list-toolbar span {
-  margin-top: 2px;
-  color: var(--color-muted);
-  font-size: 12px;
-}
-
-.list-panel .list-toolbar .el-button {
-  --el-button-size: 32px;
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 7px 12px;
-  color: #fff !important;
 }
 
 .cms-page .el-button--primary,
@@ -378,125 +271,13 @@ onMounted(loadAll)
   font-weight: 650;
 }
 
-.list-panel .list-search {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  min-height: 36px;
-  margin-bottom: 10px;
-  padding: 0 11px;
-  background: #fff;
-  color: var(--color-text);
-  font: inherit;
-}
-
-.list-panel .list-search:focus {
-  border-color: rgba(0, 135, 60, 0.35);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 135, 60, 0.08);
-}
-
-.list-panel .content-list-scroll {
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
-}
-
-.list-panel .content-row {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--color-line);
-  border-radius: 8px;
-  margin-bottom: 10px;
-  padding: 12px 13px;
-  background: #fff;
-  cursor: pointer;
-  text-align: left;
-}
-
-.list-panel .content-row:hover,
-.list-panel .content-row.active {
-  border-color: rgba(0, 135, 60, 0.14);
-  background: var(--color-eco-green);
-}
-
-.list-panel .content-row:hover strong,
-.list-panel .content-row.active strong {
-  color: var(--color-cau-green);
-}
-
-.list-panel .content-row strong,
-.list-panel .content-row span,
 .form-panel small {
   display: block;
 }
 
-.list-panel .content-row strong {
-  display: block;
-  overflow: hidden;
-  color: var(--color-text);
-  font-size: 14px;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.list-panel .content-row span,
-.form-panel small,
-.empty-list {
+.form-panel small {
   color: var(--color-muted);
   font-size: 13px;
-}
-
-.list-panel .content-row span {
-  margin-top: 7px;
-  overflow: hidden;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.list-panel .empty-list {
-  border-top: 1px solid var(--color-line);
-  padding-top: 16px;
-}
-
-.list-panel .list-pager {
-  display: grid;
-  justify-items: center;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px solid var(--color-line);
-  margin-top: 10px;
-  padding-top: 10px;
-  background: #fff;
-}
-
-.list-panel .pager-summary {
-  flex: 0 0 auto;
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.list-panel .pager-controls {
-  display: grid;
-  grid-template-columns: 68px minmax(54px, 1fr) 68px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.news-editor-grid {
-  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
-  align-items: start;
 }
 
 .news-form-panel {
@@ -590,44 +371,6 @@ onMounted(loadAll)
   white-space: nowrap;
 }
 
-.list-panel .page-size-select {
-  flex: 0 0 108px;
-  width: 116px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  min-height: 30px;
-  padding: 0 8px;
-  background: #fff;
-  color: var(--color-text);
-  font-size: 13px;
-}
-
-.list-panel .list-pager button {
-  border: 1px solid rgba(0, 135, 60, 0.22);
-  border-radius: var(--radius-sm);
-  min-height: 30px;
-  padding: 0 10px;
-  background: #fff;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.list-panel .list-pager button:disabled {
-  border-color: var(--color-border);
-  color: var(--color-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.list-panel .pager-controls span {
-  color: var(--color-muted);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
 .editor-hint {
   border: 1px solid rgba(0, 135, 60, 0.12);
   border-radius: var(--radius-sm);
@@ -659,11 +402,6 @@ onMounted(loadAll)
   padding: 10px 12px;
   background: var(--color-panel);
 }
-
-.news-content-list .content-list-scroll { gap: 4px; }
-.news-content-list .content-row { margin-bottom: 0; padding: 7px 9px; }
-.news-content-list .content-row strong { display: block; overflow: hidden; font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.news-content-list .content-row span { margin-top: 3px; font-size: 11px; line-height: 1.3; }
 
 .cms-import-block {
   grid-column: 1 / -1;
@@ -910,15 +648,6 @@ onMounted(loadAll)
   background: rgba(0, 135, 60, 0.06);
 }
 
-.list-panel .list-pager .pager-nav {
-  display: inline-grid;
-  place-items: center;
-  width: 68px;
-  padding: 0;
-  line-height: 1;
-  text-align: center;
-}
-
 .citation-actions {
   display: flex;
   align-items: center;
@@ -1064,21 +793,6 @@ onMounted(loadAll)
     width: 84px;
   }
 
-  .cms-heading {
-    align-items: center;
-  }
-
-  .heading-actions {
-    width: 100%;
-  }
-
-  .list-panel {
-    max-height: none;
-  }
-
-  .list-panel .content-list-scroll {
-    max-height: 420px;
-  }
 }
 
 @media (max-width: 720px) {
@@ -1086,34 +800,9 @@ onMounted(loadAll)
     gap: 10px;
   }
 
-  .cms-heading {
-    display: grid;
-    gap: 10px;
-    padding: 0 0 12px;
-  }
-
-  .heading-actions,
-  .cms-stat-strip {
-    display: grid;
-    grid-template-columns: 1fr;
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .cms-stat-strip {
-    display: none !important;
-  }
-
-  .cms-stat-strip span,
-  .preview-link {
-    width: 100%;
-    text-align: center;
-  }
-
   .cms-tabs {
     width: 100%;
-    border-radius: var(--radius-sm);
-    padding: 6px;
+    padding: 0;
   }
 
   .cms-mobile-nav {
@@ -1123,14 +812,22 @@ onMounted(loadAll)
     gap: 10px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    padding: 9px 10px;
+    padding: 8px 10px;
     background: #fff;
   }
 
-  .cms-mobile-nav span { color: var(--color-deep-green); font-size: 13px; font-weight: 650; }
+  .cms-mobile-nav label { color: var(--color-deep-green); font-size: 13px; font-weight: 650; }
   .cms-mobile-nav select { width: 100%; min-height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 10px; background: #fff; color: var(--color-text); font: inherit; }
 
   .cms-tabs .el-tabs__header {
+    display: none;
+  }
+
+  .editor-grid:not(.mobile-editor-open) > .form-panel {
+    display: none;
+  }
+
+  .editor-grid.mobile-editor-open > .list-panel {
     display: none;
   }
 
@@ -1215,82 +912,6 @@ onMounted(loadAll)
   .form-panel {
     border-radius: var(--radius-sm);
     padding: 12px;
-  }
-
-  .list-panel {
-    display: block;
-    height: auto;
-    overflow: visible;
-  }
-
-  .list-panel .list-toolbar {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 9px;
-    min-height: 0;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-  }
-
-  .list-panel .list-toolbar strong {
-    font-size: 17px;
-  }
-
-  .list-panel .list-toolbar .el-button {
-    width: 100%;
-    min-height: 36px;
-  }
-
-  .list-panel .list-search {
-    min-height: 38px;
-    margin-bottom: 10px;
-  }
-
-  .list-panel .content-list-scroll {
-    max-height: 48vh;
-    overflow-y: auto;
-    padding-right: 2px;
-  }
-
-  .list-panel .content-row {
-    margin-bottom: 8px;
-    padding: 10px 11px;
-  }
-
-  .list-panel .content-row strong,
-  .list-panel .content-row span {
-    white-space: normal;
-  }
-
-  .list-panel .content-row strong {
-    display: -webkit-box;
-    overflow: hidden;
-    line-height: 1.45;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .list-panel .content-row span {
-    display: -webkit-box;
-    margin-top: 5px;
-    overflow: hidden;
-    line-height: 1.45;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .list-panel .list-pager {
-    gap: 8px;
-  }
-
-  .list-panel .list-pager button {
-    min-height: 34px;
-    padding: 0 8px;
-  }
-
-  .list-panel .list-pager span {
-    align-self: center;
-    white-space: nowrap;
   }
 
   .import-strip {

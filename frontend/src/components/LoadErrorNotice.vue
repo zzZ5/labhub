@@ -22,10 +22,10 @@ defineEmits<{ retry: [] }>()
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border: 1px solid #ead7b7;
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--radius-sm);
   padding: 11px 14px;
-  background: #fffaf0;
+  background: var(--surface-warning);
 }
 
 .load-error-notice > div {
@@ -34,7 +34,7 @@ defineEmits<{ retry: [] }>()
 }
 
 .load-error-notice strong {
-  color: #75502b;
+  color: var(--color-warning);
   font-size: 14px;
 }
 
