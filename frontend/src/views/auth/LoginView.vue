@@ -49,9 +49,28 @@ async function submit() {
     await session.login(username.value, password.value)
     await router.push(redirectTo.value)
   } catch (err: any) {
-    const detail = err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0]
-    error.value = detail || '账号名/邮箱或密码不正确，请重新输入。'
+    error.value = loginErrorMessage(err)
   }
+}
+
+function loginErrorMessage(err: any) {
+  if (!err?.response) return '无法连接服务器，请检查网络后重试。'
+
+  const status = Number(err.response.status || 0)
+  const data = err.response.data || {}
+  const detail = String(data.detail || data.non_field_errors?.[0] || '')
+  const normalized = detail.toLowerCase()
+
+  if (status === 429) return '登录尝试过于频繁，请稍后再试。'
+  if (status === 423 || /停用|inactive|disabled|deactivated/.test(normalized)) {
+    return '账号已停用，请联系管理员。'
+  }
+  if (/待审核|审核|approval|approved|pending/.test(normalized)) {
+    return '账号尚未通过审核，请等待管理员处理。'
+  }
+  if (status === 401 || status === 400) return '账号名、邮箱或密码不正确。'
+  if (status >= 500) return '服务器暂时无法处理登录请求，请稍后重试。'
+  return detail || '登录失败，请稍后重试。'
 }
 </script>
 

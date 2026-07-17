@@ -1,42 +1,31 @@
 <template>
-  <InternalLayout title="无权访问">
-    <section class="denied-card card">
-      <p class="section-kicker">访问权限</p>
-      <h1>当前账号没有访问该页面的权限</h1>
-      <p>该模块仅对管理员、硕博导师或指定管理角色开放。你仍可使用已授权的内部功能。</p>
-      <RouterLink class="primary-link" to="/dashboard">返回工作台</RouterLink>
-    </section>
-  </InternalLayout>
+  <AuthStatePage eyebrow="访问权限" title="当前账号没有访问权限" description="该页面需要相应的系统权限。你仍可返回工作台使用已经授权的功能，如需调整权限请联系管理员。">
+    <RouterLink class="primary-link" to="/dashboard">返回工作台</RouterLink>
+    <RouterLink class="outline-link" to="/">返回官网</RouterLink>
+  </AuthStatePage>
 </template>
 
 <script setup lang="ts">
-import InternalLayout from '../../layouts/InternalLayout.vue'
+import AuthStatePage from '../../components/AuthStatePage.vue'
 </script>
 
 <style scoped>
-.denied-card {
-  max-width: 680px;
-  padding: 34px;
-}
-
-.denied-card h1 {
-  margin: 0 0 12px;
-  color: var(--color-deep-green);
-  font-size: 30px;
-}
-
-.denied-card p:not(.section-kicker) {
-  margin: 0;
-  color: var(--color-muted);
+.primary-link,
+.outline-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 700;
 }
 
 .primary-link {
-  display: inline-flex;
-  margin-top: 24px;
-  border-radius: var(--radius-sm);
-  padding: 10px 16px;
   background: var(--color-cau-green);
   color: #fff;
-  font-weight: 700;
+}
+
+.outline-link {
+  border: 1px solid rgba(0, 135, 60, 0.28);
+  color: var(--color-cau-green);
 }
 </style>

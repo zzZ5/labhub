@@ -27,7 +27,7 @@
       />
 
       <main class="document-main">
-        <FilterToolbar class="filter-bar">
+        <FilterToolbar v-if="!previewDocument" class="filter-bar">
           <template #primary>
             <div class="filter-title">
               <strong>{{ activeCategoryName }}</strong>
@@ -492,6 +492,10 @@ watch(readerTotalPages, (total) => {
   .document-shell,
   .document-shell.is-reading {
     grid-template-columns: 1fr;
+  }
+
+  .document-shell.is-reading .document-main {
+    order: -1;
   }
 
 }

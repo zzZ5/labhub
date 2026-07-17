@@ -20,10 +20,6 @@
               <dt>位置</dt>
               <dd>{{ instrument.location_detail || '未填写位置' }}</dd>
             </div>
-            <div v-if="instrument.manager_name">
-              <dt>负责人</dt>
-              <dd>{{ instrument.manager_name }}</dd>
-            </div>
             <div>
               <dt>说明</dt>
               <dd class="instrument-note-preview">{{ shortNote(instrument.notes) }}</dd>
@@ -175,7 +171,7 @@ function statusText(status: string) {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 1;
 }
 
 .instrument-actions {

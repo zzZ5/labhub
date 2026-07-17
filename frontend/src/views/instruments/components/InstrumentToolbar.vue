@@ -19,9 +19,16 @@
       </template>
       <template v-if="canManage" #actions>
         <input ref="excelInput" class="hidden-file-input" type="file" accept=".xlsx" @change="selectExcel" />
-        <a class="toolbar-link" href="/templates/instruments-import-template.xlsx" download>下载模板</a>
-        <button type="button" class="secondary-action" @click="excelInput?.click()">导入 Excel</button>
         <button type="button" @click="$emit('create')">新建设备</button>
+        <el-dropdown trigger="click">
+          <button class="secondary-action more-action" type="button" aria-label="更多仪器操作"><el-icon><MoreFilled /></el-icon>更多</button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item><a class="dropdown-link" href="/templates/instruments-import-template.xlsx" download>下载导入模板</a></el-dropdown-item>
+              <el-dropdown-item @click="excelInput?.click()">导入 Excel</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
       <template v-if="canManage" #note>模板填写仪器名称、型号、状态、详细位置、设备图片和使用说明；图片插入对应行即可批量导入，Excel 不超过 50 MB。</template>
     </FilterToolbar>
@@ -32,6 +39,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { MoreFilled } from '@element-plus/icons-vue'
 import UploadProgress from '../../../components/UploadProgress.vue'
 import FilterToolbar from '../../../components/FilterToolbar.vue'
 import { UPLOAD_LIMIT, validateUploadFile } from '../../../utils/files'
@@ -122,6 +130,9 @@ function selectExcel(event: Event) {
 .instrument-toolbar .secondary-action:hover {
   background: var(--color-eco-green);
 }
+
+.more-action { gap: 5px; }
+.dropdown-link { display: block; width: 100%; color: inherit; }
 
 .hidden-file-input {
   display: none;

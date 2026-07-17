@@ -25,8 +25,9 @@
                 <h2>论文发表</h2>
                 <p>{{ paperTotal }} 篇公开论文，可按题名、作者、期刊、DOI 检索</p>
               </div>
+              <button class="mobile-filter-toggle" type="button" :aria-expanded="filtersExpanded" @click="filtersExpanded = !filtersExpanded">{{ filtersExpanded ? '收起筛选' : '筛选论文' }}</button>
             </div>
-            <div class="result-tools">
+            <div class="result-tools" :class="{ 'mobile-collapsed': !filtersExpanded }">
               <input v-model="paperKeyword" type="search" placeholder="搜索论文题名、作者、期刊或 DOI" @keyup.enter="loadPapers(1)" />
               <select v-model="paperYear" @change="loadPapers(1)">
                 <option value="">全部年份</option>
@@ -56,12 +57,13 @@
                 <h2>科研项目</h2>
                 <p>{{ projectTotal }} 项公开项目，可按项目名称、编号、来源或负责人检索</p>
               </div>
+              <button class="mobile-filter-toggle" type="button" :aria-expanded="filtersExpanded" @click="filtersExpanded = !filtersExpanded">{{ filtersExpanded ? '收起筛选' : '筛选项目' }}</button>
             </div>
-            <div class="result-tools two">
+            <div class="result-tools two" :class="{ 'mobile-collapsed': !filtersExpanded }">
               <input v-model="projectKeyword" type="search" placeholder="搜索项目名称、编号、来源或负责人" @keyup.enter="loadProjects(1)" />
               <button type="button" @click="loadProjects(1)">检索</button>
             </div>
-            <RouterLink v-for="project in projects" :key="project.id" class="simple-card" :to="{ path: `/publications/projects/${project.id}`, query: { from: route.fullPath } }">
+            <RouterLink v-for="project in projects" :key="project.id" class="simple-card project-card" :to="{ path: `/publications/projects/${project.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ project.title }}</h3>
                 <p>{{ project.description || project.funding_source || '项目说明待补充' }}</p>
@@ -91,12 +93,13 @@
                 <h2>专利成果</h2>
                 <p>{{ patentTotal }} 项公开专利，可按专利名称、专利号、发明人检索</p>
               </div>
+              <button class="mobile-filter-toggle" type="button" :aria-expanded="filtersExpanded" @click="filtersExpanded = !filtersExpanded">{{ filtersExpanded ? '收起筛选' : '筛选专利' }}</button>
             </div>
-            <div class="result-tools two">
+            <div class="result-tools two" :class="{ 'mobile-collapsed': !filtersExpanded }">
               <input v-model="patentKeyword" type="search" placeholder="搜索专利名称、专利号或发明人" @keyup.enter="loadPatents(1)" />
               <button type="button" @click="loadPatents(1)">检索</button>
             </div>
-            <RouterLink v-for="patent in patents" :key="patent.id" class="simple-card" :to="{ path: `/publications/patents/${patent.id}`, query: { from: route.fullPath } }">
+            <RouterLink v-for="patent in patents" :key="patent.id" class="simple-card patent-card" :to="{ path: `/publications/patents/${patent.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ patent.title }}</h3>
                 <p>{{ patent.inventors || '发明人待补充' }}</p>
@@ -110,6 +113,10 @@
                   <dt>状态</dt>
                   <dd>{{ patent.status || '-' }}</dd>
                 </div>
+                <div v-if="patent.application_date">
+                  <dt>申请日期</dt>
+                  <dd>{{ patent.application_date }}</dd>
+                </div>
               </dl>
             </RouterLink>
             <div v-if="!patents.length" class="empty-note">没有找到匹配的专利。</div>
@@ -122,12 +129,13 @@
                 <h2>获奖成果</h2>
                 <p>{{ awardTotal }} 项公开获奖，可按奖项名称、等级或参与人员检索</p>
               </div>
+              <button class="mobile-filter-toggle" type="button" :aria-expanded="filtersExpanded" @click="filtersExpanded = !filtersExpanded">{{ filtersExpanded ? '收起筛选' : '筛选获奖' }}</button>
             </div>
-            <div class="result-tools two">
+            <div class="result-tools two" :class="{ 'mobile-collapsed': !filtersExpanded }">
               <input v-model="awardKeyword" type="search" placeholder="搜索奖项名称、等级或参与人员" @keyup.enter="loadAwards(1)" />
               <button type="button" @click="loadAwards(1)">检索</button>
             </div>
-            <RouterLink v-for="award in awards" :key="award.id" class="simple-card" :to="{ path: `/publications/awards/${award.id}`, query: { from: route.fullPath } }">
+            <RouterLink v-for="award in awards" :key="award.id" class="simple-card award-card" :to="{ path: `/publications/awards/${award.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ award.title }}</h3>
                 <p>{{ award.description || award.participants || '奖项说明待补充' }}</p>
@@ -183,6 +191,7 @@ const queryPage = Math.max(1, Number.parseInt(typeof route.query.page === 'strin
 const queryKeyword = typeof route.query.q === 'string' ? route.query.q : ''
 const activeTab = ref<TabKey>(queryTab)
 const stats = ref<PublicationStats | null>(null)
+const filtersExpanded = ref(false)
 
 const papers = ref<Publication[]>([])
 const projects = ref<Project[]>([])
@@ -265,6 +274,7 @@ async function loadAwards(page = awardPage.value) {
 }
 
 watch(activeTab, async (tab) => {
+  filtersExpanded.value = false
   syncActiveQuery()
   if (tab === 'projects' && !projects.value.length) await loadProjects(1)
   if (tab === 'patents' && !patents.value.length) await loadPatents(1)
@@ -405,6 +415,10 @@ onMounted(async () => {
 }
 
 .block-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
   margin-bottom: 14px;
 }
 
@@ -418,6 +432,10 @@ onMounted(async () => {
   margin: 0;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.mobile-filter-toggle {
+  display: none;
 }
 
 .result-tools {
@@ -516,6 +534,13 @@ onMounted(async () => {
   font-weight: 500;
 }
 
+.simple-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .meta-line span + span::before {
   margin-right: 8px;
   color: var(--color-border);
@@ -536,6 +561,10 @@ onMounted(async () => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
+}
+
+.project-card dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .simple-card dt,
@@ -569,6 +598,31 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
+  .stats-panel {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 10px 8px;
+  }
+
+  .stats-panel > div,
+  .stats-panel > div:nth-child(3) {
+    border-left: 1px solid var(--color-line);
+    padding: 0 8px;
+  }
+
+  .stats-panel > div:first-child {
+    border-left: 0;
+  }
+
+  .stats-panel strong {
+    font-size: 19px;
+  }
+
+  .stats-panel span {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
   .result-tabs {
     padding-right: 10px;
     padding-left: 10px;
@@ -579,6 +633,36 @@ onMounted(async () => {
     padding: 10px 13px;
   }
 
+  .result-block {
+    padding: 18px 16px;
+  }
+
+  .block-heading {
+    align-items: center;
+  }
+
+  .block-heading h2 {
+    font-size: 21px;
+  }
+
+  .mobile-filter-toggle {
+    display: inline-flex;
+    min-height: 38px;
+    flex: 0 0 auto;
+    align-items: center;
+    border: 1px solid rgba(0, 135, 60, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 0 11px;
+    background: #fff;
+    color: var(--color-cau-green);
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .result-tools.mobile-collapsed {
+    display: none;
+  }
+
   .result-tools,
   .result-tools.two,
   .paper-row {
@@ -587,6 +671,11 @@ onMounted(async () => {
 
   .paper-row time {
     width: fit-content;
+  }
+
+  .simple-card dl,
+  .project-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

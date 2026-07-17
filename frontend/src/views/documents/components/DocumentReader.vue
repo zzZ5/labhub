@@ -96,16 +96,20 @@ defineEmits<{
 .reader-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin: 10px 0 0;
+  gap: 0;
+  margin: 9px 0 0;
+  color: var(--color-muted);
 }
 
 .reader-meta div {
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  padding: 5px 10px;
-  background: var(--color-panel);
+  position: relative;
+  padding: 3px 12px 3px 0;
 }
+
+.reader-meta div + div { padding-left: 12px; }
+.reader-meta div + div::before { position: absolute; top: 8px; left: 0; width: 3px; height: 3px; border-radius: 50%; background: var(--color-border); content: ''; }
+.reader-meta div:last-child { flex-basis: 100%; padding-left: 0; }
+.reader-meta div:last-child::before { display: none; }
 
 .reader-meta dt,
 .reader-meta dd {
@@ -124,7 +128,7 @@ defineEmits<{
   font-weight: 650;
 }
 
-.embedded-reader :deep(.file-preview) { margin-top: 10px; }
+.embedded-reader :deep(.file-preview) { margin-top: 9px; }
 
 @media (max-width: 640px) {
   .reader-heading {
@@ -132,8 +136,12 @@ defineEmits<{
   }
 
   .reader-actions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
   }
+
+  .reader-actions :deep(.el-button) { width: 100%; margin: 0; }
 
   .reader-heading p {
     max-width: 100%;

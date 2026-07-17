@@ -1,5 +1,5 @@
 <template>
-  <aside class="card category-tree">
+  <aside :class="['card', 'category-tree', { 'is-reading': previewDocument }]">
     <template v-if="previewDocument">
       <div class="side-heading">
         <h2>资料列表</h2>
@@ -158,5 +158,23 @@ defineEmits<{
     position: static;
     max-height: none;
   }
+
+  .category-tree:not(.is-reading) {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 10px;
+    scrollbar-width: thin;
+  }
+
+  .category-tree:not(.is-reading) .side-heading {
+    flex: 0 0 auto;
+    margin: 0 5px 0 2px;
+  }
+
+  .category-tree:not(.is-reading) .side-heading h2 { margin: 0; font-size: 15px; }
+  .category-tree:not(.is-reading) > button { flex: 0 0 auto; width: auto; min-height: 34px; margin: 0; padding: 6px 11px; white-space: nowrap; }
+  .category-tree.is-reading { max-height: 300px; }
 }
 </style>

@@ -28,12 +28,13 @@
             <RouterLink to="/documents">进入资料库</RouterLink>
           </div>
           <div v-if="dashboard.latest_documents.length" class="stack-list">
-            <div v-for="doc in dashboard.latest_documents" :key="doc.id" class="list-row">
+            <RouterLink v-for="doc in dashboard.latest_documents" :key="doc.id" class="list-row" :to="{ path: '/documents', query: { document: doc.id } }">
               <div>
                 <strong>{{ doc.title }}</strong>
                 <span>{{ doc.category_name || '未分类' }} · {{ formatDate(doc.updated_at) }}</span>
               </div>
-            </div>
+              <span class="row-link">查看</span>
+            </RouterLink>
           </div>
           <div v-else class="empty-note">暂无可查阅资料。</div>
         </article>
@@ -47,13 +48,13 @@
             <RouterLink to="/instruments">查看仪器平台</RouterLink>
           </div>
           <div v-if="dashboard.instrument_status.length" class="stack-list">
-            <div v-for="item in dashboard.instrument_status" :key="item.id" class="list-row">
+            <RouterLink v-for="item in dashboard.instrument_status" :key="item.id" class="list-row" :to="`/instruments/${item.id}`">
               <div>
                 <strong>{{ item.name }}</strong>
                 <span>{{ item.location_detail || '未填写位置' }}</span>
               </div>
               <span :class="['status-tag', instrumentStatusClass(item.status)]">{{ instrumentStatusText(item.status) }}</span>
-            </div>
+            </RouterLink>
           </div>
           <div v-else class="empty-note">当前没有需要关注的设备。</div>
         </article>
@@ -66,13 +67,13 @@
             </div>
             <RouterLink to="/students">查看学生档案</RouterLink>
           </div>
-          <div v-if="dashboard.student_archives.length" class="student-grid">
-            <RouterLink v-for="student in dashboard.student_archives" :key="student.id" class="student-card" to="/students">
-              <strong>{{ student.name }}</strong>
-              <span>{{ degreeText(student.degree_type) }} {{ student.grade || '' }}</span>
-              <p>{{ student.file_count }} 份归档材料</p>
-              <small v-if="student.latest_file_title">最近上传：{{ student.latest_file_title }}</small>
-              <small v-else>{{ student.research_direction || '研究方向待补充' }}</small>
+          <div v-if="dashboard.student_archives.length" class="stack-list student-list">
+            <RouterLink v-for="student in dashboard.student_archives" :key="student.id" class="list-row student-row" :to="{ path: '/students', query: { student: student.id } }">
+              <div>
+                <strong>{{ student.name }}</strong>
+                <span>{{ degreeText(student.degree_type) }} {{ student.grade || '' }} · {{ student.latest_file_title || student.research_direction || '暂无近期材料' }}</span>
+              </div>
+              <span class="archive-count">{{ student.file_count }} 份资料</span>
             </RouterLink>
           </div>
           <div v-else class="empty-note">暂无可见学生档案。</div>
@@ -174,8 +175,6 @@ function degreeText(degree: string) {
 
 .quick-card p,
 .panel-heading p,
-.student-card p,
-.student-card small,
 .list-row div span {
   margin: 0;
   color: var(--color-muted);
@@ -282,6 +281,7 @@ function degreeText(degree: string) {
   min-height: 58px;
   padding: 12px 0;
   border-top: 1px solid var(--color-line);
+  color: inherit;
 }
 
 .list-row:first-child {
@@ -293,47 +293,14 @@ function degreeText(degree: string) {
   display: block;
 }
 
-.student-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.student-card {
-  display: grid;
-  gap: 5px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  padding: 13px 14px;
-  background: var(--color-panel);
-  color: inherit;
-}
-
-.student-card:hover {
-  border-color: rgba(0, 135, 60, 0.22);
-  background: #fff;
-}
-
-.student-card strong {
-  color: var(--color-text);
-}
-
-.student-card span {
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.student-card small {
-  overflow: hidden;
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.list-row:hover strong { color: var(--color-cau-green); }
+.row-link,
+.archive-count { flex: 0 0 auto; color: var(--color-cau-green); font-size: 13px; font-weight: 650; }
+.student-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+.student-list .list-row:nth-child(2) { border-top: 0; }
 
 .empty-note {
-  border-top: 1px solid var(--color-line);
-  padding: 18px 0 4px;
+  padding: 14px 0 2px;
   color: var(--color-muted);
   font-size: 14px;
 }
@@ -343,9 +310,6 @@ function degreeText(degree: string) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .student-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 760px) {
@@ -356,17 +320,16 @@ function degreeText(degree: string) {
 
   .quick-grid,
   .panel-grid,
-  .student-grid {
+  .student-list {
     grid-template-columns: 1fr;
   }
+
+  .student-list .list-row:nth-child(2) { border-top: 1px solid var(--color-line); }
 
   .wide-panel {
     grid-column: auto;
   }
 
-  .list-row {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+  .list-row { gap: 12px; }
 }
 </style>

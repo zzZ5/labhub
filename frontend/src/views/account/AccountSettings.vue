@@ -45,10 +45,11 @@
             </el-form>
           </section>
 
-          <section id="password" class="card settings-panel">
-            <div class="panel-heading">
-              <div><h2>修改密码</h2><p>修改后当前设备会保持登录。</p></div>
-            </div>
+          <details id="password" class="card security-panel">
+            <summary>
+              <span><strong>账号安全</strong><small>需要时在这里修改登录密码</small></span>
+              <span class="security-toggle">展开</span>
+            </summary>
             <el-form label-position="top" class="password-form" @submit.prevent>
               <el-form-item label="当前密码"><el-input v-model="passwordForm.current_password" type="password" show-password autocomplete="current-password" /></el-form-item>
               <div class="form-pair">
@@ -57,7 +58,7 @@
               </div>
               <div class="form-actions"><el-button type="primary" :loading="savingPassword" @click="savePassword">更新密码</el-button></div>
             </el-form>
-          </section>
+          </details>
         </main>
       </div>
     </section>
@@ -152,8 +153,8 @@ onMounted(async () => {
 <style scoped>
 .account-page,
 .account-panels { display: grid; gap: 18px; }
-.account-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 18px; align-items: start; }
-.account-summary { position: sticky; top: 94px; padding: 24px; text-align: center; }
+.account-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+.account-summary { position: sticky; top: 94px; padding: 20px 18px; text-align: center; box-shadow: none; }
 .account-summary h2 { margin: 14px 0 4px; color: var(--color-deep-green); font-size: 21px; }
 .account-summary > p { margin: 0; overflow-wrap: anywhere; color: var(--color-muted); font-size: 13px; }
 .account-summary dl { margin: 22px 0; border-top: 1px solid var(--color-line); text-align: left; }
@@ -161,7 +162,7 @@ onMounted(async () => {
 .account-summary dt { color: var(--color-muted); }
 .account-summary dd { margin: 0; color: var(--color-text); font-weight: 600; }
 .profile-avatar { display: grid; width: 58px; height: 58px; place-items: center; overflow: hidden; border: 1px solid rgba(0, 135, 60, .16); border-radius: 50%; background: var(--color-eco-green); color: var(--color-deep-green); font-size: 20px; font-weight: 700; }
-.profile-avatar.large { width: 88px; height: 88px; margin: 0 auto; font-size: 28px; }
+.profile-avatar.large { width: 72px; height: 72px; margin: 0 auto; font-size: 24px; }
 .profile-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .student-profile-link { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; border: 1px solid rgba(0, 135, 60, .24); border-radius: var(--radius-sm); color: var(--color-cau-green); font-size: 14px; font-weight: 650; }
 .settings-panel { padding: 22px 24px; }
@@ -169,6 +170,17 @@ onMounted(async () => {
 .panel-heading h2 { margin: 0 0 4px; color: var(--color-deep-green); font-size: 20px; }
 .panel-heading p { margin: 0; color: var(--color-muted); font-size: 14px; }
 .settings-form, .password-form { max-width: 760px; }
+.security-panel { padding: 0; overflow: hidden; box-shadow: none; }
+.security-panel:hover { border-color: var(--color-border); transform: none; }
+.security-panel summary { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 22px; cursor: pointer; list-style: none; }
+.security-panel summary::-webkit-details-marker { display: none; }
+.security-panel summary span:first-child { display: grid; gap: 3px; }
+.security-panel summary strong { color: var(--color-deep-green); font-size: 17px; }
+.security-panel summary small { color: var(--color-muted); font-size: 13px; font-weight: 400; }
+.security-toggle { color: var(--color-cau-green); font-size: 13px; font-weight: 650; }
+.security-panel[open] .security-toggle { font-size: 0; }
+.security-panel[open] .security-toggle::after { content: '收起'; font-size: 13px; }
+.security-panel .password-form { border-top: 1px solid var(--color-line); padding: 20px 22px 22px; }
 .form-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .avatar-editor { display: flex; align-items: center; gap: 12px; }
 .avatar-picker { display: inline-flex; align-items: center; min-height: 36px; border: 1px solid rgba(0, 135, 60, .28); border-radius: var(--radius-sm); padding: 0 13px; color: var(--color-cau-green); font-size: 14px; font-weight: 650; cursor: pointer; }
@@ -177,7 +189,8 @@ onMounted(async () => {
 .form-actions { display: flex; justify-content: flex-end; }
 @media (max-width: 820px) {
   .account-layout { grid-template-columns: 1fr; }
-  .account-summary { position: static; }
+  .account-summary { position: static; order: 2; }
+  .account-panels { order: 1; }
 }
 @media (max-width: 560px) {
   .settings-panel { padding: 18px; }

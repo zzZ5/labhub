@@ -3,6 +3,7 @@
     :model-value="open"
     :title="instrument ? '编辑设备' : '新建设备'"
     width="620px"
+    :fullscreen="isMobile"
     @update:model-value="$emit('update:open', $event)"
   >
     <el-form label-position="top" class="instrument-form">
@@ -35,6 +36,7 @@
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 
 import ImageCropField from '../../../components/ImageCropField.vue'
@@ -47,6 +49,7 @@ const props = defineProps<{
   saving: boolean
   progress: number
 }>()
+const isMobile = useMediaQuery('(max-width: 620px)')
 
 const emit = defineEmits<{
   'update:open': [value: boolean]

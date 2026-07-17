@@ -245,6 +245,7 @@ onMounted(async () => {
 }
 
 .info-section p {
+  max-width: 860px;
   line-height: 1.85;
 }
 
