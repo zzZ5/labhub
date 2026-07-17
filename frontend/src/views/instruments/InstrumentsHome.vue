@@ -7,6 +7,7 @@
         <InstrumentToolbar
           v-model:keyword="keyword"
           v-model:status="statusFilter"
+          v-model:sort="sortOrder"
           :can-manage="canManageInstruments"
           @create="openCreate"
           @import="openImport"
@@ -80,6 +81,7 @@ const queryNumber = (value: unknown, fallback: number) => Math.max(1, Number.par
 const keyword = ref(queryText(route.query.q))
 const debouncedKeyword = useDebouncedValue(keyword)
 const statusFilter = ref(queryText(route.query.status))
+const sortOrder = ref(queryText(route.query.sort) || 'created_desc')
 const instrumentPage = ref(queryNumber(route.query.page, 1))
 const formVisible = ref(false)
 const editingInstrument = ref<Instrument | null>(null)
@@ -93,14 +95,27 @@ const importResult = ref<InstrumentImportResult | null>(null)
 const canManageInstruments = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'instrument_manager'])))
 const filteredInstruments = computed(() => {
   const q = debouncedKeyword.value.trim().toLowerCase()
-  return instruments.value.filter((item) => {
+  const filtered = instruments.value.filter((item) => {
     const haystack = `${item.name} ${item.model || ''} ${item.location_detail || ''} ${item.manager_name || ''} ${item.notes || ''}`.toLowerCase()
     return (!statusFilter.value || item.status === statusFilter.value) && (!q || haystack.includes(q))
   })
+  if (sortOrder.value === 'created_asc') return filtered.sort((a, b) => instrumentTime(a) - instrumentTime(b))
+  if (sortOrder.value === 'name_asc') return filtered.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+  if (sortOrder.value === 'status_asc') {
+    const statusOrder: Record<string, number> = { normal: 0, maintenance: 1, disabled: 2 }
+    return filtered.sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9) || a.name.localeCompare(b.name, 'zh-CN'))
+  }
+  return filtered.sort((a, b) => instrumentTime(b) - instrumentTime(a))
 })
 const instrumentTotal = computed(() => filteredInstruments.value.length)
 const { totalPages: instrumentTotalPages, paginate: paginateInstruments } = useListPagination(instrumentTotal, { page: instrumentPage })
 const pagedInstruments = computed(() => paginateInstruments(filteredInstruments.value))
+
+function instrumentTime(instrument: Instrument) {
+  const value = instrument.created_at || instrument.updated_at
+  const timestamp = value ? Date.parse(value) : 0
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
 
 async function loadInstruments() {
   loading.value = true
@@ -208,6 +223,7 @@ function syncInstrumentQuery() {
   const query: Record<string, string> = {}
   if (keyword.value.trim()) query.q = keyword.value.trim()
   if (statusFilter.value) query.status = statusFilter.value
+  if (sortOrder.value !== 'created_desc') query.sort = sortOrder.value
   if (instrumentPage.value > 1) query.page = String(instrumentPage.value)
   void router.replace({ name: 'instruments-home', query })
 }
@@ -218,7 +234,7 @@ onMounted(async () => {
   openEditFromQuery()
 })
 
-watch([debouncedKeyword, statusFilter], () => {
+watch([debouncedKeyword, statusFilter, sortOrder], () => {
   instrumentPage.value = 1
   syncInstrumentQuery()
 })

@@ -26,23 +26,27 @@
           </div>
         </article>
 
-        <details class="permission-note">
-          <summary>系统权限说明</summary>
-          <p>系统权限只控制后台管理能力，与学校身份和成员状态分开维护。</p>
-          <div class="permission-summary">
-            <span><b>网站编辑</b>维护门户内容、新闻和成果</span>
-            <span><b>资料管理员</b>维护内部资料库</span>
-            <span><b>仪器管理员</b>维护仪器信息和说明</span>
-            <span><b>系统管理员</b>管理账号和系统权限</span>
-          </div>
-        </details>
       </section>
 
       <article class="card panel account-panel">
         <div class="panel-heading account-toolbar">
           <div>
             <h2>全部成员</h2>
-            <p>共 {{ users.length }} 个账号<span v-if="studentMissingArchiveCount">，{{ studentMissingArchiveCount }} 名学生待建档</span></p>
+            <div class="account-summary-line">
+              <p>共 {{ users.length }} 个账号<span v-if="studentMissingArchiveCount">，{{ studentMissingArchiveCount }} 名学生待建档</span></p>
+              <el-popover placement="bottom-start" :width="420" trigger="click">
+                <div class="permission-help-content">
+                  <p>系统权限仅控制后台管理能力，与学校身份和成员状态分开维护。</p>
+                  <dl>
+                    <div><dt>网站编辑</dt><dd>维护门户内容、新闻和成果</dd></div>
+                    <div><dt>资料管理员</dt><dd>维护内部资料库</dd></div>
+                    <div><dt>仪器管理员</dt><dd>维护仪器信息和说明</dd></div>
+                    <div><dt>系统管理员</dt><dd>管理账号和系统权限</dd></div>
+                  </dl>
+                </div>
+                <template #reference><button class="permission-help-trigger" type="button">系统权限说明</button></template>
+              </el-popover>
+            </div>
           </div>
           <FilterToolbar has-filters>
             <template #primary><el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" /></template>
@@ -620,47 +624,58 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   border-radius: var(--radius-lg);
 }
 
-.permission-note {
-  border-bottom: 1px solid var(--color-line);
-  padding: 0 2px 12px;
-  color: var(--color-muted);
+.account-summary-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
 }
 
-.permission-note summary {
-  width: fit-content;
-  color: var(--color-deep-green);
+.permission-help-trigger {
+  border: 0;
+  border-bottom: 1px solid rgba(0, 135, 60, 0.3);
+  padding: 0;
+  background: transparent;
+  color: var(--color-cau-green);
   cursor: pointer;
-  font-size: 14px;
+  font: inherit;
+  font-size: 13px;
   font-weight: 650;
 }
 
-.permission-note p {
-  margin: 8px 0 0;
-  color: var(--color-muted);
-  line-height: 1.7;
-}
-
-.permission-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.permission-summary span {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  padding: 9px 10px;
-  background: #fff;
+.permission-help-content > p {
+  margin: 0 0 10px;
   color: var(--color-muted);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
-.permission-summary b {
-  display: block;
+.permission-help-content dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.permission-help-content dl div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.permission-help-content dt,
+.permission-help-content dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.permission-help-content dt {
   color: var(--color-deep-green);
-  font-size: 14px;
+  font-weight: 700;
+}
+
+.permission-help-content dd {
+  color: var(--color-muted);
 }
 
 .panel-heading {
@@ -691,8 +706,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 .review-list,
-.review-card,
-.permission-note {
+.review-card {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   padding: 14px;
@@ -936,9 +950,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
     grid-template-columns: 1fr;
   }
 
-  .permission-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 720px) {
@@ -950,10 +961,6 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   .heading-actions,
   .filters {
     justify-content: flex-start;
-  }
-
-  .permission-summary {
-    grid-template-columns: 1fr;
   }
 
   .account-panel { padding: 14px; }

@@ -15,6 +15,8 @@ export interface Instrument {
   status_label: string
   notes: string
   sort_order?: number
+  created_at: string
+  updated_at: string
 }
 
 export interface InstrumentFormPayload {

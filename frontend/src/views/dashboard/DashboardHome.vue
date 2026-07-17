@@ -3,14 +3,11 @@
     <section class="dashboard-page">
       <section class="quick-grid">
         <RouterLink v-for="item in quickLinks" :key="item.title" class="card quick-card" :to="item.to">
-          <span>{{ item.kicker }}</span>
-          <strong>{{ item.title }}</strong>
-          <p>{{ item.description }}</p>
+          <span class="quick-kicker">{{ item.kicker }}</span>
+          <strong class="quick-title">{{ item.title }}</strong>
+          <div v-if="item.value !== null" class="quick-metric"><b>{{ item.value }}</b><small>{{ item.unit }}</small></div>
+          <span v-else class="quick-entry">进入管理</span>
         </RouterLink>
-      </section>
-
-      <section class="compact-summary dashboard-summary">
-        <span v-for="item in visibleSummary" :key="item.label"><strong>{{ item.value }}</strong>{{ item.label }}</span>
       </section>
 
       <section class="panel-grid">
@@ -85,9 +82,9 @@ const session = useSessionStore()
 const dashboard = reactive<DashboardData>({
   summary: [
     { label: '待审核账号', value: 0, note: '仅管理员与硕博导师可见' },
-    { label: '设备需关注', value: 0, note: '维护或停用设备' },
-    { label: '可查阅资料', value: 0, note: '当前权限范围内' },
-    { label: '学生资料', value: 0, note: '开题报告、毕业论文等归档材料' },
+    { label: '设备数量', value: 0, note: '仪器平台全部设备' },
+    { label: '资料数量', value: 0, note: '当前权限范围内' },
+    { label: '学生档案数量', value: 0, note: '当前可见学生档案' },
   ],
   instrument_status: [],
   latest_documents: [],
@@ -99,24 +96,25 @@ const dashboard = reactive<DashboardData>({
 const canEditPortal = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'editor'])))
 const canManageMembers = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin'])))
 const pendingUserCount = computed(() => dashboard.summary.find((item) => item.label === '待审核账号')?.value || 0)
+type QuickLink = { title: string; kicker: string; value: number | null; unit: string; to: string }
+
+function summaryValue(...labels: string[]) {
+  return dashboard.summary.find((item) => labels.includes(item.label))?.value || 0
+}
 const quickLinks = computed(() => {
-  const links = [
-    { title: '内部资料', kicker: '资料库', description: '查看实验方法、组会资料和项目材料', to: '/documents' },
-    { title: '仪器平台', kicker: '设备', description: '查看设备图片、位置和使用说明', to: '/instruments' },
-    { title: '学生档案', kicker: '归档', description: '维护学生信息和毕业相关材料', to: '/students' },
+  const links: QuickLink[] = [
+    { title: '内部资料', kicker: '资料库', value: summaryValue('资料数量', '可查阅资料'), unit: '份', to: '/documents' },
+    { title: '仪器平台', kicker: '设备', value: summaryValue('设备数量'), unit: '台', to: '/instruments' },
+    { title: '学生档案', kicker: '归档', value: summaryValue('学生档案数量', '归档数量', '学生资料'), unit: '份', to: '/students' },
   ]
   if (canEditPortal.value) {
-    links.push({ title: '门户内容', kicker: '网站', description: '维护首页、新闻、成果和团队展示', to: '/cms' })
+    links.push({ title: '门户内容', kicker: '网站', value: null, unit: '', to: '/cms' })
   }
   if (canManageMembers.value && pendingUserCount.value > 0) {
-    links.push({ title: '成员审核', kicker: '账号', description: `${pendingUserCount.value} 个账号等待确认`, to: '/members' })
+    links.push({ title: '成员审核', kicker: '账号', value: pendingUserCount.value, unit: '个待审核', to: '/members' })
   }
   return links
 })
-
-const visibleSummary = computed(() =>
-  dashboard.summary.filter((item) => item.label !== '待审核账号' || item.value > 0),
-)
 
 onMounted(async () => {
   try {
@@ -163,7 +161,6 @@ function degreeText(degree: string) {
   gap: 16px;
 }
 
-.quick-card p,
 .panel-heading p {
   margin: 0;
   color: var(--color-muted);
@@ -183,8 +180,10 @@ function degreeText(degree: string) {
 
 .quick-card {
   display: grid;
-  gap: 7px;
-  min-height: 96px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 5px 14px;
+  min-height: 104px;
   padding: 14px 16px;
   color: inherit;
   box-shadow: none;
@@ -195,28 +194,48 @@ function degreeText(degree: string) {
   transform: translateY(-1px);
 }
 
-.quick-card span {
+.quick-kicker {
+  grid-column: 1 / -1;
   color: var(--color-cau-green);
   font-size: 13px;
   font-weight: 700;
 }
 
-.quick-card strong {
+.quick-title {
   color: var(--color-deep-green);
   font-size: 18px;
   font-weight: 650;
 }
 
-.quick-card p {
-  font-size: 14px;
+.quick-metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 4px;
+  color: var(--color-cau-green);
+}
+
+.quick-metric b {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.quick-metric small,
+.quick-entry {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quick-entry {
+  justify-self: end;
+  color: var(--color-cau-green);
 }
 
 .panel:hover {
   transform: none;
-}
-
-.dashboard-summary {
-  padding: 0 2px 2px;
 }
 
 .panel-grid {

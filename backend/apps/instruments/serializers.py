@@ -42,6 +42,8 @@ class InstrumentSerializer(serializers.ModelSerializer):
             "status_label",
             "notes",
             "sort_order",
+            "created_at",
+            "updated_at",
         ]
 
     def get_image_size(self, obj):

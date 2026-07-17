@@ -12,7 +12,7 @@ from apps.accounts.services import can_manage_accounts
 from apps.documents.models import Document, DocumentDownloadLog, DocumentStatus
 from apps.documents.services import visible_documents_for_user
 from apps.instruments.models import Instrument
-from apps.students.models import StudentArchiveFile, StudentProfile
+from apps.students.models import StudentProfile
 from apps.students.services import visible_students_for_user
 
 
@@ -141,7 +141,7 @@ def dashboard_summary(request):
 
     instruments = Instrument.objects.all().order_by("sort_order", "name")
     instruments_needing_attention = instruments.filter(status__in=[Instrument.Status.MAINTENANCE, Instrument.Status.DISABLED])
-    student_archive_count = StudentArchiveFile.objects.filter(student__in=student_queryset).count()
+    student_profile_count = student_queryset.count()
     pending_user_count = UserProfile.objects.filter(is_approved=False).count() if can_manage_users else 0
 
     todos = []
@@ -169,9 +169,9 @@ def dashboard_summary(request):
         {
             "summary": [
                 {"label": "待审核账号", "value": pending_user_count, "note": "仅管理员与硕博导师可见"},
-                {"label": "设备需关注", "value": instrument_attention_count, "note": "维护或停用设备"},
-                {"label": "可查阅资料", "value": document_queryset.count(), "note": "当前权限范围内"},
-                {"label": "学生资料", "value": student_archive_count, "note": "开题报告、毕业论文等归档材料"},
+                {"label": "设备数量", "value": instruments.count(), "note": "仪器平台全部设备"},
+                {"label": "资料数量", "value": document_queryset.count(), "note": "当前权限范围内"},
+                {"label": "学生档案数量", "value": student_profile_count, "note": "当前可见学生档案"},
             ],
             "instrument_status": [_instrument_payload(item) for item in instruments_needing_attention.distinct()[:5]],
             "latest_documents": [_document_payload(item) for item in document_queryset.order_by("-updated_at")[:5]],

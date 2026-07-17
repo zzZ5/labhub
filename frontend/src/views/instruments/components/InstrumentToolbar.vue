@@ -16,6 +16,12 @@
           <option value="maintenance">维护中</option>
           <option value="disabled">停用</option>
         </select>
+        <select :value="sort" aria-label="仪器排序" @change="$emit('update:sort', ($event.target as HTMLSelectElement).value)">
+          <option value="created_desc">最新添加</option>
+          <option value="created_asc">最早添加</option>
+          <option value="name_asc">名称顺序</option>
+          <option value="status_asc">状态顺序</option>
+        </select>
       </template>
       <template v-if="canManage" #actions>
         <el-button type="primary" @click="$emit('create')">新建设备</el-button>
@@ -31,12 +37,14 @@ import FilterToolbar from '../../../components/FilterToolbar.vue'
 defineProps<{
   keyword: string
   status: string
+  sort: string
   canManage: boolean
 }>()
 
 const emit = defineEmits<{
   'update:keyword': [value: string]
   'update:status': [value: string]
+  'update:sort': [value: string]
   create: []
   import: []
 }>()

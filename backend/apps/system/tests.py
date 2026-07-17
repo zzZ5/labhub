@@ -9,6 +9,7 @@ from io import BytesIO
 
 from apps.documents.models import Document, DocumentCategory, DocumentStatus
 from apps.instruments.models import Instrument
+from apps.students.models import StudentProfile
 from apps.system.uploads import (
     AVATAR_UPLOAD_LIMIT,
     DOCUMENT_UPLOAD_LIMIT,
@@ -94,6 +95,7 @@ def test_dashboard_summary_returns_workspace_snapshot(client):
         status=DocumentStatus.ACTIVE,
     )
     Instrument.objects.create(name="总有机碳分析仪", status=Instrument.Status.MAINTENANCE, location_detail="B112")
+    StudentProfile.objects.create(user=user, name="测试学生", degree_type=StudentProfile.DegreeType.MASTER)
 
     client.force_login(user)
     response = client.get(reverse("dashboard-summary"))
@@ -108,6 +110,8 @@ def test_dashboard_summary_returns_workspace_snapshot(client):
         "student_archives",
         "recent_downloads",
     }
-    assert payload["summary"][1]["label"] == "设备需关注"
+    assert payload["summary"][1] == {"label": "设备数量", "value": 1, "note": "仪器平台全部设备"}
+    assert payload["summary"][2] == {"label": "资料数量", "value": 1, "note": "当前权限范围内"}
+    assert payload["summary"][3] == {"label": "学生档案数量", "value": 1, "note": "当前可见学生档案"}
     assert payload["instrument_status"][0]["name"] == "总有机碳分析仪"
     assert payload["latest_documents"][0]["title"] == "堆肥反应器操作 SOP"

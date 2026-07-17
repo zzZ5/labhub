@@ -19,6 +19,7 @@ export interface LabDocument {
   allow_download: boolean
   status: string
   status_label: string
+  created_at: string
   updated_at: string
   original_filename: string
   uploaded_by_name: string

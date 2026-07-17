@@ -18,13 +18,21 @@
       />
 
       <main class="document-main">
-        <FilterToolbar v-if="!previewDocument" class="filter-bar">
+        <FilterToolbar v-if="!previewDocument" class="filter-bar" has-filters>
           <template #primary>
             <div class="filter-title">
               <strong>{{ activeCategoryName }}</strong>
               <span>{{ loading ? '正在更新资料列表' : `共 ${displayDocuments.length} 条资料` }}</span>
             </div>
             <el-input v-model="keyword" placeholder="搜索实验方法、论文材料、项目资料或组会资料" clearable @keyup.enter="loadDocuments()" />
+          </template>
+          <template #filters>
+            <el-select v-model="sortOrder" aria-label="资料排序">
+              <el-option label="最新添加" value="created_desc" />
+              <el-option label="最早添加" value="created_asc" />
+              <el-option label="最近更新" value="updated_desc" />
+              <el-option label="标题顺序" value="title_asc" />
+            </el-select>
           </template>
           <template #actions>
             <el-button type="primary" @click="loadDocuments()">搜索</el-button>
@@ -128,6 +136,7 @@ const loading = ref(false)
 const loadError = ref('')
 const keyword = ref(String(route.query.q || ''))
 const activeCategory = ref(String(route.query.category || ''))
+const sortOrder = ref(String(route.query.sort || 'created_desc'))
 const documentPage = ref(Math.max(1, Number(route.query.page) || 1))
 const readerPage = ref(1)
 const readerPageSize = 12
@@ -150,7 +159,13 @@ useDocumentPreviewPolling(previewDocument, async (documentId) => {
 })
 
 const displayCategories = computed(() => categories.value)
-const displayDocuments = computed(() => documents.value)
+const displayDocuments = computed(() => {
+  const sorted = [...documents.value]
+  if (sortOrder.value === 'created_asc') return sorted.sort((a, b) => documentTime(a, 'created') - documentTime(b, 'created'))
+  if (sortOrder.value === 'updated_desc') return sorted.sort((a, b) => documentTime(b, 'updated') - documentTime(a, 'updated'))
+  if (sortOrder.value === 'title_asc') return sorted.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'))
+  return sorted.sort((a, b) => documentTime(b, 'created') - documentTime(a, 'created'))
+})
 const documentTotal = computed(() => displayDocuments.value.length)
 const { totalPages: documentTotalPages, paginate: paginateDocuments } = useListPagination(documentTotal, { page: documentPage })
 const pagedDocuments = computed(() => paginateDocuments(displayDocuments.value))
@@ -395,20 +410,34 @@ onMounted(async () => {
   }
 })
 
+function documentTime(document: LabDocument, type: 'created' | 'updated') {
+  const value = type === 'updated'
+    ? document.updated_at
+    : document.created_at || document.uploaded_at || document.updated_at
+  const timestamp = value ? Date.parse(value) : 0
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
 watch(
-  [keyword, activeCategory, documentPage, () => previewDocument.value?.id || 0],
-  ([q, category, page, document]) => {
+  [keyword, activeCategory, sortOrder, documentPage, () => previewDocument.value?.id || 0],
+  ([q, category, sort, page, document]) => {
     void router.replace({
       query: {
         ...route.query,
         q: q || undefined,
         category: category || undefined,
+        sort: sort !== 'created_desc' ? sort : undefined,
         page: page > 1 ? String(page) : undefined,
         document: document ? String(document) : undefined,
       },
     })
   },
 )
+
+watch(sortOrder, () => {
+  documentPage.value = 1
+  readerPage.value = 1
+})
 
 watch(readerTotalPages, (total) => {
   if (readerPage.value > total) readerPage.value = total
