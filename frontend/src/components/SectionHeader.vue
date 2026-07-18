@@ -28,17 +28,27 @@ defineProps<{
   position: absolute;
   top: 0;
   left: 0;
-  width: 38px;
-  height: 2px;
+  width: 36px;
+  height: 3px;
   content: "";
   background: var(--color-cau-green);
+}
+
+.section-header::after {
+  position: absolute;
+  top: 0;
+  left: 40px;
+  width: 12px;
+  height: 3px;
+  background: var(--color-cau-gold);
+  content: "";
 }
 
 .section-header h2 {
   margin: 0;
   color: var(--color-deep-green);
   font-size: clamp(28px, 3.2vw, 34px);
-  font-weight: 650;
+  font-weight: 680;
   line-height: 1.18;
 }
 

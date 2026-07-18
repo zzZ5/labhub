@@ -312,29 +312,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.portal-page-head {
-  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
-  padding: 30px 0 26px;
-  background: linear-gradient(90deg, rgba(234, 245, 238, 0.72), rgba(255, 255, 255, 0.96) 52%, rgba(248, 247, 242, 0.9));
-}
-
-.portal-page-head h1 {
-  margin: 0 0 9px;
-  color: var(--color-deep-green);
-  font-size: clamp(30px, 3vw, 40px);
-  font-weight: 650;
-}
-
-.portal-page-head p:last-child {
-  max-width: 780px;
-  margin: 0;
-  color: var(--color-muted);
-  line-height: 1.7;
-}
-
 .page-section {
-  padding-top: 32px;
-  background: var(--color-rice);
+  padding-top: 34px;
+  background: var(--surface-portal);
 }
 
 .output-layout {
@@ -350,11 +330,24 @@ onMounted(async () => {
 }
 
 .stats-panel {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-self: start;
   gap: 0;
-  padding: 12px 18px;
+  overflow: hidden;
+  padding: 16px 18px 13px;
+  background: linear-gradient(90deg, #fff, rgba(245, 239, 227, 0.38));
+}
+
+.stats-panel::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 88px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .stats-panel > div {
@@ -420,12 +413,12 @@ onMounted(async () => {
 }
 
 .result-tabs button.active {
-  border-color: var(--color-cau-green);
+  border-image: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%) 1;
   color: var(--color-cau-green);
 }
 
 .result-block {
-  padding: 22px;
+  padding: 24px;
 }
 
 .block-heading {
@@ -456,7 +449,11 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px 82px;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: var(--color-panel);
 }
 
 .result-tools.two {
@@ -495,7 +492,8 @@ onMounted(async () => {
 
 .paper-row time {
   align-self: start;
-  border-radius: 999px;
+  border-left: 2px solid var(--color-cau-gold);
+  border-radius: 2px;
   padding: 5px 10px;
   background: var(--color-eco-green);
   color: var(--color-cau-green);

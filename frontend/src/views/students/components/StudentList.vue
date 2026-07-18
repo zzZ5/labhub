@@ -69,6 +69,7 @@ defineEmits<{
   max-height: calc(100vh - 120px);
   overflow: auto;
   padding: 14px;
+  box-shadow: none;
 }
 
 .student-list:hover {
@@ -76,6 +77,7 @@ defineEmits<{
 }
 
 .side-heading {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -83,6 +85,16 @@ defineEmits<{
   margin-bottom: 10px;
   border-bottom: 1px solid var(--color-line);
   padding-bottom: 10px;
+}
+
+.side-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 44px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .side-heading > div {
@@ -125,7 +137,7 @@ defineEmits<{
   gap: 11px;
   width: 100%;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 5px;
   margin-bottom: 6px;
   padding: 8px 10px;
   background: #fff;
@@ -138,6 +150,10 @@ defineEmits<{
 .student-list > button:hover {
   border-color: rgba(0, 135, 60, 0.14);
   background: var(--color-eco-green);
+}
+
+.student-list > button.active {
+  box-shadow: inset 3px 0 0 var(--color-cau-green);
 }
 
 .student-list-avatar {

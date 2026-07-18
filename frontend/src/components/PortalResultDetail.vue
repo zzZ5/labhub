@@ -34,10 +34,22 @@ defineProps<{
 }
 
 .result-detail-content :deep(h2) {
+  position: relative;
   margin: 0 0 12px;
   color: var(--color-deep-green);
   font-size: 21px;
+  padding-left: 13px;
   font-weight: 650;
+}
+
+.result-detail-content :deep(h2)::before {
+  position: absolute;
+  top: 0.18em;
+  bottom: 0.18em;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .result-detail-content :deep(p) {

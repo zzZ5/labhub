@@ -17,9 +17,25 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
 
 <style scoped>
 .portal-page-header {
+  position: relative;
+  overflow: hidden;
   border-bottom: 1px solid var(--color-border-quiet);
-  padding: 30px 0 26px;
-  background: var(--surface-white-soft);
+  padding: 34px 0 30px;
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.72), rgba(255, 255, 255, 0.88) 46%, rgba(245, 239, 227, 0.58)),
+    #fff;
+}
+
+.portal-page-header::after {
+  position: absolute;
+  right: max(18px, calc((100vw - var(--container)) / 2));
+  bottom: -24px;
+  width: 280px;
+  height: 92px;
+  border-top: 1px solid rgba(0, 135, 60, 0.12);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-6deg);
 }
 
 .portal-page-header .container {
@@ -34,7 +50,7 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
   left: 0;
   width: 3px;
   border-radius: 2px;
-  background: var(--color-cau-green);
+  background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
   content: "";
 }
 
@@ -50,7 +66,7 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
   margin: 0;
   color: var(--color-deep-green);
   font-size: var(--font-page-title);
-  font-weight: 650;
+  font-weight: 680;
   line-height: 1.2;
 }
 

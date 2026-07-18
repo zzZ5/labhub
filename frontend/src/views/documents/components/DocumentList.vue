@@ -66,7 +66,8 @@ defineEmits<{
 .document-card {
   min-width: 0;
   padding: 0 16px;
-  box-shadow: var(--shadow-flat);
+  border-left: 3px solid transparent;
+  box-shadow: none;
 }
 
 .document-card.previewable {
@@ -74,13 +75,15 @@ defineEmits<{
 }
 
 .document-card.previewable:hover {
+  border-left-color: var(--color-cau-gold);
   border-color: var(--color-border-accent);
   box-shadow: var(--shadow-hover);
 }
 
 .file-type {
   border: 1px solid var(--color-line);
-  border-radius: 999px;
+  border-left: 2px solid var(--color-cau-green);
+  border-radius: 3px;
   padding: 3px 9px;
   background: var(--color-panel);
   color: var(--color-muted);

@@ -29,6 +29,7 @@ const filtersOpen = ref(false)
 
 <style scoped>
 .filter-toolbar {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto auto;
   align-items: center;
@@ -37,7 +38,18 @@ const filtersOpen = ref(false)
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-3);
-  background: var(--color-panel);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 2px 0 rgba(0, 135, 60, 0.08);
+}
+
+.filter-toolbar::before {
+  position: absolute;
+  top: -1px;
+  left: 18px;
+  width: 34px;
+  height: 2px;
+  background: var(--color-cau-gold);
+  content: "";
 }
 
 .filter-toolbar__primary,

@@ -31,7 +31,8 @@ function change(value: number) {
   gap: 10px;
   width: 100%;
   border-top: 1px solid var(--color-line);
-  padding-top: 12px;
+  margin-top: 4px;
+  padding-top: 16px;
 }
 
 .page-nav {
@@ -42,7 +43,7 @@ function change(value: number) {
   width: 84px;
   min-height: 34px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   background: var(--color-white);
   color: var(--color-deep-green);
   cursor: pointer;
@@ -53,7 +54,7 @@ function change(value: number) {
 
 .page-nav:hover:not(:disabled) {
   border-color: var(--color-border-accent);
-  background: var(--surface-hover);
+  background: linear-gradient(90deg, var(--surface-hover), var(--color-cau-gold-soft));
   color: var(--color-cau-green);
 }
 

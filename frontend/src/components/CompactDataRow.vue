@@ -25,7 +25,14 @@ defineProps<{
   gap: 12px 16px;
   min-width: 0;
   min-height: 58px;
-  padding: 11px 0;
+  padding: 11px 8px;
+  transition: background 160ms ease, padding 160ms ease;
+}
+
+.compact-data-row:hover {
+  padding-right: 5px;
+  padding-left: 11px;
+  background: linear-gradient(90deg, rgba(234, 245, 238, 0.62), rgba(245, 239, 227, 0.2));
 }
 
 .compact-data-row__leading,

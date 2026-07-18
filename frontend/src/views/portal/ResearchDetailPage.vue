@@ -94,7 +94,8 @@ onMounted(loadDirection)
 .detail-media img { display: block; object-fit: cover; }
 
 .detail-body { padding: 28px 34px 34px; }
-.detail-body h2 { margin: 0 0 18px; color: var(--color-deep-green); font-size: 23px; }
+.detail-body h2 { position: relative; margin: 0 0 18px; padding-left: 13px; color: var(--color-deep-green); font-size: 23px; }
+.detail-body h2::before { position: absolute; top: 0.16em; bottom: 0.16em; left: 0; width: 3px; background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%); content: ""; }
 .detail-body p { margin: 0 0 16px; color: var(--color-text); font-size: 16px; line-height: 1.9; }
 .muted { color: var(--color-muted) !important; }
 

@@ -37,9 +37,25 @@ defineProps<{
 
 <style scoped>
 .portal-detail-head {
+  position: relative;
+  overflow: hidden;
   border-bottom: 1px solid var(--color-border-quiet);
   padding: 32px 0 28px;
-  background: var(--surface-white-soft);
+  background:
+    linear-gradient(100deg, rgba(234, 245, 238, 0.74), rgba(255, 255, 255, 0.94) 55%, rgba(245, 239, 227, 0.62)),
+    #fff;
+}
+
+.portal-detail-head::after {
+  position: absolute;
+  right: max(20px, calc((100vw - var(--container)) / 2));
+  bottom: -42px;
+  width: 320px;
+  height: 90px;
+  border-top: 1px solid rgba(0, 135, 60, 0.13);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-7deg);
 }
 
 .portal-detail-head__inner {
@@ -60,7 +76,7 @@ defineProps<{
   margin: 0;
   color: var(--color-deep-green);
   font-size: clamp(28px, 3.4vw, 40px);
-  font-weight: 650;
+  font-weight: 680;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -81,7 +97,7 @@ defineProps<{
 
 .portal-detail-section {
   padding: 32px 0 64px;
-  background: var(--color-rice);
+  background: var(--surface-portal);
 }
 
 .portal-detail-layout {
@@ -105,13 +121,29 @@ defineProps<{
 }
 
 .portal-detail-main {
+  position: relative;
   overflow: hidden;
   padding: 0;
 }
 
 .portal-detail-side {
   align-self: start;
-  padding: 22px;
+  border-top: 3px solid var(--color-cau-green);
+  padding: 20px 22px 22px;
+}
+
+.portal-detail-main {
+  padding-top: 3px;
+}
+
+.portal-detail-main::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 92px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72px, var(--color-cau-gold) 72px 92px);
+  content: "";
 }
 
 .portal-detail-side > strong {

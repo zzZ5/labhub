@@ -179,12 +179,15 @@ function degreeText(degree: string) {
 }
 
 .quick-card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 5px 14px;
   min-height: 104px;
-  padding: 14px 16px;
+  overflow: hidden;
+  padding: 18px 17px 15px;
+  background: linear-gradient(135deg, #fff, rgba(234, 245, 238, 0.28));
   color: inherit;
   box-shadow: none;
 }
@@ -213,6 +216,16 @@ function degreeText(degree: string) {
   justify-content: flex-end;
   gap: 4px;
   color: var(--color-cau-green);
+}
+
+.quick-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 74%, var(--color-cau-gold) 74% 82%, transparent 82%);
+  content: "";
 }
 
 .quick-metric b {
@@ -245,8 +258,20 @@ function degreeText(degree: string) {
 }
 
 .panel {
+  position: relative;
+  overflow: hidden;
   border-radius: var(--radius-lg);
   padding: 20px;
+}
+
+.panel::before {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 42px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .wide-panel {
@@ -267,7 +292,7 @@ function degreeText(degree: string) {
   margin: 0 0 4px;
   color: var(--color-deep-green);
   font-size: 19px;
-  font-weight: 650;
+  font-weight: 680;
 }
 
 .panel-heading a {

@@ -28,10 +28,10 @@ function submit() {
 
 <style scoped>
 .page-jump { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; color: var(--color-muted); font-size: 13px; white-space: nowrap; }
-.page-jump input { width: 44px; height: 32px; box-sizing: border-box; appearance: textfield; padding: 0 4px; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-white); color: var(--color-text); font-variant-numeric: tabular-nums; line-height: 30px; text-align: center; outline: none; }
+.page-jump input { width: 44px; height: 32px; box-sizing: border-box; appearance: textfield; padding: 0 4px; border: 1px solid var(--color-border); border-radius: 3px; background: var(--color-white); color: var(--color-text); font-variant-numeric: tabular-nums; line-height: 30px; text-align: center; outline: none; }
 .page-jump input:focus { border-color: var(--color-cau-green); box-shadow: 0 0 0 2px var(--color-focus); }
 .page-jump input::-webkit-inner-spin-button, .page-jump input::-webkit-outer-spin-button { margin: 0; appearance: none; }
-.page-jump button { width: 48px; height: 32px; box-sizing: border-box; padding: 0; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-white); color: var(--color-deep-green); font-weight: 600; cursor: pointer; }
+.page-jump button { width: 48px; height: 32px; box-sizing: border-box; padding: 0; border: 1px solid var(--color-border); border-radius: 3px; background: var(--color-white); color: var(--color-deep-green); font-weight: 600; cursor: pointer; }
 .page-jump button:hover { border-color: var(--color-cau-green); background: var(--surface-hover); }
 .page-jump.compact input { width: 40px; height: 30px; }
 .page-jump.compact button { width: 44px; height: 30px; }

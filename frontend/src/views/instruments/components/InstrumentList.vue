@@ -88,9 +88,22 @@ function statusText(status: string) {
 }
 
 .instrument-card {
+  position: relative;
   overflow: hidden;
   border-radius: var(--radius-lg);
   cursor: pointer;
+  box-shadow: none;
+}
+
+.instrument-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 68px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .instrument-card:hover {
@@ -120,6 +133,7 @@ function statusText(status: string) {
 }
 
 .instrument-body {
+  border-top: 1px solid var(--color-line);
   padding: 16px;
 }
 
@@ -199,7 +213,7 @@ function statusText(status: string) {
 
 .edit-action {
   border: 1px solid rgba(0, 135, 60, 0.2);
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   background: #fff;
   color: var(--color-cau-green);
   cursor: pointer;

@@ -112,11 +112,12 @@ onMounted(async () => {
   align-items: center;
   gap: 24px;
   border-bottom: 1px solid var(--color-line);
+  background: linear-gradient(90deg, rgba(234, 245, 238, 0.38), rgba(255, 255, 255, 0));
   padding: 28px 32px;
 }
 
 .member-intro > p { margin: 0; color: var(--color-muted); font-size: 17px; line-height: 1.8; }
-.member-avatar { width: 144px; overflow: hidden; border: 1px solid var(--color-border-quiet); border-radius: var(--radius-md); background: var(--color-panel-strong); }
+.member-avatar { width: 144px; overflow: hidden; border: 1px solid var(--color-border-quiet); border-bottom: 3px solid var(--color-cau-gold); border-radius: var(--radius-md); background: var(--color-panel-strong); }
 .member-avatar img,
 .member-avatar :deep(.image-placeholder) { width: 100%; }
 .member-avatar img { display: block; width: 100%; height: auto; }
@@ -124,7 +125,8 @@ onMounted(async () => {
 
 .member-content { display: grid; gap: 28px; padding: 28px 32px 34px; }
 .member-content section + section { border-top: 1px solid var(--color-line); padding-top: 26px; }
-.member-content h2 { margin: 0 0 16px; color: var(--color-deep-green); font-size: 22px; }
+.member-content h2 { position: relative; margin: 0 0 16px; padding-left: 13px; color: var(--color-deep-green); font-size: 22px; }
+.member-content h2::before { position: absolute; top: 0.16em; bottom: 0.16em; left: 0; width: 3px; background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%); content: ""; }
 .member-content p { margin: 0 0 14px; color: var(--color-text); line-height: 1.85; }
 .profile-section + .profile-section { border-top: 1px solid var(--color-line); margin-top: 16px; padding-top: 16px; }
 .profile-section h3 { margin: 0 0 10px; color: var(--color-deep-green); font-size: 17px; }

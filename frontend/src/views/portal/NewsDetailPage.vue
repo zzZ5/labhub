@@ -86,7 +86,9 @@ onMounted(async () => {
 
 .lead {
   margin: 0;
-  padding: 28px 34px 0;
+  border-left: 3px solid var(--color-cau-green);
+  margin: 28px 34px 0;
+  padding: 2px 0 2px 18px;
   color: var(--color-deep-green);
   font-size: 20px;
   line-height: 1.75;
@@ -123,7 +125,8 @@ onMounted(async () => {
 }
 
 .tag-row span {
-  border-radius: 999px;
+  border-left: 2px solid var(--color-cau-gold);
+  border-radius: 3px;
   padding: 5px 10px;
   background: var(--color-eco-green);
   color: var(--color-deep-green);
@@ -131,11 +134,15 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
-  .lead,
   .article-body,
   .image-gallery {
     padding-right: 22px;
     padding-left: 22px;
+  }
+
+  .lead {
+    margin: 22px 22px 0;
+    padding: 2px 0 2px 14px;
   }
 
   .image-gallery { grid-template-columns: 1fr; }

@@ -27,8 +27,23 @@ withDefaults(defineProps<{ label?: string; initial?: string; text?: string }>(),
   justify-content: center;
   flex-direction: column;
   gap: 7px;
-  background: var(--color-panel-strong);
+  background:
+    linear-gradient(145deg, rgba(234, 245, 238, 0.82), rgba(245, 239, 227, 0.64)),
+    var(--color-panel-strong);
   color: color-mix(in srgb, var(--color-blue-gray) 58%, transparent);
+}
+
+.image-placeholder::before {
+  width: 30px;
+  height: 2px;
+  margin-bottom: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
+  opacity: 0.6;
+}
+
+.image-placeholder:has(.image-placeholder__initial)::before {
+  display: none;
 }
 
 .image-placeholder :deep(svg) {

@@ -106,8 +106,8 @@ onBeforeUnmount(() => {
 .portal-shell {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.22), rgba(248, 247, 242, 0) 320px),
-    var(--color-rice);
+    linear-gradient(180deg, rgba(234, 245, 238, 0.18), rgba(250, 249, 245, 0) 320px),
+    var(--surface-portal);
 }
 
 .portal-nav {
@@ -121,10 +121,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   height: var(--nav-height);
   gap: 20px;
-  border-top: 2px solid var(--color-cau-green);
+  border-top: 3px solid var(--color-cau-green);
   border-bottom: 1px solid var(--color-border-quiet);
   padding: 0 max(20px, calc((100vw - var(--container)) / 2));
-  background: var(--surface-white-strong);
+  background: rgba(255, 255, 255, 0.975);
+  box-shadow: 0 1px 8px rgba(31, 61, 43, 0.035);
 }
 
 .portal-main {
@@ -150,7 +151,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border-accent-soft);
   border-radius: 50%;
   background: var(--color-white);
-  box-shadow: 0 4px 12px rgba(31, 61, 43, 0.08);
+  box-shadow: none;
 }
 
 .brand-emblem img {
@@ -216,7 +217,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 15px;
   left: 0;
-  height: 2px;
+  height: 3px;
   border-radius: 999px;
   background: transparent;
   content: "";
@@ -230,7 +231,7 @@ onBeforeUnmount(() => {
 
 .portal-links a:hover::after,
 .portal-links a.router-link-active::after {
-  background: var(--color-cau-green);
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
 }
 
 .portal-links .internal-entry {
@@ -289,9 +290,20 @@ onBeforeUnmount(() => {
 }
 
 .portal-footer {
+  position: relative;
   background: var(--color-deep-green);
   color: rgba(255, 255, 255, 0.86);
   padding: 36px 0 34px;
+}
+
+.portal-footer::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 68%, var(--color-cau-gold) 68% 76%, transparent 76%);
+  content: "";
 }
 
 .footer-grid {
@@ -306,6 +318,21 @@ onBeforeUnmount(() => {
   color: #fff;
   font-size: 15px;
   font-weight: 650;
+}
+
+.footer-grid section {
+  position: relative;
+  padding-top: 13px;
+}
+
+.footer-grid section::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--color-cau-gold);
+  content: "";
 }
 
 .footer-grid p {

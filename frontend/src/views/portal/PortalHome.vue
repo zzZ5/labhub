@@ -539,8 +539,8 @@ onUnmounted(() => {
 .hero {
   position: relative;
   overflow: hidden;
-  padding: 12px 0 22px;
-  background: var(--color-rice);
+  padding: 16px 0 26px;
+  background: var(--surface-portal);
 }
 
 .hero-carousel {
@@ -549,7 +549,7 @@ onUnmounted(() => {
   height: clamp(380px, 39vw, 540px);
   margin: 0 auto;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #eef2ee;
   touch-action: pan-y;
   user-select: none;
@@ -744,7 +744,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(200px, 0.32fr) minmax(0, 1fr);
   gap: 34px;
   min-width: 0;
-  border-top: 1px solid rgba(31, 61, 43, 0.12);
+  border-top: 1px solid rgba(31, 61, 43, 0.14);
   border-bottom: 1px solid rgba(31, 61, 43, 0.08);
   padding: 28px 0 26px;
 }
@@ -759,10 +759,10 @@ onUnmounted(() => {
 
 .intro-heading::before {
   display: block;
-  width: 44px;
+  width: 52px;
   height: 3px;
   margin-bottom: 12px;
-  background: var(--color-cau-green);
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
   content: "";
 }
 
@@ -798,7 +798,7 @@ onUnmounted(() => {
 
 .publication-section,
 .news-section {
-  background: var(--color-rice);
+  background: var(--surface-portal);
 }
 
 .page-section {
@@ -886,7 +886,9 @@ onUnmounted(() => {
   overflow: hidden;
   padding-top: 68px;
   padding-bottom: 72px;
-  background: var(--color-soft-gray);
+  background:
+    linear-gradient(115deg, rgba(237, 240, 237, 0.8), rgba(245, 239, 227, 0.42) 100%),
+    var(--color-soft-gray);
 }
 
 .intro-main.is-empty {
@@ -927,7 +929,9 @@ onUnmounted(() => {
 }
 
 .team-section {
-  background: var(--color-eco-green);
+  background:
+    linear-gradient(90deg, rgba(234, 245, 238, 0.82), rgba(255, 255, 255, 0.84) 50%, rgba(245, 239, 227, 0.5)),
+    #f4f8f5;
 }
 
 .news-section {
@@ -981,7 +985,7 @@ onUnmounted(() => {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92)),
     #fff;
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
 }
 
 .research-card:hover,
@@ -1003,7 +1007,7 @@ onUnmounted(() => {
   height: 34px;
   place-items: center;
   border: 1px solid rgba(0, 135, 60, 0.14);
-  border-radius: 50%;
+  border-radius: 6px;
   background: var(--color-eco-green);
 }
 
@@ -1061,7 +1065,8 @@ onUnmounted(() => {
 
 .paper-compact time {
   align-self: start;
-  border-radius: 999px;
+  border-left: 2px solid var(--color-cau-gold);
+  border-radius: 2px;
   padding: 4px 9px;
   background: var(--color-eco-green);
   color: var(--color-cau-green);
@@ -1152,7 +1157,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.96);
   color: inherit;
   text-decoration: none;
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
 }
 
 .member-photo {
@@ -1245,7 +1250,7 @@ onUnmounted(() => {
   overflow: hidden;
   background: #fff;
   color: inherit;
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
 }
 
 .news-media,
@@ -1332,10 +1337,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 32px;
-  border: 1px solid rgba(0, 135, 60, 0.18);
+  border: 1px solid rgba(31, 61, 43, 0.12);
+  border-left: 4px solid var(--color-cau-green);
   border-radius: var(--radius-lg);
   padding: 28px 32px;
-  background: #fff;
+  background: linear-gradient(90deg, #fff, rgba(245, 239, 227, 0.48));
   box-shadow: none;
 }
 

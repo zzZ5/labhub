@@ -20,12 +20,16 @@ defineProps<{
 
 <style scoped>
 .empty-state {
+  position: relative;
+  overflow: hidden;
   display: grid;
   place-items: center;
   min-height: 180px;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  background: #fff;
+  background:
+    linear-gradient(135deg, rgba(234, 245, 238, 0.42), transparent 46%),
+    #fff;
   color: var(--color-muted);
   text-align: center;
 }
@@ -44,6 +48,18 @@ defineProps<{
 
 .empty-state p {
   margin: 4px 0 0;
+}
+
+.empty-state::after {
+  position: absolute;
+  right: -34px;
+  bottom: -50px;
+  width: 120px;
+  height: 72px;
+  border-top: 1px solid rgba(181, 139, 66, 0.2);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-12deg);
 }
 
 .empty-state__action { margin-top: 12px; }

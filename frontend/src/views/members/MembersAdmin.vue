@@ -672,8 +672,20 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
 }
 
 .panel {
+  position: relative;
+  overflow: hidden;
   padding: 24px;
   border-radius: var(--radius-lg);
+}
+
+.panel::before {
+  position: absolute;
+  top: 0;
+  left: 24px;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .account-summary-line {
@@ -762,7 +774,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   padding: 14px;
-  background: var(--color-panel);
+  background: linear-gradient(90deg, var(--color-panel), rgba(245, 239, 227, 0.24));
 }
 
 .review-card {

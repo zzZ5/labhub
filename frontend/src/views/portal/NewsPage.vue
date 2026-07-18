@@ -100,53 +100,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.portal-page-head {
-  position: relative;
-  border-bottom: 1px solid rgba(31, 61, 43, 0.1);
-  padding: 28px 0 24px;
-  background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.76), rgba(255, 255, 255, 0.96) 48%, rgba(248, 247, 242, 0.92)),
-    var(--color-white);
-}
-
-.portal-page-head::before {
-  position: absolute;
-  top: 30px;
-  bottom: 26px;
-  left: max(20px, calc((100vw - var(--container)) / 2));
-  width: 3px;
-  border-radius: 999px;
-  content: "";
-  background: var(--color-cau-green);
-}
-
-.portal-page-head .container {
-  padding-left: 22px;
-}
-
-.portal-page-head h1 {
-  margin: 0 0 9px;
-  color: var(--color-deep-green);
-  font-size: clamp(28px, 3.1vw, 38px);
-  font-weight: 650;
-  line-height: 1.18;
-}
-
-.portal-page-head p:last-child {
-  max-width: 820px;
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 15px;
-  line-height: 1.65;
-}
-
-.portal-page-head .section-kicker {
-  color: var(--color-cau-green);
-}
-
 .page-section {
-  padding-top: 30px;
-  background: var(--color-rice);
+  padding-top: 34px;
+  background: var(--surface-portal);
 }
 
 .filter-row {
@@ -175,7 +131,7 @@ onMounted(async () => {
 
 .filter-row button.active,
 .filter-row button:hover {
-  border-bottom-color: var(--color-cau-green);
+  border-image: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%) 1;
   color: var(--color-cau-green);
   font-weight: 650;
 }
@@ -197,6 +153,7 @@ onMounted(async () => {
   border-color: rgba(31, 61, 43, 0.1);
   color: inherit;
   box-shadow: none;
+  transition: border-color 180ms ease, transform 180ms ease;
 }
 
 .news-media,
@@ -228,6 +185,7 @@ onMounted(async () => {
 }
 
 .news-card-content {
+  border-top: 2px solid rgba(0, 135, 60, 0.08);
   padding: 15px 16px 17px;
 }
 
@@ -249,6 +207,11 @@ onMounted(async () => {
 .news-card p {
   margin: 0;
   color: var(--color-muted);
+}
+
+.news-card:hover {
+  border-color: rgba(0, 135, 60, 0.28);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 980px) {

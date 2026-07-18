@@ -144,7 +144,7 @@ async function handleAccountCommand(command: string) {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.56) 0%, rgba(245, 247, 246, 0.92) 260px),
+    linear-gradient(180deg, rgba(234, 245, 238, 0.5) 0%, rgba(245, 247, 246, 0.94) 230px),
     var(--color-soft-gray);
 }
 
@@ -153,6 +153,7 @@ async function handleAccountCommand(command: string) {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  border-top: 3px solid var(--color-cau-green);
   border-right: 1px solid var(--color-border);
   background: var(--surface-white-strong);
   padding: 20px 14px;
@@ -162,7 +163,7 @@ async function handleAccountCommand(command: string) {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-border-quiet);
   margin-bottom: 18px;
   padding: 0 10px 20px;
   color: var(--color-deep-green);
@@ -236,7 +237,7 @@ async function handleAccountCommand(command: string) {
 }
 
 .internal-menu a.router-link-active {
-  box-shadow: inset 3px 0 0 var(--color-cau-green);
+  box-shadow: inset 3px 0 0 var(--color-cau-green), inset 0 -1px 0 rgba(181, 139, 66, 0.12);
   font-weight: 650;
 }
 
@@ -254,12 +255,23 @@ async function handleAccountCommand(command: string) {
   min-height: 66px;
   border-bottom: 1px solid var(--color-border);
   padding: 0 28px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 1px 0 rgba(31, 61, 43, 0.03);
 }
 
 .topbar-title {
+  position: relative;
   min-width: 0;
+}
+
+.topbar-title::after {
+  position: absolute;
+  bottom: -9px;
+  left: 0;
+  width: 34px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .internal-topbar h1 {
@@ -273,7 +285,7 @@ async function handleAccountCommand(command: string) {
 .internal-topbar h1 {
   color: var(--color-deep-green);
   font-size: 21px;
-  font-weight: 650;
+  font-weight: 680;
 }
 
 .topbar-actions {
@@ -335,8 +347,8 @@ async function handleAccountCommand(command: string) {
 
 .internal-content {
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: var(--internal-content-max);
+  margin: 0 auto;
   padding: 24px 28px 40px;
 }
 
