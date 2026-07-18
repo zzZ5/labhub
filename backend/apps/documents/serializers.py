@@ -8,6 +8,7 @@ from apps.system.uploads import validate_document_upload
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentTag
 from .services import can_delete_document, can_download_document, can_edit_document, can_view_document
+from .video_urls import resolve_bilibili_short_url
 
 
 class DocumentCategorySerializer(serializers.ModelSerializer):
@@ -105,6 +106,9 @@ class DocumentWriteSerializer(serializers.ModelSerializer):
 
     def validate_file(self, file_obj):
         return validate_document_upload(file_obj)
+
+    def validate_external_url(self, value):
+        return resolve_bilibili_short_url(value)
 
     def _replace_file(self, document, file_obj):
         if not file_obj:

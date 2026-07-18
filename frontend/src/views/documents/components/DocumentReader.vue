@@ -18,35 +18,41 @@
       <div><dt>更新</dt><dd>{{ formatDate(document.updated_at) }}</dd></div>
       <div v-if="document.description"><dt>说明</dt><dd>{{ document.description }}</dd></div>
     </dl>
-    <ExternalVideoCard
-      v-if="document.external_url"
-      class="reader-video"
-      :url="document.external_url"
-      :title="document.title"
-    />
-    <FilePreview
-      v-else
-      :url="canEmbed ? previewUrl : ''"
-      :title="document.title"
-      :filename="document.original_filename"
-      :mime-type="document.file_type"
-      :status="document.preview_status"
-      :error="document.preview_error"
-    >
-      <template #fallback>
-        <el-button v-if="document.can_download" type="primary" @click="$emit('download', document)">下载文件</el-button>
-      </template>
-    </FilePreview>
+    <section v-if="document.external_url" class="reader-media-block">
+      <h3>视频</h3>
+      <ExternalVideoCard
+        class="reader-video"
+        :url="document.external_url"
+        :title="document.title"
+      />
+    </section>
+    <section v-if="hasAttachedFile" class="reader-media-block">
+      <h3>附件预览</h3>
+      <FilePreview
+        :url="canEmbed ? previewUrl : ''"
+        :title="document.title"
+        :filename="document.original_filename"
+        :mime-type="document.file_type"
+        :status="document.preview_status"
+        :error="document.preview_error"
+      >
+        <template #fallback>
+          <el-button v-if="document.can_download" type="primary" @click="$emit('download', document)">下载文件</el-button>
+        </template>
+      </FilePreview>
+    </section>
   </section>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { LabDocument } from '../../../api/documents'
 import FilePreview from '../../../components/FilePreview.vue'
 import ExternalVideoCard from '../../../components/ExternalVideoCard.vue'
 import { categoryName, currentFileLabel, formatDate } from '../documentPresentation'
 
-defineProps<{ document: LabDocument; previewUrl: string; canEmbed: boolean }>()
+const props = defineProps<{ document: LabDocument; previewUrl: string; canEmbed: boolean }>()
+const hasAttachedFile = computed(() => Boolean(props.document.original_filename || props.document.file_size || props.document.file_type))
 defineEmits<{
   close: []
   edit: [document: LabDocument]
@@ -136,8 +142,10 @@ defineEmits<{
   font-weight: 650;
 }
 
-.embedded-reader :deep(.file-preview) { margin-top: 9px; }
-.reader-video { margin-top: 12px; }
+.reader-media-block { margin-top: 14px; }
+.reader-media-block + .reader-media-block { border-top: 1px solid var(--color-line); padding-top: 16px; }
+.reader-media-block h3 { margin: 0 0 9px; color: var(--color-deep-green); font-size: 15px; font-weight: 650; }
+.reader-video { margin-top: 0; }
 
 @media (max-width: 640px) {
   .reader-heading {

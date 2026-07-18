@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock, patch
 from zipfile import ZipFile
 
 import pytest
@@ -12,6 +12,7 @@ from openpyxl import Workbook
 from apps.accounts.models import Role, RoleCode, UserRole
 
 from .models import Document, DocumentCategory, DocumentDownloadLog, DocumentStatus
+from .video_urls import resolve_bilibili_short_url
 from .views import convert_embedded_image_to_png
 
 User = get_user_model()
@@ -238,6 +239,46 @@ def test_approved_member_can_create_external_video_document(client, approved_use
     assert payload["can_preview"] is True
     document = Document.objects.get(title="堆肥微生物实验视频")
     assert not document.file
+
+
+@pytest.mark.django_db
+def test_document_can_keep_video_link_and_file_together(client, approved_user):
+    client.force_login(approved_user)
+
+    response = client.post(
+        reverse("document-list"),
+        {
+            "title": "堆肥实验视频与附件",
+            "external_url": "https://www.bilibili.com/video/BV1example",
+            "file": ContentFile(b"attachment", name="experiment-notes.txt"),
+            "status": DocumentStatus.ACTIVE,
+            "allow_download": True,
+        },
+    )
+
+    assert response.status_code == 201
+    document = Document.objects.get(title="堆肥实验视频与附件")
+    assert document.external_url == "https://www.bilibili.com/video/BV1example"
+    assert document.original_filename == "experiment-notes.txt"
+    assert document.file_size == len(b"attachment")
+
+
+def test_bilibili_short_url_is_resolved_only_to_bilibili():
+    response = MagicMock()
+    response.__enter__.return_value.geturl.return_value = "https://www.bilibili.com/video/BV1xx411c7mD"
+    with patch("apps.documents.video_urls.open_bilibili_url", return_value=response) as mocked_open:
+        resolved = resolve_bilibili_short_url("https://b23.tv/example")
+
+    assert resolved == "https://www.bilibili.com/video/BV1xx411c7mD"
+    mocked_open.assert_called_once()
+
+
+def test_video_url_resolver_does_not_request_other_hosts():
+    with patch("apps.documents.video_urls.open_bilibili_url") as mocked_open:
+        resolved = resolve_bilibili_short_url("https://example.com/video/123")
+
+    assert resolved == "https://example.com/video/123"
+    mocked_open.assert_not_called()
 
 
 @pytest.mark.django_db

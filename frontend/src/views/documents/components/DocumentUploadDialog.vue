@@ -14,8 +14,8 @@
       </el-form-item>
       <el-form-item label="资料说明"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
       <el-form-item label="视频链接（可选）">
-        <el-input v-model="form.external_url" placeholder="支持哔哩哔哩或其他公开视频链接" />
-        <small class="field-help">视频资料可只填写链接；普通文档继续上传文件。</small>
+        <el-input v-model="form.external_url" placeholder="粘贴哔哩哔哩、腾讯视频或视频文件链接" />
+        <small class="field-help">完整视频页链接会优先内嵌播放，也可以同时上传附件；哔哩哔哩短链接会在保存时尝试解析。</small>
       </el-form-item>
       <el-form-item :label="document ? '替换文件（可选）' : '文件'">
         <UploadFileField v-model="form.file" :disabled="saving" :max-size-mb="200" :existing-label="document ? currentFileLabel(document) : ''" />
