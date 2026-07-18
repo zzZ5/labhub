@@ -101,8 +101,8 @@
           <el-form-item label="头像">
             <ImageCropField v-model="accountForm.avatar" :existing-url="accountAvatarPreview" :existing-size="accountAvatarSize" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="accountAvatarPreview = $event" />
           </el-form-item>
-          <el-form-item label="邮箱"><el-input v-model="accountForm.email" autocomplete="off" placeholder="用于登录和找回账号" /></el-form-item>
-          <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="可不填，默认使用邮箱" /></el-form-item>
+          <el-form-item label="邮箱（选填）"><el-input v-model="accountForm.email" autocomplete="off" placeholder="有邮箱时可用于登录" /></el-form-item>
+          <el-form-item label="账号名"><el-input v-model="accountForm.username" autocomplete="off" placeholder="无邮箱时必填；有邮箱时可留空" /></el-form-item>
           <el-form-item v-if="!editingUserId" label="初始密码"><el-input v-model="accountForm.password" type="password" autocomplete="new-password" show-password /></el-form-item>
           <el-form-item label="学校身份"><el-select v-model="accountForm.school_identity"><el-option v-for="item in schoolIdentityOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
           <el-form-item label="成员状态"><el-segmented v-model="accountForm.membership_status" :options="membershipStatusOptions" /></el-form-item>
@@ -446,8 +446,8 @@ function accountMenuItems(user: CurrentUser): ActionMenuItem[] {
 }
 
 async function submitAccountForm() {
-  if (!accountForm.email.trim()) {
-    ElMessage.warning('请填写邮箱。')
+  if (!accountForm.email.trim() && !accountForm.username.trim()) {
+    ElMessage.warning('邮箱和账号名至少填写一个。')
     return
   }
   if (!editingUserId.value && !accountForm.password) {

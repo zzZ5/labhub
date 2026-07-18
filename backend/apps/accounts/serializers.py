@@ -152,7 +152,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class AdminUserCreateSerializer(serializers.Serializer):
     username = serializers.CharField(required=False, allow_blank=True, max_length=150)
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, validators=[validate_password])
     real_name = serializers.CharField(required=False, allow_blank=True, max_length=80)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=30)
@@ -164,7 +164,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         email = value.strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
+        if email and User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError("该邮箱已存在。")
         return email
 
@@ -193,6 +193,15 @@ class AdminUserCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"系统权限不正确：{', '.join(invalid)}")
         return list(dict.fromkeys(value))
 
+    def validate(self, attrs):
+        email = attrs.get("email", "").strip().lower()
+        username = attrs.get("username", "").strip()
+        if not email and not username:
+            raise serializers.ValidationError({"username": "邮箱和账号名至少填写一个。"})
+        attrs["email"] = email
+        attrs["username"] = username or email
+        return attrs
+
     def create(self, validated_data):
         system_roles = validated_data.pop("system_roles", [])
         real_name = validated_data.pop("real_name", "")
@@ -202,7 +211,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
         membership_status = validated_data.pop("membership_status", UserProfile.MembershipStatus.ACTIVE)
         is_approved = validated_data.pop("is_approved", True)
         password = validated_data.pop("password")
-        username = validated_data.pop("username", "") or validated_data["email"]
+        username = validated_data.pop("username")
         user = User.objects.create_user(username=username, password=password, **validated_data)
         profile = user.profile
         profile.real_name = real_name
@@ -228,7 +237,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
 
 class AdminUserUpdateSerializer(serializers.Serializer):
     username = serializers.CharField(required=False, allow_blank=True, max_length=150)
-    email = serializers.EmailField(required=False)
+    email = serializers.EmailField(required=False, allow_blank=True)
     real_name = serializers.CharField(required=False, allow_blank=True, max_length=80)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=30)
     avatar = serializers.ImageField(required=False)
@@ -240,7 +249,7 @@ class AdminUserUpdateSerializer(serializers.Serializer):
     def validate_email(self, value):
         email = value.strip().lower()
         user = self.context["user"]
-        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+        if email and User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
             raise serializers.ValidationError("该邮箱已存在。")
         return email
 
@@ -263,6 +272,18 @@ class AdminUserUpdateSerializer(serializers.Serializer):
 
     def validate_avatar(self, value):
         return validate_avatar_size(value)
+
+    def validate(self, attrs):
+        user = self.context["user"]
+        email = attrs.get("email", user.email).strip().lower()
+        username = attrs.get("username", user.username).strip()
+        if not email and not username:
+            raise serializers.ValidationError({"username": "邮箱和账号名至少保留一个。"})
+        if "email" in attrs:
+            attrs["email"] = email
+        if "username" in attrs:
+            attrs["username"] = username or email
+        return attrs
 
     def update(self, instance, validated_data):
         profile_data = {

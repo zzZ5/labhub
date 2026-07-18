@@ -284,7 +284,7 @@ def test_admin_can_import_accounts_and_create_student_profile(client, admin_user
     client.force_login(admin_user)
     upload = account_import_file([
         ["测试学生", "student-import@example.com", "", "StrongImportPass123!", "博士生", "在组", "资料管理员", "是", "是", "2026级"],
-        ["测试博士后", "postdoc-import@example.com", "postdoc-import", "StrongImportPass456!", "博士后", "在组", "", "是", "否", ""],
+        ["测试博士后", "", "postdoc-import", "StrongImportPass456!", "博士后", "在组", "", "是", "否", ""],
     ])
 
     response = client.post(reverse("account-user-import-excel"), {"file": upload})
@@ -297,6 +297,34 @@ def test_admin_can_import_accounts_and_create_student_profile(client, admin_user
     assert student.profile.school_identity == UserProfile.SchoolIdentity.PHD
     assert student.user_roles.filter(role__code=RoleCode.DOCUMENT_MANAGER).exists()
     assert StudentProfile.objects.get(user=student).grade == "2026级"
+    postdoc = User.objects.get(username="postdoc-import")
+    assert postdoc.email == ""
+    assert postdoc.profile.school_identity == UserProfile.SchoolIdentity.POSTDOC
+
+
+@pytest.mark.django_db
+def test_admin_can_create_username_only_account(client, admin_user):
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("account-user-create-account"),
+        {
+            "real_name": "无邮箱成员",
+            "username": "username-only-member",
+            "email": "",
+            "password": "StrongUsernamePass123!",
+            "school_identity": UserProfile.SchoolIdentity.OTHER,
+            "membership_status": UserProfile.MembershipStatus.ACTIVE,
+            "is_approved": True,
+            "system_roles": [],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    user = User.objects.get(username="username-only-member")
+    assert user.email == ""
+    assert user.check_password("StrongUsernamePass123!")
 
 
 @pytest.mark.django_db

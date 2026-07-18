@@ -10,6 +10,7 @@ backend/celerybeat-schedule*
 .ruff_cache/
 htmlcov/
 coverage.xml
+JPG/
 
 node_modules/
 dist/

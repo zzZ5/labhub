@@ -129,8 +129,8 @@ def import_accounts_from_excel(file_obj: BinaryIO, *, request) -> dict:
     if not header_values:
         raise ValueError("Excel 中没有账号数据。")
     headers = [clean_cell(value) for value in header_values]
-    if "邮箱" not in headers or "初始密码" not in headers:
-        raise ValueError("账号表至少需要“姓名、邮箱、初始密码”列。")
+    if "姓名" not in headers or "初始密码" not in headers:
+        raise ValueError("账号表至少需要“姓名、初始密码”列。")
 
     ensure_system_roles()
     created = 0
@@ -156,6 +156,10 @@ def import_accounts_from_excel(file_obj: BinaryIO, *, request) -> dict:
         if not real_name:
             failed += 1
             issues.append({"row": row_number, "status": "failed", "message": "姓名不能为空。"})
+            continue
+        if not email and not username:
+            failed += 1
+            issues.append({"row": row_number, "status": "failed", "message": "邮箱和账号名至少填写一个。"})
             continue
         if not identity:
             failed += 1

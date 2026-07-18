@@ -10,7 +10,7 @@
       <section class="import-guide">
         <div>
           <strong>按模板整理账号清单</strong>
-          <p>填写姓名、邮箱、初始密码和学校身份；系统权限可留空，学生账号可选择同步生成档案。</p>
+          <p>填写姓名、初始密码和学校身份；邮箱与账号名至少填写一个，学生账号可选择同步生成档案。</p>
         </div>
         <a href="/templates/accounts-import-template.xlsx" download>下载导入模板</a>
       </section>
