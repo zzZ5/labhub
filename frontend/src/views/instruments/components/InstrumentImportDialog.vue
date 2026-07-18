@@ -16,7 +16,7 @@
         <el-form-item label="仪器清单（.xlsx）">
           <UploadFileField
             v-model="file"
-            :disabled="saving"
+            :disabled="saving || Boolean(result)"
             accept=".xlsx"
             :max-size-mb="50"
             hint="请选择仪器设备导入模板，文件和内嵌图片合计不超过 50 MB"
@@ -39,8 +39,8 @@
         uploading-text="正在上传仪器清单，请不要关闭窗口。"
         processing-text="上传完成，正在解析仪器信息和图片。"
       />
-      <el-button @click="$emit('update:open', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">开始导入</el-button>
+      <el-button @click="$emit('update:open', false)">{{ result ? '关闭' : '取消' }}</el-button>
+      <el-button v-if="!result" type="primary" :loading="saving" :disabled="saving" @click="submit">开始导入</el-button>
     </template>
   </el-dialog>
 </template>
@@ -68,6 +68,7 @@ const emit = defineEmits<{
 const file = ref<File>()
 
 function submit() {
+  if (props.saving || props.result) return
   if (!file.value) {
     ElMessage.warning('请选择 .xlsx 仪器清单。')
     return

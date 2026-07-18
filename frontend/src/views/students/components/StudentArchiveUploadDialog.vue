@@ -22,7 +22,7 @@
     <template #footer>
       <UploadProgress :active="saving" :progress="progress" processing-text="上传完成，正在保存学生资料。" />
       <el-button @click="$emit('update:open', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">保存资料</el-button>
+      <el-button type="primary" :loading="saving" :disabled="saving" @click="submit">保存资料</el-button>
     </template>
   </el-dialog>
 </template>
@@ -47,6 +47,7 @@ function reset() {
 }
 
 function submit() {
+  if (props.saving) return
   if (!form.file || !form.title.trim()) {
     ElMessage.warning('请填写标题并选择文件。')
     return

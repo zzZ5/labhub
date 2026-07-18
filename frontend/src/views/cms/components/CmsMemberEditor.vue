@@ -1,7 +1,7 @@
 <template>
   <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
     <CmsContentList title="团队成员" action-label="新增成员" :items="rows" :active-key="editingId || ''" @create="createMember" @edit="openMember">
-      <template #tools><CmsImportStrip description="批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。" template-url="/templates/members-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传团队成员表，请不要关闭页面。" processing-text="上传完成，正在写入团队成员。" @import="emit('import', $event)" /></template>
+      <template #tools><CmsImportStrip description="批量导入团队成员，可填写姓名、身份头衔、研究方向、邮箱、简介和展示排序。" template-url="/templates/members-import-template.xlsx" :loading="importing" :progress="importProgress" :completed="importCompleted" uploading-text="正在上传团队成员表，请不要关闭页面。" processing-text="上传完成，正在写入团队成员。" @import="emit('import', $event)" @reset="emit('resetImport')" /></template>
     </CmsContentList>
     <article class="card form-panel">
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
@@ -50,11 +50,13 @@ defineProps<{
   rows: CmsListRow<Member>[]
   importing: boolean
   importProgress: number
+  importCompleted: boolean
 }>()
 
 const emit = defineEmits<{
   import: [file: File]
   changed: []
+  resetImport: []
 }>()
 
 type MemberForm = Record<string, unknown> & {

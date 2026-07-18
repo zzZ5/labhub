@@ -8,10 +8,10 @@
       </div>
       <el-form label-position="top">
         <el-form-item label="资料清单（.xlsx）">
-          <UploadFileField v-model="form.file" :disabled="saving" accept=".xlsx" :max-size-mb="50" hint="请选择内部资料导入模板，单个文件不超过 50 MB" />
+          <UploadFileField v-model="form.file" :disabled="saving || Boolean(result)" accept=".xlsx" :max-size-mb="50" hint="请选择内部资料导入模板，单个文件不超过 50 MB" />
         </el-form-item>
         <el-form-item label="资料文件包（.zip，可选）">
-          <UploadFileField v-model="form.archive" :disabled="saving" accept=".zip" :max-size-mb="200" hint="文件名需与清单一致，压缩包不超过 200 MB" />
+          <UploadFileField v-model="form.archive" :disabled="saving || Boolean(result)" accept=".zip" :max-size-mb="200" hint="文件名需与清单一致，压缩包不超过 200 MB" />
         </el-form-item>
       </el-form>
       <div v-if="result" class="import-result">
@@ -24,8 +24,8 @@
     </div>
     <template #footer>
       <UploadProgress :active="saving" :progress="progress" uploading-text="正在上传并导入，请不要关闭窗口。" processing-text="上传完成，正在处理资料。" />
-      <el-button @click="$emit('update:open', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">开始导入</el-button>
+      <el-button @click="$emit('update:open', false)">{{ result ? '关闭' : '取消' }}</el-button>
+      <el-button v-if="!result" type="primary" :loading="saving" :disabled="saving" @click="submit">开始导入</el-button>
     </template>
   </el-dialog>
 </template>
@@ -46,6 +46,7 @@ const emit = defineEmits<{
 const form = reactive<{ file?: File; archive?: File }>({ file: undefined, archive: undefined })
 
 function submit() {
+  if (props.saving || props.result) return
   if (!form.file) {
     ElMessage.warning('请选择 .xlsx 资料清单。')
     return

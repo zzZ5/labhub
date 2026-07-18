@@ -186,7 +186,7 @@ function openUpload() {
 }
 
 async function submitArchiveFile(payload: StudentArchiveUploadPayload) {
-  if (!selectedStudent.value) return
+  if (!selectedStudent.value || uploading.value) return
   uploading.value = true
   uploadProgress.value = 0
   try {
@@ -195,7 +195,7 @@ async function submitArchiveFile(payload: StudentArchiveUploadPayload) {
       ...payload,
     }, (event) => {
       if (!event.total) return
-      uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     uploadProgress.value = 100
     ElMessage.success('学生资料已上传。')

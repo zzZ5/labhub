@@ -201,7 +201,7 @@ async function insertNewsBodyImage(file: File) {
     const articleId = await ensureNewsDraft()
     if (!articleId) return
     const uploaded = await cmsApi.createNewsImage({ article_id: articleId, image: file, caption: '正文插图', sort_order: 0 }, (event) => {
-      if (event.total) imageUploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      if (event.total) imageUploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     imageUploadProgress.value = 100
     editorRef.value?.insertImage(uploaded.image, file.name)

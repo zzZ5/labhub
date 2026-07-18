@@ -10,6 +10,7 @@ type ImportResult = { created: number; updated: number; skipped: number; images?
 export function useCmsImport(reload: () => Promise<void>) {
   const importProgress = ref(0)
   const importingKind = ref<CmsImportKind | ''>('')
+  const completedKind = ref<CmsImportKind | ''>('')
   const actions: Record<CmsImportKind, (file: File, progress: (event: { loaded: number; total?: number }) => void) => Promise<ImportResult>> = {
     members: cmsApi.importMembers,
     publications: cmsApi.importPublications,
@@ -19,17 +20,20 @@ export function useCmsImport(reload: () => Promise<void>) {
   }
 
   async function importFile(file: File, kind: CmsImportKind) {
+    if (importingKind.value || completedKind.value === kind) return
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
       ElMessage.warning('请上传 .xlsx 文件。')
       return
     }
     importingKind.value = kind
+    completedKind.value = ''
     importProgress.value = 0
     try {
       const result = await actions[kind](file, (event) => {
-        if (event.total) importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+        if (event.total) importProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
       })
       importProgress.value = 100
+      completedKind.value = kind
       ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条${result.images ? `，图片 ${result.images} 张` : ''}。`)
       try {
         await reload()
@@ -37,6 +41,7 @@ export function useCmsImport(reload: () => Promise<void>) {
         ElMessage.warning('导入数据已经保存，但列表刷新失败，请手动刷新页面查看。')
       }
     } catch (error: any) {
+      completedKind.value = ''
       ElMessage.error(error?.response?.data?.detail || '导入失败，请检查模板列名、日期格式和必填字段。')
     } finally {
       globalThis.setTimeout(() => {
@@ -48,5 +53,11 @@ export function useCmsImport(reload: () => Promise<void>) {
     }
   }
 
-  return { importProgress, importingKind, importFile }
+  function resetCompletedImport(kind: CmsImportKind) {
+    if (importingKind.value) return
+    if (completedKind.value === kind) completedKind.value = ''
+    importProgress.value = 0
+  }
+
+  return { importProgress, importingKind, completedKind, importFile, resetCompletedImport }
 }

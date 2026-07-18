@@ -35,7 +35,7 @@
       <UploadProgress :active="saving" :progress="progress" uploading-text="正在上传设备图片，请不要关闭窗口。" processing-text="上传完成，正在保存设备信息。" />
       <div class="entity-form-footer">
         <el-button @click="$emit('update:open', false)">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">{{ instrument ? '保存修改' : '创建设备' }}</el-button>
+        <el-button type="primary" :loading="saving" :disabled="saving" @click="submit">{{ instrument ? '保存修改' : '创建设备' }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -81,6 +81,7 @@ function resetForm() {
 }
 
 function submit() {
+  if (props.saving) return
   const name = form.name.trim()
   if (!name) {
     ElMessage.warning('请填写仪器名称。')

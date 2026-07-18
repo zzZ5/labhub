@@ -1,7 +1,7 @@
 <template>
   <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
     <CmsContentList title="论文成果" action-label="新增论文" :items="rows" :active-key="editingId || ''" @create="createPublication" @edit="openPublication">
-      <template #tools><CmsImportStrip description="批量导入论文成果，优先按 DOI 更新；没有 DOI 时按题目和年份匹配。" template-url="/templates/publications-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传论文成果表，请不要关闭页面。" processing-text="上传完成，正在写入论文成果。" @import="emit('import', $event)" /></template>
+      <template #tools><CmsImportStrip description="批量导入论文成果，优先按 DOI 更新；没有 DOI 时按题目和年份匹配。" template-url="/templates/publications-import-template.xlsx" :loading="importing" :progress="importProgress" :completed="importCompleted" uploading-text="正在上传论文成果表，请不要关闭页面。" processing-text="上传完成，正在写入论文成果。" @import="emit('import', $event)" @reset="emit('resetImport')" /></template>
     </CmsContentList>
     <article class="card form-panel">
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
@@ -48,8 +48,8 @@ import FeedbackPanel from '../../../components/FeedbackPanel.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
-defineProps<{ rows: CmsListRow<Publication>[]; importing: boolean; importProgress: number; displayFileLabel: (value: string) => string }>()
-const emit = defineEmits<{ import: [file: File]; changed: [] }>()
+defineProps<{ rows: CmsListRow<Publication>[]; importing: boolean; importProgress: number; importCompleted: boolean; displayFileLabel: (value: string) => string }>()
+const emit = defineEmits<{ import: [file: File]; changed: []; resetImport: [] }>()
 
 type PublicationForm = Record<string, unknown> & {
   citation_text: string

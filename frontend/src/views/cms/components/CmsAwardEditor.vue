@@ -1,7 +1,7 @@
 <template>
   <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
     <CmsContentList title="获奖成果" action-label="新增获奖" :items="rows" :active-key="editingId || ''" @create="createAward" @edit="openAward">
-      <template #tools><CmsImportStrip description="批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。" template-url="/templates/awards-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传获奖成果表，请不要关闭页面。" processing-text="上传完成，正在写入获奖成果。" @import="emit('import', $event)" /></template>
+      <template #tools><CmsImportStrip description="批量导入获奖成果，按奖项名称和获奖日期更新；Excel 行内图片会作为获奖图片。" template-url="/templates/awards-import-template.xlsx" :loading="importing" :progress="importProgress" :completed="importCompleted" uploading-text="正在上传获奖成果表，请不要关闭页面。" processing-text="上传完成，正在写入获奖成果。" @import="emit('import', $event)" @reset="emit('resetImport')" /></template>
     </CmsContentList>
     <article class="card form-panel">
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
@@ -41,8 +41,8 @@ import ImageCropField from '../../../components/ImageCropField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
-defineProps<{ rows: CmsListRow<Award>[]; importing: boolean; importProgress: number; displayFileLabel: (value: string) => string }>()
-const emit = defineEmits<{ import: [file: File]; changed: [] }>()
+defineProps<{ rows: CmsListRow<Award>[]; importing: boolean; importProgress: number; importCompleted: boolean; displayFileLabel: (value: string) => string }>()
+const emit = defineEmits<{ import: [file: File]; changed: []; resetImport: [] }>()
 
 type AwardForm = Record<string, unknown> & {
   title: string

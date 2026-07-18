@@ -375,6 +375,7 @@ function openAccountImport() {
 }
 
 async function handleAccountImport(file: File) {
+  if (accountImporting.value || accountImportResult.value) return
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
     ElMessage.warning('请选择 .xlsx 账号清单。')
     return
@@ -384,7 +385,7 @@ async function handleAccountImport(file: File) {
   accountImportResult.value = null
   try {
     const result = await importAccountsExcel(file, (event) => {
-      if (event.total) accountImportProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      if (event.total) accountImportProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     accountImportProgress.value = 100
     accountImportResult.value = result

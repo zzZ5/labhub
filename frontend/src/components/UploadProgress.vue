@@ -1,6 +1,6 @@
 <template>
   <div v-if="active || progress > 0" class="upload-progress-panel" role="status" aria-live="polite">
-    <el-progress :percentage="normalizedProgress" :status="normalizedProgress === 100 ? 'success' : undefined" />
+    <el-progress :percentage="normalizedProgress" :status="!active && normalizedProgress === 100 ? 'success' : undefined" />
     <div class="upload-progress-copy">
       <span>{{ normalizedProgress < 100 ? uploadingText : processingText }}</span>
       <button v-if="active && normalizedProgress > 0 && normalizedProgress < 100" type="button" @click="cancelUpload">取消上传</button>

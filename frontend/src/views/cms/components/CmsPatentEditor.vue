@@ -1,7 +1,7 @@
 <template>
   <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
     <CmsContentList title="专利成果" action-label="新增专利" :items="rows" :active-key="editingId || ''" @create="createPatent" @edit="openPatent">
-      <template #tools><CmsImportStrip description="批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。" template-url="/templates/patents-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传专利成果表，请不要关闭页面。" processing-text="上传完成，正在写入专利成果。" @import="emit('import', $event)" /></template>
+      <template #tools><CmsImportStrip description="批量导入专利成果，优先按专利号更新；没有专利号时按专利名称匹配。" template-url="/templates/patents-import-template.xlsx" :loading="importing" :progress="importProgress" :completed="importCompleted" uploading-text="正在上传专利成果表，请不要关闭页面。" processing-text="上传完成，正在写入专利成果。" @import="emit('import', $event)" @reset="emit('resetImport')" /></template>
     </CmsContentList>
     <article class="card form-panel">
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
@@ -39,8 +39,8 @@ import UploadFileField from '../../../components/UploadFileField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
-defineProps<{ rows: CmsListRow<Patent>[]; importing: boolean; importProgress: number; displayFileLabel: (value: string) => string }>()
-const emit = defineEmits<{ import: [file: File]; changed: [] }>()
+defineProps<{ rows: CmsListRow<Patent>[]; importing: boolean; importProgress: number; importCompleted: boolean; displayFileLabel: (value: string) => string }>()
+const emit = defineEmits<{ import: [file: File]; changed: []; resetImport: [] }>()
 
 type PatentForm = Record<string, unknown> & {
   title: string

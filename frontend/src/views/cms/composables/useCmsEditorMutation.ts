@@ -15,7 +15,7 @@ export function useCmsEditorMutation(afterChange: () => void | Promise<void>) {
 
   function onUploadProgress(event: UploadProgressEvent) {
     if (!event.total) return
-    progress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+    progress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
   }
 
   function errorMessage(error: any, fallback: string) {

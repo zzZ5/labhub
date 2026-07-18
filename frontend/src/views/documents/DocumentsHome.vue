@@ -248,6 +248,7 @@ function openEdit(doc: LabDocument) {
 }
 
 async function submitDocument(form: DocumentFormPayload) {
+  if (uploading.value) return
   uploading.value = true
   uploadProgress.value = 0
   try {
@@ -259,11 +260,11 @@ async function submitDocument(form: DocumentFormPayload) {
     const saved = editingDocument.value
       ? await updateDocument(editingDocument.value.id, payload, (event) => {
         if (!event.total) return
-        uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+        uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
       })
       : await createDocument(payload, (event) => {
       if (!event.total) return
-      uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     uploadProgress.value = 100
     ElMessage.success(editingDocument.value ? '资料已更新。' : '资料已保存到内部资料库。')
@@ -284,13 +285,14 @@ async function submitDocument(form: DocumentFormPayload) {
 }
 
 async function submitImport(payload: DocumentImportPayload) {
+  if (importing.value || importResult.value) return
   importing.value = true
   importProgress.value = 0
   importResult.value = null
   try {
     const result = await importDocumentsExcel(payload.file, payload.archive, (event) => {
       if (!event.total) return
-      importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      importProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     importProgress.value = 100
     importResult.value = result

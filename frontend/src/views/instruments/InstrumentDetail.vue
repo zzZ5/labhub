@@ -120,13 +120,13 @@ function openEdit() {
 }
 
 async function saveInstrument(payload: InstrumentFormPayload) {
-  if (!instrument.value) return
+  if (!instrument.value || saving.value) return
   saving.value = true
   uploadProgress.value = 0
   try {
     await updateInstrument(instrument.value.id, payload, (event) => {
       if (!event.total) return
-      uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     if (uploadProgress.value > 0) uploadProgress.value = 100
     ElMessage.success('设备信息已更新。')

@@ -19,7 +19,7 @@
         <el-form-item label="账号清单（.xlsx）">
           <UploadFileField
             v-model="file"
-            :disabled="saving"
+            :disabled="saving || Boolean(result)"
             accept=".xlsx"
             :max-size-mb="10"
             hint="仅支持账号导入模板，单个文件不超过 10 MB"
@@ -55,7 +55,7 @@
         processing-text="上传完成，正在校验并创建账号。"
       />
       <el-button @click="$emit('update:open', false)">{{ result ? '关闭' : '取消' }}</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">开始导入</el-button>
+      <el-button v-if="!result" type="primary" :loading="saving" :disabled="saving" @click="submit">开始导入</el-button>
     </template>
   </el-dialog>
 </template>
@@ -82,6 +82,7 @@ const emit = defineEmits<{
 const file = ref<File>()
 
 function submit() {
+  if (props.saving || props.result) return
   if (!file.value) {
     ElMessage.warning('请选择 .xlsx 账号清单。')
     return

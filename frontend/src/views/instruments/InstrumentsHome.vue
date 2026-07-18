@@ -164,6 +164,7 @@ function openEditFromQuery() {
 }
 
 async function handleExcelImport(file: File) {
+  if (importing.value || importResult.value) return
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
     ElMessage.warning('请上传 .xlsx 文件。')
     return
@@ -173,7 +174,7 @@ async function handleExcelImport(file: File) {
   importResult.value = null
   try {
     const result = await importInstrumentsExcel(file, (event) => {
-      if (event.total) importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      if (event.total) importProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     })
     importProgress.value = 100
     importResult.value = result
@@ -191,11 +192,12 @@ async function handleExcelImport(file: File) {
 }
 
 async function saveInstrument(payload: InstrumentFormPayload) {
+  if (saving.value) return
   saving.value = true
   uploadProgress.value = 0
   try {
     const progressHandler = (event: any) => {
-      if (event.total) uploadProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      if (event.total) uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
     }
     if (editingInstrument.value) await updateInstrument(editingInstrument.value.id, payload, progressHandler)
     else await createInstrument(payload, progressHandler)

@@ -1,7 +1,7 @@
 <template>
   <section class="editor-grid" :class="{ 'mobile-editor-open': mobileEditorOpen }">
     <CmsContentList title="科研项目" action-label="新增项目" :items="rows" :active-key="editingId || ''" @create="createProject" @edit="openProject">
-      <template #tools><CmsImportStrip description="批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。" template-url="/templates/projects-import-template.xlsx" :loading="importing" :progress="importProgress" uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。" @import="emit('import', $event)" /></template>
+      <template #tools><CmsImportStrip description="批量导入科研项目，优先按项目编号更新；没有编号时按项目名称匹配。" template-url="/templates/projects-import-template.xlsx" :loading="importing" :progress="importProgress" :completed="importCompleted" uploading-text="正在上传科研项目表，请不要关闭页面。" processing-text="上传完成，正在写入科研项目。" @import="emit('import', $event)" @reset="emit('resetImport')" /></template>
     </CmsContentList>
     <article class="card form-panel">
       <CmsMobileEditorBack @back="mobileEditorOpen = false" />
@@ -48,8 +48,8 @@ import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
-defineProps<{ rows: CmsListRow<Project>[]; importing: boolean; importProgress: number }>()
-const emit = defineEmits<{ import: [file: File]; changed: [] }>()
+defineProps<{ rows: CmsListRow<Project>[]; importing: boolean; importProgress: number; importCompleted: boolean }>()
+const emit = defineEmits<{ import: [file: File]; changed: []; resetImport: [] }>()
 
 type ProjectForm = Record<string, unknown> & {
   title: string

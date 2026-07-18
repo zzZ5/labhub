@@ -24,7 +24,7 @@
     <template #footer>
       <UploadProgress :active="saving" :progress="progress" processing-text="上传完成，正在保存资料。" />
       <el-button @click="$emit('update:open', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="submit">{{ document ? '保存修改' : '保存资料' }}</el-button>
+      <el-button type="primary" :loading="saving" :disabled="saving" @click="submit">{{ document ? '保存修改' : '保存资料' }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -63,6 +63,7 @@ function reset() {
 }
 
 function submit() {
+  if (props.saving) return
   const title = form.title.trim()
   if (!title || (!props.document && !form.file && !form.external_url?.trim())) {
     ElMessage.warning('请填写资料标题，并上传文件或填写视频链接。')

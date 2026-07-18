@@ -50,7 +50,8 @@
         <el-tab-pane label="团队成员" name="members">
           <CmsMemberEditor
             :rows="memberRows" :importing="importingKind === 'members'" :import-progress="importProgress"
-            @import="importCmsFile($event, 'members')" @changed="loadAll"
+            :import-completed="completedKind === 'members'"
+            @import="importCmsFile($event, 'members')" @reset-import="resetCompletedImport('members')" @changed="loadAll"
           />
         </el-tab-pane>
 
@@ -63,28 +64,32 @@
         <el-tab-pane label="论文成果" name="publications">
           <CmsPublicationEditor
             :rows="publicationRows" :importing="importingKind === 'publications'" :import-progress="importProgress"
-            :display-file-label="displayFileLabel" @import="importCmsFile($event, 'publications')" @changed="loadAll"
+            :import-completed="completedKind === 'publications'" :display-file-label="displayFileLabel"
+            @import="importCmsFile($event, 'publications')" @reset-import="resetCompletedImport('publications')" @changed="loadAll"
           />
         </el-tab-pane>
 
         <el-tab-pane label="科研项目" name="projects">
           <CmsProjectEditor
             :rows="projectRows" :importing="importingKind === 'projects'" :import-progress="importProgress"
-            @import="importCmsFile($event, 'projects')" @changed="loadAll"
+            :import-completed="completedKind === 'projects'"
+            @import="importCmsFile($event, 'projects')" @reset-import="resetCompletedImport('projects')" @changed="loadAll"
           />
         </el-tab-pane>
 
         <el-tab-pane label="专利成果" name="patents">
           <CmsPatentEditor
             :rows="patentRows" :importing="importingKind === 'patents'" :import-progress="importProgress"
-            :display-file-label="displayFileLabel" @import="importCmsFile($event, 'patents')" @changed="loadAll"
+            :import-completed="completedKind === 'patents'" :display-file-label="displayFileLabel"
+            @import="importCmsFile($event, 'patents')" @reset-import="resetCompletedImport('patents')" @changed="loadAll"
           />
         </el-tab-pane>
 
         <el-tab-pane label="获奖成果" name="awards">
           <CmsAwardEditor
             :rows="awardRows" :importing="importingKind === 'awards'" :import-progress="importProgress"
-            :display-file-label="displayFileLabel" @import="importCmsFile($event, 'awards')" @changed="loadAll"
+            :import-completed="completedKind === 'awards'" :display-file-label="displayFileLabel"
+            @import="importCmsFile($event, 'awards')" @reset-import="resetCompletedImport('awards')" @changed="loadAll"
           />
         </el-tab-pane>
 
@@ -147,7 +152,13 @@ const {
   displayFileLabel,
   loadAll,
 } = useCmsContentData(fillSiteForms)
-const { importProgress, importingKind, importFile: importCmsFile } = useCmsImport(loadAll)
+const {
+  importProgress,
+  importingKind,
+  completedKind,
+  importFile: importCmsFile,
+  resetCompletedImport,
+} = useCmsImport(loadAll)
 
 onMounted(loadAll)
 </script>
