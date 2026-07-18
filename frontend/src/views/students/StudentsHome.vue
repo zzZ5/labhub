@@ -323,6 +323,11 @@ watch(filteredStudents, (matches) => {
   align-items: start;
 }
 
+.student-workspace.is-editing {
+  grid-template-columns: 250px minmax(320px, 1fr) minmax(360px, 420px);
+  gap: 14px;
+}
+
 @media (max-width: 1400px) {
   .student-workspace {
     grid-template-columns: 260px minmax(0, 1fr);
@@ -330,8 +335,18 @@ watch(filteredStudents, (matches) => {
 
 }
 
+@media (max-width: 1200px) {
+  .student-workspace.is-editing {
+    grid-template-columns: 220px minmax(280px, 1fr) 340px;
+    gap: 12px;
+  }
+}
 @media (max-width: 900px) {
   .student-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .student-workspace.is-editing {
     grid-template-columns: 1fr;
   }
 

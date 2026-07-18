@@ -1,53 +1,57 @@
 <template>
-  <el-drawer
-    :model-value="open"
-    class="entity-form-drawer"
-    :title="student ? '编辑学生档案' : '新建学生档案'"
-    size="min(520px, 100%)"
-    destroy-on-close
-    @update:model-value="handleOpenChange"
-  >
-    <p class="entity-form-intro">{{ canManage ? '关联学生账号并维护基本档案信息。' : '维护你的基本档案信息。' }}</p>
-    <el-form label-position="top" class="entity-form profile-form">
-      <el-form-item label="头像">
-        <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :existing-size="student?.avatar_size || currentStudent?.avatar_size || 0" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
-      </el-form-item>
-      <el-form-item label="关联成员账号">
-        <el-select v-model="form.user" filterable placeholder="选择学生登录账号" :disabled="!canManage && Boolean(student)">
-          <el-option v-for="user in studentUsers" :key="user.id" :label="userOptionLabel(user)" :value="user.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="姓名"><el-input v-model="form.name" /></el-form-item>
-      <div class="form-pair">
-        <el-form-item label="学位类型">
-          <el-select v-model="form.degree_type">
-            <el-option label="本科" value="undergraduate" />
-            <el-option label="硕士" value="master" />
-            <el-option label="博士" value="phd" />
+  <aside class="card student-profile-editor" :aria-label="student ? '编辑学生档案' : '新建学生档案'">
+    <header class="editor-heading">
+      <div>
+        <h2>{{ student ? '编辑学生档案' : '新建学生档案' }}</h2>
+        <p>{{ canManage ? '关联学生账号并维护基本档案信息。' : '维护你的基本档案信息。' }}</p>
+      </div>
+      <button class="editor-close" type="button" title="关闭编辑" aria-label="关闭编辑" @click="$emit('cancel')">
+        <el-icon><Close /></el-icon>
+      </button>
+    </header>
+
+    <div class="editor-body">
+      <el-form label-position="top" class="entity-form profile-form">
+        <el-form-item label="头像">
+          <ImageCropField v-model="form.avatar_upload" :existing-url="avatarPreview" :existing-size="student?.avatar_size || currentStudent?.avatar_size || 0" :aspect-ratio="1" :output-width="800" :output-height="800" :max-size-mb="10" preview-shape="circle" @preview="avatarPreview = $event" />
+        </el-form-item>
+        <el-form-item label="关联成员账号">
+          <el-select v-model="form.user" filterable placeholder="选择学生登录账号" :disabled="!canManage && Boolean(student)">
+            <el-option v-for="user in studentUsers" :key="user.id" :label="userOptionLabel(user)" :value="user.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="年级"><el-input v-model="form.grade" placeholder="如 2024级" /></el-form-item>
-      </div>
-      <el-form-item label="导师">
-        <el-select v-model="form.advisors" multiple collapse-tags collapse-tags-tooltip clearable filterable placeholder="可选择多位导师">
-          <el-option v-for="user in supervisors" :key="user.id" :label="userOptionLabel(user)" :value="user.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="研究方向"><el-input v-model="form.research_direction" /></el-form-item>
-      <el-form-item label="研究题目"><el-input v-model="form.research_topic" type="textarea" :rows="3" /></el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="entity-form-footer">
-        <el-button @click="$emit('cancel')">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">{{ student ? '保存修改' : '创建档案' }}</el-button>
-      </div>
-    </template>
-  </el-drawer>
+        <el-form-item label="姓名"><el-input v-model="form.name" /></el-form-item>
+        <div class="form-pair">
+          <el-form-item label="学位类型">
+            <el-select v-model="form.degree_type">
+              <el-option label="本科" value="undergraduate" />
+              <el-option label="硕士" value="master" />
+              <el-option label="博士" value="phd" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="年级"><el-input v-model="form.grade" placeholder="如 2024级" /></el-form-item>
+        </div>
+        <el-form-item label="导师">
+          <el-select v-model="form.advisors" multiple collapse-tags collapse-tags-tooltip clearable filterable placeholder="可选择多位导师">
+            <el-option v-for="user in supervisors" :key="user.id" :label="userOptionLabel(user)" :value="user.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="研究方向"><el-input v-model="form.research_direction" /></el-form-item>
+        <el-form-item label="研究题目"><el-input v-model="form.research_topic" type="textarea" :rows="3" /></el-form-item>
+      </el-form>
+    </div>
+
+    <footer class="editor-footer">
+      <el-button @click="$emit('cancel')">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="submit">{{ student ? '保存修改' : '创建档案' }}</el-button>
+    </footer>
+  </aside>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Close } from '@element-plus/icons-vue'
 import type { CurrentUser } from '../../../api/accounts'
 import type { StudentProfile, StudentProfilePayload } from '../../../api/students'
 import ImageCropField from '../../../components/ImageCropField.vue'
@@ -106,9 +110,6 @@ function submit() {
   emit('save', { ...form, name: form.name.trim(), advisors, supervisor: advisors[0] || null })
 }
 
-function handleOpenChange(value: boolean) {
-  if (!value) emit('cancel')
-}
 
 watch(
   [() => props.open, () => props.student],
@@ -120,49 +121,78 @@ watch(
 </script>
 
 <style scoped>
-.student-avatar-editor {
+.student-profile-editor {
+  position: sticky;
+  top: 16px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.student-profile-avatar {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+  min-width: 0;
   overflow: hidden;
-  border: 1px solid rgba(0, 135, 60, 0.16);
-  border-radius: 50%;
-  background: var(--color-eco-green);
+  padding: 0;
+  box-shadow: var(--shadow-flat);
+}
+
+.student-profile-editor:hover {
+  border-color: var(--color-border);
+  transform: none;
+}
+
+.editor-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--color-line);
+  padding: 16px 18px 14px;
+}
+
+.editor-heading h2 {
+  margin: 0;
   color: var(--color-deep-green);
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 650;
 }
 
-.student-profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.student-avatar-upload {
-  border: 1px solid rgba(0, 135, 60, 0.24);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  color: var(--color-cau-green);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.student-avatar-upload input {
-  display: none;
-}
-
-.avatar-note {
+.editor-heading p {
+  margin: 5px 0 0;
   color: var(--color-muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.editor-close {
+  display: inline-grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.editor-close:hover {
+  border-color: rgba(0, 135, 60, 0.24);
+  color: var(--color-cau-green);
+}
+
+.editor-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 4px;
+}
+
+.editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--color-line);
+  padding: 13px 18px;
+  background: var(--color-panel);
 }
 
 .form-pair {
@@ -171,14 +201,21 @@ watch(
   gap: 12px;
 }
 
-.relation-note {
-  display: grid;
-  gap: 10px;
+@media (max-width: 900px) {
+  .student-profile-editor {
+    position: static;
+    max-height: none;
+  }
 }
 
 @media (max-width: 520px) {
   .form-pair {
     grid-template-columns: 1fr;
+  }
+
+  .editor-footer .el-button {
+    flex: 1;
+    margin: 0;
   }
 }
 </style>

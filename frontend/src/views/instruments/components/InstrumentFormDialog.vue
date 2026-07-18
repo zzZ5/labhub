@@ -1,10 +1,13 @@
 <template>
-  <el-drawer
+  <el-dialog
     :model-value="open"
-    class="entity-form-drawer"
+    class="instrument-form-dialog"
     :title="instrument ? '编辑设备' : '新建设备'"
-    size="min(520px, 100%)"
+    width="720px"
+    align-center
     destroy-on-close
+    :close-on-click-modal="!saving"
+    :close-on-press-escape="!saving"
     @update:model-value="$emit('update:open', $event)"
   >
     <p class="entity-form-intro">维护设备基本信息、位置、图片和使用说明。</p>
@@ -35,7 +38,7 @@
         <el-button type="primary" :loading="saving" @click="submit">{{ instrument ? '保存修改' : '创建设备' }}</el-button>
       </div>
     </template>
-  </el-drawer>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -94,6 +97,18 @@ watch(() => props.open, (open) => {
 <style scoped>
 .instrument-form {
   display: grid;
+}
+
+:global(.instrument-form-dialog) {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+}
+
+:global(.instrument-form-dialog .el-dialog__body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .form-two-col {
