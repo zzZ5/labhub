@@ -1,7 +1,12 @@
 ﻿<template>
   <PortalLayout>
     <section class="hero">
-      <div class="hero-carousel">
+      <div
+        class="hero-carousel"
+        @pointerdown="handleBannerPointerDown"
+        @pointerup="handleBannerPointerUp"
+        @pointercancel="handleBannerPointerCancel"
+      >
         <div
           v-for="(banner, index) in heroBanners"
           :key="`${banner.image}-${index}`"
@@ -216,6 +221,7 @@ const heroImageStates = reactive<Record<string, 'loaded' | 'failed'>>({})
 const newsImageErrors = reactive(new Set<string>())
 const memberImageErrors = reactive(new Set<string>())
 let bannerTimer: number | undefined
+let bannerPointer: { id: number; x: number; y: number } | null = null
 
 type HomeAchievement = {
   id: number
@@ -277,6 +283,12 @@ function startBannerTimer() {
   }, bannerIntervalMs.value)
 }
 
+function stopBannerTimer() {
+  if (!bannerTimer) return
+  window.clearInterval(bannerTimer)
+  bannerTimer = undefined
+}
+
 function showPrevBanner() {
   const length = heroBanners.value.length
   if (length <= 1) return
@@ -297,6 +309,33 @@ function showNextBannerManually() {
 
 function setActiveBanner(index: number) {
   activeBannerIndex.value = index
+  startBannerTimer()
+}
+
+function handleBannerPointerDown(event: PointerEvent) {
+  if (!event.isPrimary || heroBanners.value.length <= 1) return
+  bannerPointer = { id: event.pointerId, x: event.clientX, y: event.clientY }
+  if (event.currentTarget instanceof HTMLElement) event.currentTarget.setPointerCapture(event.pointerId)
+  stopBannerTimer()
+}
+
+function handleBannerPointerUp(event: PointerEvent) {
+  if (!bannerPointer || event.pointerId !== bannerPointer.id) return
+  const deltaX = event.clientX - bannerPointer.x
+  const deltaY = event.clientY - bannerPointer.y
+  bannerPointer = null
+
+  if (Math.abs(deltaX) >= 36 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+    if (deltaX < 0) showNextBannerManually()
+    else showPrevBanner()
+    return
+  }
+  startBannerTimer()
+}
+
+function handleBannerPointerCancel(event: PointerEvent) {
+  if (!bannerPointer || event.pointerId !== bannerPointer.id) return
+  bannerPointer = null
   startBannerTimer()
 }
 
@@ -482,6 +521,8 @@ onUnmounted(() => {
   overflow: hidden;
   border-radius: 8px;
   background: #eef2ee;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .hero-slide {
@@ -508,6 +549,7 @@ onUnmounted(() => {
   display: block;
   object-fit: cover;
   object-position: center;
+  -webkit-user-drag: none;
 }
 
 .hero-skeleton {
