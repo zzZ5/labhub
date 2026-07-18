@@ -72,11 +72,26 @@ defineEmits<{
 }
 
 .side-heading {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.side-heading.static {
+  padding-bottom: 10px;
+}
+
+.side-heading.static::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 36px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .side-heading h2 {
@@ -110,6 +125,7 @@ defineEmits<{
 }
 
 .category-tree > button.active {
+  box-shadow: inset 2px 0 0 var(--color-cau-green);
   font-weight: 650;
 }
 
@@ -172,6 +188,9 @@ defineEmits<{
     flex: 0 0 auto;
     margin: 0 5px 0 2px;
   }
+
+  .category-tree:not(.is-reading) .side-heading.static { padding-bottom: 0; }
+  .category-tree:not(.is-reading) .side-heading.static::after { display: none; }
 
   .category-tree:not(.is-reading) .side-heading h2 { margin: 0; font-size: 15px; }
   .category-tree:not(.is-reading) > button { flex: 0 0 auto; width: auto; min-height: 34px; margin: 0; padding: 6px 11px; white-space: nowrap; }

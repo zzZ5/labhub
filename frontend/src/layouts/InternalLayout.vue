@@ -185,7 +185,8 @@ async function handleAccountCommand(command: string) {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 2px;
 }
 
 .internal-brand strong {

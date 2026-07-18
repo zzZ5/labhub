@@ -5,7 +5,7 @@
     <section class="page-section">
       <div class="container output-layout">
         <aside class="stats-panel card">
-          <div v-for="item in statsItems" :key="item.label">
+          <div v-for="(item, index) in statsItems" :key="item.label" :class="`result-stat result-stat-${index + 1}`">
             <strong>{{ item.value }}</strong>
             <span>{{ item.label }}</span>
           </div>
@@ -13,10 +13,10 @@
 
         <main class="output-main card">
           <div class="result-tabs" role="tablist" aria-label="科研成果类型" @keydown="handleTabKeydown">
-            <button id="result-tab-papers" role="tab" aria-controls="result-panel-papers" :aria-selected="activeTab === 'papers'" :tabindex="activeTab === 'papers' ? 0 : -1" :class="{ active: activeTab === 'papers' }" type="button" @click="activeTab = 'papers'">论文</button>
-            <button id="result-tab-projects" role="tab" aria-controls="result-panel-projects" :aria-selected="activeTab === 'projects'" :tabindex="activeTab === 'projects' ? 0 : -1" :class="{ active: activeTab === 'projects' }" type="button" @click="activeTab = 'projects'">项目</button>
-            <button id="result-tab-patents" role="tab" aria-controls="result-panel-patents" :aria-selected="activeTab === 'patents'" :tabindex="activeTab === 'patents' ? 0 : -1" :class="{ active: activeTab === 'patents' }" type="button" @click="activeTab = 'patents'">专利</button>
-            <button id="result-tab-awards" role="tab" aria-controls="result-panel-awards" :aria-selected="activeTab === 'awards'" :tabindex="activeTab === 'awards' ? 0 : -1" :class="{ active: activeTab === 'awards' }" type="button" @click="activeTab = 'awards'">获奖</button>
+            <button id="result-tab-papers" class="tab-papers" role="tab" aria-controls="result-panel-papers" :aria-selected="activeTab === 'papers'" :tabindex="activeTab === 'papers' ? 0 : -1" :class="{ active: activeTab === 'papers' }" type="button" @click="activeTab = 'papers'">论文</button>
+            <button id="result-tab-projects" class="tab-projects" role="tab" aria-controls="result-panel-projects" :aria-selected="activeTab === 'projects'" :tabindex="activeTab === 'projects' ? 0 : -1" :class="{ active: activeTab === 'projects' }" type="button" @click="activeTab = 'projects'">项目</button>
+            <button id="result-tab-patents" class="tab-patents" role="tab" aria-controls="result-panel-patents" :aria-selected="activeTab === 'patents'" :tabindex="activeTab === 'patents' ? 0 : -1" :class="{ active: activeTab === 'patents' }" type="button" @click="activeTab = 'patents'">专利</button>
+            <button id="result-tab-awards" class="tab-awards" role="tab" aria-controls="result-panel-awards" :aria-selected="activeTab === 'awards'" :tabindex="activeTab === 'awards' ? 0 : -1" :class="{ active: activeTab === 'awards' }" type="button" @click="activeTab = 'awards'">获奖</button>
           </div>
 
           <section v-if="activeTab === 'papers'" id="result-panel-papers" role="tabpanel" aria-labelledby="result-tab-papers" class="result-block">
@@ -370,6 +370,10 @@ onMounted(async () => {
   font-size: 22px;
 }
 
+.stats-panel .result-stat-2 strong { color: var(--color-cau-wisdom-blue); }
+.stats-panel .result-stat-3 strong { color: var(--color-cau-green-dark); }
+.stats-panel .result-stat-4 strong { color: var(--color-cau-gold); }
+
 .stats-panel span {
   color: var(--color-muted);
   font-size: 13px;
@@ -413,9 +417,13 @@ onMounted(async () => {
 }
 
 .result-tabs button.active {
-  border-image: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%) 1;
   color: var(--color-cau-green);
 }
+
+.result-tabs .tab-papers.active { border-bottom-color: var(--color-cau-green); }
+.result-tabs .tab-projects.active { border-bottom-color: var(--color-cau-wisdom-blue); color: var(--color-cau-wisdom-blue); }
+.result-tabs .tab-patents.active { border-bottom-color: var(--color-cau-green-dark); color: var(--color-cau-green-dark); }
+.result-tabs .tab-awards.active { border-bottom-color: var(--color-cau-gold); color: var(--color-cau-gold); }
 
 .result-block {
   padding: 24px;
@@ -571,6 +579,29 @@ onMounted(async () => {
   padding: 16px 0;
   color: inherit;
 }
+
+.project-card,
+.patent-card,
+.award-card {
+  position: relative;
+  padding-left: 14px;
+}
+
+.project-card::before,
+.patent-card::before,
+.award-card::before {
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  left: 0;
+  width: 2px;
+  border-radius: 2px;
+  content: "";
+}
+
+.project-card::before { background: var(--color-cau-wisdom-blue); }
+.patent-card::before { background: var(--color-cau-green-dark); }
+.award-card::before { background: var(--color-cau-gold); }
 
 .simple-card dl {
   display: grid;

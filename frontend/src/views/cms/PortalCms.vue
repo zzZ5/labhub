@@ -61,6 +61,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="论文成果" name="publications">
+          <template #label><span class="cms-result-tab is-paper">论文成果</span></template>
           <CmsPublicationEditor
             :rows="publicationRows" :importing="importingKind === 'publications'" :import-progress="importProgress"
             :display-file-label="displayFileLabel" @import="importCmsFile($event, 'publications')" @changed="loadAll"
@@ -68,6 +69,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="科研项目" name="projects">
+          <template #label><span class="cms-result-tab is-project">科研项目</span></template>
           <CmsProjectEditor
             :rows="projectRows" :importing="importingKind === 'projects'" :import-progress="importProgress"
             @import="importCmsFile($event, 'projects')" @changed="loadAll"
@@ -75,6 +77,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="专利成果" name="patents">
+          <template #label><span class="cms-result-tab is-patent">专利成果</span></template>
           <CmsPatentEditor
             :rows="patentRows" :importing="importingKind === 'patents'" :import-progress="importProgress"
             :display-file-label="displayFileLabel" @import="importCmsFile($event, 'patents')" @changed="loadAll"
@@ -82,6 +85,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="获奖成果" name="awards">
+          <template #label><span class="cms-result-tab is-award">获奖成果</span></template>
           <CmsAwardEditor
             :rows="awardRows" :importing="importingKind === 'awards'" :import-progress="importProgress"
             :display-file-label="displayFileLabel" @import="importCmsFile($event, 'awards')" @changed="loadAll"
@@ -196,6 +200,24 @@ onMounted(loadAll)
   height: 1px;
   background: var(--color-line);
 }
+
+.cms-result-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cms-result-tab::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-cau-green);
+  content: "";
+}
+
+.cms-result-tab.is-project::before { background: var(--color-cau-wisdom-blue); }
+.cms-result-tab.is-patent::before { background: var(--color-cau-green-dark); }
+.cms-result-tab.is-award::before { background: var(--color-cau-gold); }
 
 .editor-grid {
   display: grid;

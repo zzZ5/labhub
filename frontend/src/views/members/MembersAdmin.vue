@@ -30,23 +30,21 @@
 
       <article class="card panel account-panel">
         <div class="panel-heading account-toolbar">
-          <div>
+          <div class="account-heading-line">
             <h2>全部成员</h2>
-            <div class="account-summary-line">
-              <p>共 {{ users.length }} 个账号<span v-if="studentMissingArchiveCount">，{{ studentMissingArchiveCount }} 名学生待建档</span></p>
-              <el-popover placement="bottom-start" :width="420" trigger="click">
-                <div class="permission-help-content">
-                  <p>系统权限仅控制后台管理能力，与学校身份和成员状态分开维护。</p>
-                  <dl>
-                    <div><dt>网站编辑</dt><dd>维护门户内容、新闻和成果</dd></div>
-                    <div><dt>资料管理员</dt><dd>维护内部资料库</dd></div>
-                    <div><dt>仪器管理员</dt><dd>维护仪器信息和说明</dd></div>
-                    <div><dt>系统管理员</dt><dd>管理账号和系统权限</dd></div>
-                  </dl>
-                </div>
-                <template #reference><button class="permission-help-trigger" type="button">系统权限说明</button></template>
-              </el-popover>
-            </div>
+            <span class="account-count">共 {{ users.length }} 个账号<span v-if="studentMissingArchiveCount">，{{ studentMissingArchiveCount }} 名学生待建档</span></span>
+            <el-popover placement="bottom-start" :width="420" trigger="click">
+              <div class="permission-help-content">
+                <p>系统权限仅控制后台管理能力，与学校身份和成员状态分开维护。</p>
+                <dl>
+                  <div><dt>网站编辑</dt><dd>维护门户内容、新闻和成果</dd></div>
+                  <div><dt>资料管理员</dt><dd>维护内部资料库</dd></div>
+                  <div><dt>仪器管理员</dt><dd>维护仪器信息和说明</dd></div>
+                  <div><dt>系统管理员</dt><dd>管理账号和系统权限</dd></div>
+                </dl>
+              </div>
+              <template #reference><button class="permission-help-trigger" type="button">系统权限说明</button></template>
+            </el-popover>
           </div>
           <FilterToolbar has-filters>
             <template #primary><el-input v-model="keyword" clearable placeholder="搜索姓名、邮箱或账号" /></template>
@@ -691,11 +689,25 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   content: "";
 }
 
-.account-summary-line {
+.account-heading-line {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 12px;
+  gap: 6px 14px;
+  min-height: 32px;
+}
+
+.account-heading-line .account-count,
+.account-heading-line .account-count span {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.account-heading-line .account-count {
+  padding-left: 14px;
+  border-left: 1px solid var(--color-line);
 }
 
 .permission-help-trigger {
@@ -708,6 +720,7 @@ watch([debouncedKeyword, statusFilter, membershipFilter, schoolFilter, permissio
   font: inherit;
   font-size: 13px;
   font-weight: 650;
+  line-height: 1.5;
 }
 
 .permission-help-content > p {

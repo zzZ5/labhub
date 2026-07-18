@@ -87,7 +87,7 @@
           </div>
         </div>
         <div class="latest-paper-panel">
-          <RouterLink v-for="item in displayAchievements" :key="`${item.type}-${item.id}`" class="paper-compact" :to="{ path: item.to, query: { from: route.fullPath } }">
+          <RouterLink v-for="item in displayAchievements" :key="`${item.type}-${item.id}`" :class="['paper-compact', `achievement-${item.type}`]" :to="{ path: item.to, query: { from: route.fullPath } }">
             <time>{{ item.badge }}</time>
             <div>
               <h3>{{ item.title }}</h3>
@@ -859,6 +859,10 @@ onUnmounted(() => {
   padding: 8px 0 8px 14px;
 }
 
+.compact-stats div:nth-child(2) { border-left-color: var(--color-cau-wisdom-blue); }
+.compact-stats div:nth-child(3) { border-left-color: var(--color-cau-green-dark); }
+.compact-stats div:nth-child(4) { border-left-color: var(--color-cau-gold); }
+
 .stats-row strong {
   display: block;
   color: var(--color-cau-green);
@@ -1072,6 +1076,23 @@ onUnmounted(() => {
   color: var(--color-cau-green);
   font-size: 13px;
   font-weight: 700;
+}
+
+.paper-compact.achievement-project time {
+  border-left-color: var(--color-cau-wisdom-blue);
+  background: var(--color-info-soft);
+  color: var(--color-cau-wisdom-blue);
+}
+
+.paper-compact.achievement-patent time {
+  border-left-color: var(--color-cau-green-dark);
+  color: var(--color-cau-green-dark);
+}
+
+.paper-compact.achievement-award time {
+  border-left-color: var(--color-cau-gold);
+  background: var(--color-cau-gold-soft);
+  color: var(--color-cau-gold);
 }
 
 .paper-compact h3 {

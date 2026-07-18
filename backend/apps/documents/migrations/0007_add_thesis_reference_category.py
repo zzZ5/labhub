@@ -6,8 +6,8 @@ def add_thesis_reference_category(apps, schema_editor):
     DocumentCategory.objects.update_or_create(
         slug="thesis-reference",
         defaults={
-            "name": "学位论文与参考资料",
-            "description": "学位论文、研究报告及组内科研参考资料。",
+            "name": "其他参考资料",
+            "description": "学位论文、研究报告及其他科研参考资料。",
             "sort_order": 6,
         },
     )
