@@ -1,3 +1,5 @@
+import type { AxiosProgressEvent } from 'axios'
+
 import { http } from './http'
 
 export interface UserProfile {
@@ -60,6 +62,21 @@ export interface AdminUserUpdatePayload {
   is_active?: boolean
 }
 
+export interface AccountImportIssue {
+  row: number
+  status: 'skipped' | 'failed'
+  message: string
+}
+
+export interface AccountImportResult {
+  total: number
+  created: number
+  skipped: number
+  failed: number
+  student_profiles: number
+  issues: AccountImportIssue[]
+}
+
 export async function login(username: string, password: string) {
   const response = await http.post<CurrentUser>('/accounts/auth/login/', { username, password })
   return response.data
@@ -116,6 +133,13 @@ export async function fetchPendingUsers() {
 
 export async function createUser(payload: AdminUserCreatePayload) {
   const response = await http.post<CurrentUser>('/accounts/users/create/', userPayloadBody(payload))
+  return response.data
+}
+
+export async function importAccountsExcel(file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) {
+  const body = new FormData()
+  body.append('file', file)
+  const response = await http.post<AccountImportResult>('/accounts/users/import-excel/', body, { onUploadProgress })
   return response.data
 }
 

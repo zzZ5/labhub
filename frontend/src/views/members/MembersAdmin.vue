@@ -57,6 +57,7 @@
               <el-select v-model="permissionFilter" placeholder="系统权限"><el-option label="全部权限" value="all" /><el-option v-for="role in systemPermissionRoles" :key="role.code" :label="roleLabel(role.code)" :value="role.code" /></el-select>
             </template>
             <template #actions>
+              <el-button plain @click="openAccountImport">批量导入</el-button>
               <el-button plain :loading="loading" @click="reload">刷新</el-button>
               <el-button type="primary" @click="openCreateDrawer">新建账号</el-button>
             </template>
@@ -113,6 +114,14 @@
         <template #footer><div class="entity-form-footer"><el-button @click="accountDrawerVisible = false">取消</el-button><el-button type="primary" :loading="accountSaving" @click="submitAccountForm">{{ editingUserId ? '保存修改' : '创建账号' }}</el-button></div></template>
       </el-drawer>
 
+      <AccountImportDialog
+        v-model:open="accountImportVisible"
+        :saving="accountImporting"
+        :progress="accountImportProgress"
+        :result="accountImportResult"
+        @import="handleAccountImport"
+      />
+
       <el-dialog v-model="passwordVisible" title="重置密码" width="420px">
         <el-alert class="password-alert" type="warning" :closable="false" title="保存后旧密码立即失效，请通过线下方式把新密码告知成员。" />
         <el-form label-position="top"><el-form-item label="成员"><el-input :model-value="passwordTargetName" disabled /></el-form-item><el-form-item label="新密码"><el-input v-model="passwordForm.password" type="password" autocomplete="new-password" show-password /></el-form-item></el-form>
@@ -133,8 +142,10 @@ import {
   fetchPendingUsers,
   fetchRoles,
   fetchUsers,
+  importAccountsExcel,
   removeUserRole,
   resetUserPassword,
+  type AccountImportResult,
   type CurrentUser,
   type Role,
   updateUser,
@@ -151,6 +162,7 @@ import { useListPagination } from '../../composables/useListPagination'
 import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import { useSessionStore } from '../../stores/session'
+import AccountImportDialog from './components/AccountImportDialog.vue'
 
 const session = useSessionStore()
 const users = ref<CurrentUser[]>([])
@@ -161,6 +173,10 @@ const loading = ref(false)
 const savingId = ref<number | null>(null)
 const accountDrawerVisible = ref(false)
 const accountSaving = ref(false)
+const accountImportVisible = ref(false)
+const accountImporting = ref(false)
+const accountImportProgress = ref(0)
+const accountImportResult = ref<AccountImportResult | null>(null)
 const editingUserId = ref<number | null>(null)
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
@@ -352,6 +368,42 @@ function resetAccountForm() {
 function openCreateDrawer() {
   resetAccountForm()
   accountDrawerVisible.value = true
+}
+
+function openAccountImport() {
+  accountImportProgress.value = 0
+  accountImportResult.value = null
+  accountImportVisible.value = true
+}
+
+async function handleAccountImport(file: File) {
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    ElMessage.warning('请选择 .xlsx 账号清单。')
+    return
+  }
+  accountImporting.value = true
+  accountImportProgress.value = 0
+  accountImportResult.value = null
+  try {
+    const result = await importAccountsExcel(file, (event) => {
+      if (event.total) accountImportProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+    })
+    accountImportProgress.value = 100
+    accountImportResult.value = result
+    const message = result.failed
+      ? `导入完成：新增 ${result.created} 个，${result.failed} 行失败。`
+      : `已新增 ${result.created} 个账号，生成 ${result.student_profiles} 个学生档案。`
+    result.failed ? ElMessage.warning(message) : ElMessage.success(message)
+    await reload()
+    memberPage.value = 1
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.detail || '导入失败，请确认模板列名和账号内容。')
+  } finally {
+    accountImporting.value = false
+    setTimeout(() => {
+      if (!accountImporting.value) accountImportProgress.value = 0
+    }, 900)
+  }
 }
 
 function openEditDrawer(user: CurrentUser) {

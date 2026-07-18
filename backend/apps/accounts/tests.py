@@ -1,10 +1,14 @@
 import pytest
 import base64
+from io import BytesIO
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
 from django.urls import reverse
+from openpyxl import Workbook
 
+from apps.students.models import StudentProfile
 from .models import Role, RoleCode, UserProfile, UserRole
 from .services import can_manage_accounts, is_approved_member, user_has_role
 
@@ -261,3 +265,69 @@ def test_identity_role_cannot_be_assigned_as_system_permission(client, admin_use
     )
 
     assert response.status_code == 400
+
+
+def account_import_file(rows):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "账号导入"
+    sheet.append(["姓名", "邮箱", "账号名", "初始密码", "学校身份", "成员状态", "系统权限", "审核状态", "生成学生档案", "年级"])
+    for row in rows:
+        sheet.append(row)
+    buffer = BytesIO()
+    workbook.save(buffer)
+    return ContentFile(buffer.getvalue(), name="accounts.xlsx")
+
+
+@pytest.mark.django_db
+def test_admin_can_import_accounts_and_create_student_profile(client, admin_user):
+    client.force_login(admin_user)
+    upload = account_import_file([
+        ["测试学生", "student-import@example.com", "", "StrongImportPass123!", "博士生", "在组", "资料管理员", "是", "是", "2026级"],
+        ["测试博士后", "postdoc-import@example.com", "postdoc-import", "StrongImportPass456!", "博士后", "在组", "", "是", "否", ""],
+    ])
+
+    response = client.post(reverse("account-user-import-excel"), {"file": upload})
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 2
+    assert response.json()["student_profiles"] == 1
+    student = User.objects.get(email="student-import@example.com")
+    assert student.username == "student-import@example.com"
+    assert student.profile.school_identity == UserProfile.SchoolIdentity.PHD
+    assert student.user_roles.filter(role__code=RoleCode.DOCUMENT_MANAGER).exists()
+    assert StudentProfile.objects.get(user=student).grade == "2026级"
+
+
+@pytest.mark.django_db
+def test_account_import_skips_existing_account_without_changing_password(client, admin_user):
+    existing = User.objects.create_user(username="existing-import", email="existing-import@example.com", password="OriginalPass123!")
+    client.force_login(admin_user)
+    upload = account_import_file([
+        ["已有成员", "existing-import@example.com", "existing-import", "ReplacementPass123!", "硕士生", "在组", "", "是", "是", "2025级"],
+    ])
+
+    response = client.post(reverse("account-user-import-excel"), {"file": upload})
+
+    existing.refresh_from_db()
+    assert response.status_code == 200
+    assert response.json()["created"] == 0
+    assert response.json()["skipped"] == 1
+    assert existing.check_password("OriginalPass123!")
+    assert not StudentProfile.objects.filter(user=existing).exists()
+
+
+@pytest.mark.django_db
+def test_non_admin_cannot_import_accounts(client):
+    member = User.objects.create_user(username="ordinary-member", password="pass12345")
+    member.profile.is_approved = True
+    member.profile.save(update_fields=["is_approved"])
+    client.force_login(member)
+    upload = account_import_file([
+        ["无权限成员", "forbidden-import@example.com", "", "StrongImportPass123!", "硕士生", "在组", "", "是", "否", ""],
+    ])
+
+    response = client.post(reverse("account-user-import-excel"), {"file": upload})
+
+    assert response.status_code == 403
+    assert not User.objects.filter(email="forbidden-import@example.com").exists()

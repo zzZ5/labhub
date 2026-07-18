@@ -8,6 +8,9 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.system.uploads import validate_spreadsheet_upload
+
+from .importers import import_accounts_from_excel
 from .models import Role, UserRole
 from .permissions import CanManageAccounts
 from .serializers import (
@@ -112,6 +115,22 @@ class UserAdminViewSet(viewsets.ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="import-excel")
+    def import_excel(self, request):
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response({"detail": "请上传账号 Excel 文件。"}, status=status.HTTP_400_BAD_REQUEST)
+        if not upload.name.lower().endswith(".xlsx"):
+            return Response({"detail": "仅支持 .xlsx 文件。"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_spreadsheet_upload(upload)
+            result = import_accounts_from_excel(upload, request=request)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"detail": "Excel 解析失败，请确认使用账号导入模板。"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
 
     @action(detail=True, methods=["patch"], url_path="update")
     @transaction.atomic
