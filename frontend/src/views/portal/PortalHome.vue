@@ -2,8 +2,9 @@
   <PortalLayout>
     <section class="hero">
       <div
-        class="hero-carousel"
+        :class="['hero-carousel', { 'is-dragging': bannerDragging }]"
         @pointerdown="handleBannerPointerDown"
+        @pointermove="handleBannerPointerMove"
         @pointerup="handleBannerPointerUp"
         @pointercancel="handleBannerPointerCancel"
       >
@@ -12,7 +13,7 @@
           :key="`${banner.image}-${index}`"
           class="hero-slide"
           :class="{ active: index === activeBannerIndex }"
-          :style="{ transform: `translateX(${(index - activeBannerIndex) * 100}%)` }"
+          :style="{ transform: bannerSlideTransform(index) }"
         >
           <div v-if="!heroImageStates[heroStateKey(banner.image, index)]" class="hero-skeleton" aria-hidden="true"></div>
           <img
@@ -217,11 +218,13 @@ const siteSetting = ref<Partial<SiteSetting>>({})
 const contactInfo = ref<Partial<ContactInfo>>({})
 const achievementsReady = ref(false)
 const activeBannerIndex = ref(0)
+const bannerDragOffset = ref(0)
+const bannerDragging = ref(false)
 const heroImageStates = reactive<Record<string, 'loaded' | 'failed'>>({})
 const newsImageErrors = reactive(new Set<string>())
 const memberImageErrors = reactive(new Set<string>())
 let bannerTimer: number | undefined
-let bannerPointer: { id: number; x: number; y: number } | null = null
+let bannerPointer: { id: number; x: number; y: number; axis: 'pending' | 'horizontal' | 'vertical' } | null = null
 
 type HomeAchievement = {
   id: number
@@ -275,6 +278,10 @@ function heroStateKey(image: string, index: number) {
   return `${index}:${image}`
 }
 
+function bannerSlideTransform(index: number) {
+  return `translate3d(calc(${(index - activeBannerIndex.value) * 100}% + ${bannerDragOffset.value}px), 0, 0)`
+}
+
 function startBannerTimer() {
   if (bannerTimer) window.clearInterval(bannerTimer)
   if (heroBanners.value.length <= 1) return
@@ -314,18 +321,39 @@ function setActiveBanner(index: number) {
 
 function handleBannerPointerDown(event: PointerEvent) {
   if (!event.isPrimary || heroBanners.value.length <= 1) return
-  bannerPointer = { id: event.pointerId, x: event.clientX, y: event.clientY }
+  bannerPointer = { id: event.pointerId, x: event.clientX, y: event.clientY, axis: 'pending' }
+  bannerDragOffset.value = 0
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.setPointerCapture(event.pointerId)
   stopBannerTimer()
+}
+
+function handleBannerPointerMove(event: PointerEvent) {
+  if (!bannerPointer || event.pointerId !== bannerPointer.id) return
+  const deltaX = event.clientX - bannerPointer.x
+  const deltaY = event.clientY - bannerPointer.y
+
+  if (bannerPointer.axis === 'pending' && Math.max(Math.abs(deltaX), Math.abs(deltaY)) >= 6) {
+    bannerPointer.axis = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical'
+  }
+  if (bannerPointer.axis !== 'horizontal') return
+
+  bannerDragging.value = true
+  const width = event.currentTarget instanceof HTMLElement ? event.currentTarget.clientWidth : 0
+  bannerDragOffset.value = width ? Math.max(-width, Math.min(width, deltaX)) : deltaX
 }
 
 function handleBannerPointerUp(event: PointerEvent) {
   if (!bannerPointer || event.pointerId !== bannerPointer.id) return
   const deltaX = event.clientX - bannerPointer.x
   const deltaY = event.clientY - bannerPointer.y
+  const horizontalDrag = bannerPointer.axis === 'horizontal'
+  const width = event.currentTarget instanceof HTMLElement ? event.currentTarget.clientWidth : 0
+  const threshold = Math.min(80, Math.max(36, width * 0.12))
   bannerPointer = null
+  bannerDragging.value = false
+  bannerDragOffset.value = 0
 
-  if (Math.abs(deltaX) >= 36 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+  if (horizontalDrag && Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
     if (deltaX < 0) showNextBannerManually()
     else showPrevBanner()
     return
@@ -336,6 +364,8 @@ function handleBannerPointerUp(event: PointerEvent) {
 function handleBannerPointerCancel(event: PointerEvent) {
   if (!bannerPointer || event.pointerId !== bannerPointer.id) return
   bannerPointer = null
+  bannerDragging.value = false
+  bannerDragOffset.value = 0
   startBannerTimer()
 }
 
@@ -534,6 +564,10 @@ onUnmounted(() => {
   opacity: 1;
   overflow: hidden;
   transition: transform 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-carousel.is-dragging .hero-slide {
+  transition: none;
 }
 
 .hero-slide > img,
