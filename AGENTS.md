@@ -104,39 +104,106 @@ Important banner bug fixed: `HomeBanner.image` can be `null` if a banner was cre
 
 Do not use labels like “横幅显示标题” or “横幅兜底副标题”. The user prefers plain labels such as “标题” and “副标题”.
 
-## Design Direction
+## China Agricultural University Visual Identity
 
-Public portal style should be:
+The local China Agricultural University Visual Identity System under `JPG/` is the design source of truth. Before changing the brand, navigation, homepage, major colors, typography, or decorative language, inspect the relevant manual pages rather than relying on memory or generic “university green” styling.
 
-- Simple, academic, clean, CAU-style green.
-- Agricultural ecology and resource/environment feel.
-- Avoid flashy tech style, heavy gradients, glassmorphism, big data dashboard visuals, excessive cards, or strong shadows.
-- Avoid duplicate section labels. Do not show “研究方向 / 研究方向” or “加入我们 / 联系我们” redundantly.
-- Public home should not feel like a generic SaaS template.
+Key references:
 
-Core colors:
+- `JPG/A 基础部分/A1 基础设计要素/A1-1.01.jpg`: standard color mark.
+- `JPG/A 基础部分/A1 基础设计要素/A1-1.22.jpg` through `A1-1.25.jpg`: Chinese and English type guidance.
+- `JPG/A 基础部分/A1 基础设计要素/A1-1.26.jpg` and `A1-1.27.jpg`: “百年校门” and “韵动笔触” auxiliary graphics.
+- `JPG/A 基础部分/A1 基础设计要素/A1-1.28.jpg` and `A1-1.29.jpg`: color strategy and exact auxiliary colors.
+- `JPG/A 基础部分/A1 基础设计要素/A1-1.30.jpg` and `A1-1.31.jpg`: mark use on different backgrounds.
 
-- CAU life green: `#00873C`
-- Deep green: `#1F3D2B`
-- Rice background: `#F8F7F2`
-- Soft gray: `#F5F7F6`
-- Text: `#2F3437`
-- Muted: `#6B7280`
+### Brand Hierarchy And Marks
 
-Homepage notes:
+- “中农雨磷” is the primary laboratory identity. “中国农业大学资源与环境学院” is the affiliation and should remain visually secondary.
+- Do not make the portal look like an official university-wide website or imply that the laboratory logo is an official CAU mark.
+- Never redraw, stretch, crop, rotate, recolor, outline, add effects to, or merge an official CAU mark with the laboratory logo. Use the supplied electronic asset and preserve its proportions and clear space.
+- Choose the official standard, reversed, black, gold, or silver mark variant appropriate to the background. Do not place a low-contrast mark directly over a busy photograph.
+- Keep the laboratory logo, CAU affiliation, page title, and navigation visually distinct. Do not repeat the same identity text in adjacent areas.
 
-- The home banner is a photo carousel managed by CMS.
-- Banner width should align with the global content container and navigation content line.
-- Keep a small gap between fixed navigation and banner.
-- Banner text should be modest in size and show title/subtitle only.
-- “课题组简介” should stay concise and should not repeat research directions. Research directions have their own section.
+### Color System
 
-Internal platform style:
+The official primary color is CAU “生命绿”:
 
-- Use the same brand but more management-oriented.
-- Background `#F5F7F6`, white content surfaces, restrained borders.
-- Mobile internal pages need special attention; tables/lists should not overflow horizontally.
-- Dense repeated data should support search, pagination, compact rows, and clear actions.
+- 生命绿: `#00873C`
+
+Official auxiliary colors from the local manual:
+
+- 厚土金: RGB `162, 98, 42`, `#A2622A`
+- 丰收金: RGB `151, 108, 8`, `#976C08`
+- 喜悦金: RGB `248, 182, 45`, `#F8B62D`
+- 典雅黄: RGB `219, 204, 174`, `#DBCCAE`
+- 厚重绿: RGB `0, 61, 22`, `#003D16`
+- 智慧蓝: RGB `0, 73, 94`, `#00495E`
+- 理性蓝: RGB `0, 135, 169`, `#0087A9`
+- 清新蓝: RGB `173, 200, 202`, `#ADC8CA`
+- 淡雅绿: RGB `167, 211, 152`, `#A7D398`
+- 雅致红: RGB `94, 0, 11`, `#5E000B`
+- 知性红: RGB `199, 0, 63`, `#C7003F`
+- 喜庆红: RGB `216, 33, 13`, `#D8210D`
+- 睿智灰: RGB `159, 160, 160`, `#9FA0A0`
+- 理性灰: RGB `201, 202, 202`, `#C9CACA`
+- 起点灰: RGB `239, 239, 239`, `#EFEFEF`
+
+Web application rules:
+
+- Use white, warm white, and soft gray for most surfaces. Life green is an accent for primary actions, active navigation, links, short rules, icons, focus states, and important figures; do not flood entire pages with saturated green.
+- Use 厚土金 sparingly as a warm agricultural accent and section differentiator. It must not compete with life green for primary actions.
+- Use 厚重绿 for important headings or deep footer surfaces, and 理性蓝 for occasional informational states. Do not use every auxiliary color on one page.
+- The manual’s suggested `70%` 厚土金, `5%` 理性蓝, `5%` 厚重绿, and `20%` other colors describes material-level color planning. It is not a literal CSS area quota for every screen.
+- LabHub neutral tokens remain valid: warm background `#F8F7F2`, internal background `#F5F7F6`, body text `#2F3437`, muted text `#6B7280`, and border `#E5E7EB`.
+- Keep shared colors and dimensions centralized in `frontend/src/styles/theme.css`. Do not scatter new brand hex values through components.
+
+### Typography
+
+- The manual specifies 汉仪大宋简、汉仪中宋简、汉仪书宋二简 for print Chinese, 汉仪大黑简、汉仪中黑简、汉仪中等线简 for office Chinese, Goudy Old Style for print English, and Myriad for office English.
+- Treat those proprietary fonts as visual references only unless licensed webfont files are explicitly provided. Do not download, bundle, or substitute unlicensed font files.
+- Browser font stack: `Noto Sans SC`, `Microsoft YaHei`, `PingFang SC`, `sans-serif`; English and numbers: `Inter`, `Arial`, `Helvetica`, `sans-serif`.
+- Use restrained weights, normally `600` or `700` for headings and `400` or `500` for body and controls. Keep body line height near `1.7` and letter spacing at `0`.
+- Use academic hierarchy rather than oversized marketing typography. Compact panels, cards, tables, and sidebars must use appropriately compact headings.
+
+### Graphic Language
+
+- The official auxiliary language is based on the “百年校门” main element and “韵动笔触” supporting element, generally following a flexible `1 + 2` composition principle.
+- Use official auxiliary artwork only when the supplied asset is available. Do not manually trace or invent a near-copy of the gate, brush stroke, seal, or university mark.
+- For the web UI, this language may be translated into restrained architectural linework, short green/gold rules, quiet borders, and generous spacing. Decoration must stay subordinate to content.
+- Prefer authentic campus, team, fieldwork, composting, microbiology, and laboratory photography. Avoid generic stock scenes, neon science imagery, fake data dashboards, and decorative imagery that obscures people or research objects.
+
+### Public Portal
+
+- The public portal should feel academic, open, calm, and connected to agriculture, resources, environment, ecology, composting, and microbiology. It must not feel like a generic SaaS landing page.
+- Use a clear content line shared by navigation, banner, and page sections. Allow breathing room but avoid large empty zones that make wide screens feel scattered.
+- The home banner is a CMS-managed photo carousel. Keep its controls subtle, preserve useful focal points on desktop and mobile, and keep title/subtitle modest enough not to cover people.
+- Keep section introductions concise. Never duplicate section names, summaries, research-direction copy, affiliation, contact information, or calls to action in adjacent blocks.
+- Cards should be compact and purposeful, normally `4px` to `10px` radius with a thin border and minimal shadow. Do not turn every section into a floating card.
+- Life green and 厚土金 may form a small dual-color rule or local accent, but not a heavy decorative frame around every section.
+
+### Internal Platform
+
+- Use the same identity with a quieter, work-focused layout: soft gray page background, white content surfaces, clear borders, compact controls, and predictable alignment.
+- Keep primary action placement consistent across accounts, student archives, instruments, documents, and CMS pages.
+- Avoid oversized page descriptions, isolated metric rows, excessive nested cards, and wide empty margins on large displays.
+- Dense repeated data needs search, sorting where useful, pagination, compact rows, readable empty states, and actions that do not crowd the main content.
+- On mobile, navigation and all CMS tabs must remain reachable. Tables and forms must reflow intentionally instead of being silently clipped.
+
+### Accessibility And Quality Gate
+
+- Maintain readable contrast for text, controls, and marks. Do not rely on color alone for status; pair it with text or an icon.
+- Preserve visible keyboard focus, adequate touch targets, and reduced-motion-friendly behavior.
+- Text, navigation, pagination, upload controls, and media must not overflow or become inaccessible at common desktop, 2K, tablet, and phone widths.
+- After a visual change, inspect representative public and internal pages on desktop and mobile, then run the frontend build and relevant visual/end-to-end tests.
+- If an official print rule conflicts with web accessibility or product usability, preserve the identity intent while prioritizing accessibility, and document the exception in the change.
+
+### Prohibited Visual Patterns
+
+- No flashy technology aesthetic, neon glow, complex gradients, glassmorphism, particle effects, decorative orbs, or “big-screen command center” dashboards.
+- No excessive shadows, nested cards, pill-shaped navigation masks, oversized rounded containers, or strong hover motion.
+- No one-note all-green page, and no arbitrary mixture of green, gold, red, and blue for decoration.
+- No duplicate headings or explanatory text that merely repeats visible interface labels.
+- No unofficial CAU-style seal, gate drawing, or homemade institutional mark.
 
 ## Data And Permission Conventions
 

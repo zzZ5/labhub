@@ -18,48 +18,23 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
 <style scoped>
 .portal-page-header {
   position: relative;
-  overflow: hidden;
   border-bottom: 1px solid var(--color-border-quiet);
-  padding: 34px 0 30px;
-  background:
-    linear-gradient(90deg, rgba(234, 245, 238, 0.72), rgba(255, 255, 255, 0.88) 46%, rgba(245, 239, 227, 0.58)),
-    #fff;
-}
-
-.portal-page-header::after {
-  position: absolute;
-  right: max(18px, calc((100vw - var(--container)) / 2));
-  bottom: -24px;
-  width: 280px;
-  height: 92px;
-  border-top: 1px solid rgba(0, 135, 60, 0.12);
-  border-radius: 50%;
-  content: "";
-  transform: rotate(-6deg);
+  padding: 33px 0 31px;
+  background: #f4f7f4;
 }
 
 .portal-page-header .container {
-  position: relative;
-  padding-left: 20px;
-}
-
-.portal-page-header .container::before {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 0;
-  width: 3px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
-  content: "";
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .portal-page-header span {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--color-cau-green);
-  font-size: 13px;
-  font-weight: 700;
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 6px;
+  color: var(--color-cau-gold-deep);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .portal-page-header h1 {
@@ -72,7 +47,7 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
 
 .portal-page-header p {
   max-width: 820px;
-  margin: 8px 0 0;
+  margin: 7px 0 0;
   color: var(--color-muted);
   font-size: 15px;
   line-height: 1.65;
@@ -80,11 +55,11 @@ withDefaults(defineProps<{ title: string; description?: string; eyebrow?: string
 
 @media (max-width: 720px) {
   .portal-page-header {
-    padding: 22px 0 20px;
+    padding: 20px 0 18px;
   }
 
   .portal-page-header .container {
-    padding-left: 14px;
+    display: block;
   }
 
   .portal-page-header h1 {

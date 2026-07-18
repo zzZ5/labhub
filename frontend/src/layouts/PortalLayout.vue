@@ -11,7 +11,7 @@
         </span>
       </RouterLink>
 
-      <button ref="menuButton" class="nav-toggle" type="button" :aria-expanded="menuOpen" :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'" @click="toggleMenu">
+      <button ref="menuButton" class="nav-toggle" :class="{ open: menuOpen }" type="button" :aria-expanded="menuOpen" :aria-label="menuOpen ? '关闭导航菜单' : '打开导航菜单'" @click="toggleMenu">
         <span></span>
         <span></span>
         <span></span>
@@ -35,7 +35,9 @@
     <footer class="portal-footer">
       <div class="container footer-grid">
         <section class="footer-about">
-          <strong>{{ footerName }}</strong>
+          <div class="footer-brand">
+            <strong>{{ footerName }}</strong>
+          </div>
           <p>{{ footerDescription }}</p>
         </section>
         <section class="footer-contact">
@@ -121,11 +123,22 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   height: var(--nav-height);
   gap: 20px;
-  border-top: 3px solid var(--color-cau-green);
-  border-bottom: 1px solid var(--color-border-quiet);
+  border-bottom: 1px solid rgba(0, 61, 22, 0.28);
   padding: 0 max(20px, calc((100vw - var(--container)) / 2));
-  background: rgba(255, 255, 255, 0.975);
-  box-shadow: 0 1px 8px rgba(31, 61, 43, 0.035);
+  background: var(--color-cau-green);
+  box-shadow: 0 2px 9px rgba(0, 61, 22, 0.12);
+}
+
+.portal-nav::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: max(286px, calc((100vw - var(--container)) / 2 + 300px));
+  width: 82px;
+  background: url('/brand/cau-mark-watermark.webp') center / 62px auto no-repeat;
+  content: "";
+  opacity: 0.09;
+  pointer-events: none;
 }
 
 .portal-main {
@@ -133,25 +146,27 @@ onBeforeUnmount(() => {
 }
 
 .portal-brand {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   min-width: 260px;
   height: 100%;
-  gap: 13px;
+  gap: 12px;
   color: inherit;
   text-decoration: none;
 }
 
 .brand-emblem {
   display: inline-flex;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   overflow: hidden;
-  border: 1px solid var(--color-border-accent-soft);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 50%;
   background: var(--color-white);
-  box-shadow: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 .brand-emblem img {
@@ -174,24 +189,27 @@ onBeforeUnmount(() => {
 }
 
 .portal-brand strong {
-  color: var(--color-deep-green);
+  color: var(--color-white);
   font-size: 17px;
-  font-weight: 650;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .portal-brand small {
-  color: var(--color-muted);
+  color: rgba(255, 255, 255, 0.76);
   font-size: 12px;
-  line-height: 1.3;
+  line-height: 1.45;
 }
 
 .portal-links {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   height: 100%;
-  gap: 22px;
-  color: var(--color-text);
+  gap: 25px;
+  color: rgba(255, 255, 255, 0.82);
   font-size: 14px;
   white-space: nowrap;
 }
@@ -203,8 +221,8 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 0;
   padding: 0;
-  color: var(--color-text);
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 550;
   text-decoration: none;
   transition:
     background 160ms ease,
@@ -214,35 +232,42 @@ onBeforeUnmount(() => {
 
 .portal-links a::after {
   position: absolute;
-  right: 0;
-  bottom: 15px;
-  left: 0;
-  height: 3px;
-  border-radius: 999px;
-  background: transparent;
+  right: 20%;
+  bottom: 13px;
+  left: 20%;
+  height: 2px;
+  background: var(--color-cau-elegant-yellow);
   content: "";
+  opacity: 0;
+  transform: scaleX(0.45);
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .portal-links a:hover,
 .portal-links a.router-link-active {
-  color: var(--color-cau-green);
+  color: var(--color-white);
   background: transparent;
+}
+
+.portal-links a.router-link-active {
+  font-weight: 700;
 }
 
 .portal-links a:hover::after,
 .portal-links a.router-link-active::after {
-  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .portal-links .internal-entry {
   height: 34px;
   min-height: 0;
-  border: 1px solid rgba(0, 135, 60, 0.28);
-  border-radius: 2px;
-  margin-left: 2px;
-  padding: 0 13px;
-  color: var(--color-cau-green);
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 4px;
+  margin-left: 7px;
+  padding: 0 14px;
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .portal-links .internal-entry::after {
@@ -251,8 +276,16 @@ onBeforeUnmount(() => {
 
 .portal-links .internal-entry:hover,
 .portal-links .internal-entry.router-link-active {
-  border-color: var(--color-cau-green);
-  background: rgba(234, 245, 238, 0.7);
+  border-color: var(--color-white);
+  background: var(--color-white);
+  color: var(--color-cau-green-dark);
+}
+
+.portal-links a:focus-visible,
+.portal-brand:focus-visible,
+.nav-toggle:focus-visible {
+  outline: 2px solid var(--color-cau-elegant-yellow);
+  outline-offset: 3px;
 }
 
 .nav-toggle {
@@ -263,9 +296,9 @@ onBeforeUnmount(() => {
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 1px solid rgba(0, 135, 60, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.46);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
 }
 
@@ -274,7 +307,8 @@ onBeforeUnmount(() => {
   width: 18px;
   height: 2px;
   border-radius: 999px;
-  background: var(--color-deep-green);
+  background: var(--color-white);
+  transition: opacity 160ms ease, transform 180ms ease;
 }
 
 .nav-toggle span:nth-child(1) {
@@ -285,59 +319,77 @@ onBeforeUnmount(() => {
   transform: translateY(6px);
 }
 
+.nav-toggle.open span:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.nav-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.open span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
 .portal-menu-backdrop {
   display: none;
 }
 
 .portal-footer {
   position: relative;
-  background: var(--color-deep-green);
+  overflow: hidden;
+  border-top: 1px solid rgba(219, 204, 174, 0.42);
+  background: var(--color-cau-heavy-green);
   color: rgba(255, 255, 255, 0.86);
-  padding: 36px 0 34px;
+  padding: 40px 0 36px;
 }
 
-.portal-footer::before {
+.portal-footer::after {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-cau-green) 0 68%, var(--color-cau-gold) 68% 76%, transparent 76%);
+  right: max(14px, calc((100vw - var(--container)) / 2));
+  bottom: -96px;
+  width: 440px;
+  height: 320px;
+  background: url('/brand/cau-centenary-gate.webp') center / contain no-repeat;
   content: "";
+  opacity: 0.16;
+  pointer-events: none;
 }
 
 .footer-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.9fr) minmax(190px, 0.65fr);
   align-items: start;
-  gap: 28px 52px;
+  gap: 28px 56px;
 }
 
 .footer-grid strong {
   display: block;
-  color: #fff;
-  font-size: 15px;
+  color: var(--color-cau-elegant-yellow);
+  font-size: 14px;
   font-weight: 650;
 }
 
 .footer-grid section {
-  position: relative;
-  padding-top: 13px;
+  min-width: 0;
 }
 
-.footer-grid section::before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 30px;
-  height: 2px;
-  background: var(--color-cau-gold);
-  content: "";
+.footer-brand {
+  display: flex;
+  align-items: center;
+}
+
+.footer-brand strong {
+  color: var(--color-white);
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .footer-grid p {
   max-width: 620px;
-  margin: 8px 0 0;
+  margin: 12px 0 0;
   color: rgba(255, 255, 255, 0.74);
   font-size: 14px;
   line-height: 1.65;
@@ -347,7 +399,7 @@ onBeforeUnmount(() => {
 .footer-resources {
   display: grid;
   align-content: start;
-  gap: 7px;
+  gap: 10px;
   color: rgba(255, 255, 255, 0.78);
 }
 
@@ -361,7 +413,7 @@ onBeforeUnmount(() => {
 
 .footer-links {
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 .footer-links a {
@@ -380,6 +432,12 @@ onBeforeUnmount(() => {
   text-underline-offset: 4px;
 }
 
+@media (max-width: 1180px) {
+  .portal-nav::after {
+    display: none;
+  }
+}
+
 @media (max-width: 980px) {
   .portal-nav {
     gap: 12px;
@@ -395,27 +453,27 @@ onBeforeUnmount(() => {
     position: fixed;
     top: calc(var(--nav-height) - 1px);
     right: 0;
-    bottom: 0;
-    left: auto;
+    bottom: auto;
+    left: 0;
     z-index: var(--z-menu);
     display: none;
-    width: min(320px, 88vw);
+    width: 100%;
     height: auto;
-    max-height: none;
+    max-height: calc(100vh - var(--nav-height));
     overflow-y: auto;
-    border-left: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     border-radius: 0;
-    padding: 14px;
+    padding: 14px max(16px, calc((100vw - 720px) / 2)) 18px;
     background: var(--color-white);
-    box-shadow: var(--shadow-drawer-left);
+    box-shadow: 0 14px 28px rgba(31, 61, 43, 0.09);
     font-size: 15px;
   }
 
   .portal-links.open {
     display: grid;
     align-content: start;
-    grid-template-columns: 1fr;
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 12px;
   }
 
   .portal-links a,
@@ -424,6 +482,7 @@ onBeforeUnmount(() => {
     height: 44px;
     border-radius: var(--radius-sm);
     padding: 0 10px;
+    color: var(--color-text);
   }
 
   .portal-links a::after {
@@ -432,12 +491,14 @@ onBeforeUnmount(() => {
 
   .portal-links a.router-link-active {
     background: var(--color-eco-green);
+    color: var(--color-cau-green);
     box-shadow: inset 3px 0 0 var(--color-cau-green);
     font-weight: 700;
   }
 
   .portal-links .internal-entry {
     border-color: var(--color-line);
+    grid-column: 1 / -1;
     margin: 8px 0 0;
     background: var(--color-panel);
     color: var(--color-deep-green);
@@ -462,13 +523,14 @@ onBeforeUnmount(() => {
     z-index: var(--z-overlay);
     display: block;
     border: 0;
-    background: rgba(17, 31, 23, 0.28);
+    background: rgba(17, 31, 23, 0.22);
   }
 }
 
 @media (max-width: 640px) {
   .portal-nav {
     height: 62px;
+    padding: 0 14px;
   }
 
   .portal-main {
@@ -479,6 +541,10 @@ onBeforeUnmount(() => {
     width: 34px;
     height: 34px;
     flex-basis: 34px;
+  }
+
+  .brand-text {
+    min-width: 0;
   }
 
   .portal-brand strong {
@@ -514,6 +580,14 @@ onBeforeUnmount(() => {
 
   .portal-footer {
     padding: 28px 0 24px;
+  }
+
+  .portal-footer::after {
+    right: -74px;
+    bottom: -58px;
+    width: 280px;
+    height: 210px;
+    opacity: 0.09;
   }
 
   .footer-links a {
