@@ -320,7 +320,7 @@ function setActiveBanner(index: number) {
 }
 
 function handleBannerPointerDown(event: PointerEvent) {
-  if (!event.isPrimary || heroBanners.value.length <= 1) return
+  if (event.pointerType === 'mouse' || !event.isPrimary || heroBanners.value.length <= 1) return
   bannerPointer = { id: event.pointerId, x: event.clientX, y: event.clientY, axis: 'pending' }
   bannerDragOffset.value = 0
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.setPointerCapture(event.pointerId)
