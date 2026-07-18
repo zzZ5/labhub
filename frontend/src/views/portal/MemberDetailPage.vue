@@ -108,7 +108,7 @@ onMounted(async () => {
 <style scoped>
 .member-intro {
   display: grid;
-  grid-template-columns: 118px minmax(0, 1fr);
+  grid-template-columns: 144px minmax(0, 1fr);
   align-items: center;
   gap: 24px;
   border-bottom: 1px solid var(--color-line);
@@ -116,10 +116,11 @@ onMounted(async () => {
 }
 
 .member-intro > p { margin: 0; color: var(--color-muted); font-size: 17px; line-height: 1.8; }
-.member-avatar { width: 118px; height: 118px; overflow: hidden; border: 1px solid var(--color-border-quiet); border-radius: var(--radius-md); background: #fff; }
+.member-avatar { width: 144px; overflow: hidden; border: 1px solid var(--color-border-quiet); border-radius: var(--radius-md); background: var(--color-panel-strong); }
 .member-avatar img,
-.member-avatar :deep(.image-placeholder) { width: 100%; height: 100%; }
-.member-avatar img { display: block; object-fit: cover; object-position: center top; }
+.member-avatar :deep(.image-placeholder) { width: 100%; }
+.member-avatar img { display: block; width: 100%; height: auto; }
+.member-avatar :deep(.image-placeholder) { aspect-ratio: 4 / 5; }
 
 .member-content { display: grid; gap: 28px; padding: 28px 32px 34px; }
 .member-content section + section { border-top: 1px solid var(--color-line); padding-top: 26px; }
@@ -139,8 +140,8 @@ onMounted(async () => {
 .timeline-row span { margin-top: 4px; color: var(--color-muted); }
 
 @media (max-width: 640px) {
-  .member-intro { grid-template-columns: 82px minmax(0, 1fr); gap: 16px; padding: 22px; }
-  .member-avatar { width: 82px; height: 82px; }
+  .member-intro { grid-template-columns: 92px minmax(0, 1fr); align-items: start; gap: 16px; padding: 22px; }
+  .member-avatar { width: 92px; }
   .member-intro > p { font-size: 14px; line-height: 1.65; }
   .member-content { padding: 24px 22px 28px; }
   .timeline-row { grid-template-columns: 1fr; gap: 8px; }

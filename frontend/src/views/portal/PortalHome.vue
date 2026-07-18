@@ -618,22 +618,34 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 2px;
 }
 
 .hero-dots button {
-  width: 6px;
-  height: 6px;
+  display: grid;
+  width: 22px;
+  min-width: 0;
+  height: 22px;
+  min-height: 0;
+  place-items: center;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  padding: 0;
+  background: transparent;
   cursor: pointer;
+}
+
+.hero-dots button::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  content: "";
   transition: width 0.2s ease, background 0.2s ease;
 }
 
-.hero-dots button.active {
-  width: 18px;
-  background: #fff;
+.hero-dots button.active::before {
+  width: 14px;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .intro-grid,
@@ -1338,7 +1350,7 @@ onUnmounted(() => {
   }
 
   .hero-controls {
-    bottom: 12px;
+    bottom: 9px;
   }
 
   .hero-arrow {
@@ -1356,12 +1368,19 @@ onUnmounted(() => {
   }
 
   .hero-dots button {
-    width: 6px;
-    height: 6px;
+    width: 18px;
+    height: 18px;
   }
 
-  .hero-dots button.active {
-    width: 20px;
+  .hero-dots button::before {
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .hero-dots button.active::before {
+    width: 10px;
+    background: rgba(255, 255, 255, 0.7);
   }
 
   .intro-grid {
