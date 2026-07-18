@@ -218,8 +218,20 @@ a {
 }
 
 .el-dialog {
+  position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+
+.el-dialog::before {
+  position: absolute;
+  top: 0;
+  left: 22px;
+  z-index: 1;
+  width: 54px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  content: "";
 }
 
 .el-dialog__header {
@@ -549,6 +561,7 @@ a {
   color: var(--color-deep-green);
   font-size: 20px;
   font-weight: 650;
+  box-shadow: inset 0 2px 0 rgba(0, 135, 60, 0.08);
 }
 
 .entity-form-drawer .el-drawer__body {

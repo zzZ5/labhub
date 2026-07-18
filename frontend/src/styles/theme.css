@@ -172,8 +172,8 @@
 }
 
 .status-tag.maintenance {
-  background: #edf3f5;
-  color: var(--color-blue-gray);
+  background: rgba(173, 200, 202, 0.24);
+  color: var(--color-cau-wisdom-blue);
 }
 
 .status-tag.archived {

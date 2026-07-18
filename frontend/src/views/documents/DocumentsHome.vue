@@ -77,6 +77,7 @@
       v-model:open="uploadVisible"
       :document="editingDocument"
       :categories="displayCategories"
+      :default-category-id="activeCategoryId"
       :saving="uploading"
       :progress="uploadProgress"
       @save="submitDocument"
@@ -409,6 +410,7 @@ onMounted(async () => {
     if (target?.can_preview) handlePreview(target)
   }
 })
+const activeCategoryId = computed(() => displayCategories.value.find((item) => item.slug === activeCategory.value)?.id)
 
 function documentTime(document: LabDocument, type: 'created' | 'updated') {
   const value = type === 'updated'

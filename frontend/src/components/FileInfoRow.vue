@@ -29,11 +29,12 @@ const kind = computed(() => {
   if (/\.pdf\b|application\/pdf/.test(value)) return 'pdf'
   if (/\.docx?\b|word/.test(value)) return 'word'
   if (/\.pptx?\b|presentation/.test(value)) return 'ppt'
+  if (/\.xlsx?\b|spreadsheet|excel/.test(value)) return 'excel'
   if (/\.(png|jpe?g|gif|webp)\b|image\//.test(value)) return 'image'
   if (/\.(mp4|webm|mov)\b|video\//.test(value)) return 'video'
   return 'file'
 })
-const typeLabel = computed(() => ({ pdf: 'PDF', word: 'Word', ppt: 'PPT', image: '图片', video: '视频', file: '文件' })[kind.value])
+const typeLabel = computed(() => ({ pdf: 'PDF', word: 'Word', ppt: 'PPT', excel: 'Excel', image: '图片', video: '视频', file: '文件' })[kind.value])
 const icon = computed(() => kind.value === 'image' ? PictureFilled : kind.value === 'video' ? VideoCamera : kind.value === 'ppt' ? Files : Document)
 
 function formatDate(value: string) {
@@ -60,7 +61,9 @@ function formatDate(value: string) {
 .file-kind-icon.pdf { background: #fff5f5; color: #9f312f; }
 .file-kind-icon.word { background: #eff6ff; color: #315f8f; }
 .file-kind-icon.ppt { background: #fff7ed; color: #a65f2b; }
+.file-kind-icon.excel { background: var(--color-eco-green); color: var(--color-cau-green-dark); }
 .file-kind-icon.image { background: var(--color-eco-green); color: var(--color-cau-green); }
+.file-kind-icon.video { background: rgba(173, 200, 202, 0.22); color: var(--color-cau-wisdom-blue); }
 .file-info-copy { min-width: 0; }
 .file-title-line, .file-meta, .file-info-actions { display: flex; align-items: center; gap: 8px; }
 .file-title-line strong, .file-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

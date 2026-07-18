@@ -25,15 +25,19 @@ export function currentFileLabel(document: LabDocument) {
     : currentFilename(document)
 }
 
-export function fileTypeLabel(document: LabDocument) {
-  if (document.external_url) return '视频'
+export function fileTypeKind(document: LabDocument) {
+  if (document.external_url) return 'video'
   const filename = currentFilename(document).toLowerCase()
-  if (filename.endsWith('.pdf')) return 'PDF'
-  if (filename.endsWith('.docx') || filename.endsWith('.doc')) return 'Word'
-  if (filename.endsWith('.pptx') || filename.endsWith('.ppt')) return 'PPT'
-  if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) return 'Excel'
-  if (filename.endsWith('.txt') || filename.endsWith('.md')) return '文本'
-  return '资料'
+  if (filename.endsWith('.pdf')) return 'pdf'
+  if (filename.endsWith('.docx') || filename.endsWith('.doc')) return 'word'
+  if (filename.endsWith('.pptx') || filename.endsWith('.ppt')) return 'ppt'
+  if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) return 'excel'
+  if (filename.endsWith('.txt') || filename.endsWith('.md')) return 'text'
+  return 'file'
+}
+
+export function fileTypeLabel(document: LabDocument) {
+  return ({ pdf: 'PDF', word: 'Word', ppt: 'PPT', excel: 'Excel', text: '文本', video: '视频', file: '资料' })[fileTypeKind(document)]
 }
 
 export function formatDate(value: string) {

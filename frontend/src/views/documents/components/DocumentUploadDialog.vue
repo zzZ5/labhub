@@ -41,6 +41,7 @@ const props = defineProps<{
   open: boolean
   document: LabDocument | null
   categories: DocumentCategory[]
+  defaultCategoryId?: number
   saving: boolean
   progress: number
 }>()
@@ -54,7 +55,7 @@ const form = reactive<DocumentFormPayload>({ title: '', category_id: undefined, 
 function reset() {
   Object.assign(form, {
     title: props.document?.title || '',
-    category_id: props.document?.category?.id,
+    category_id: props.document?.category?.id ?? props.defaultCategoryId,
     description: props.document?.description || '',
     external_url: props.document?.external_url || '',
     file: undefined,
@@ -70,7 +71,7 @@ function submit() {
   emit('save', { ...form, title })
 }
 
-watch(() => props.open, (open) => {
+watch([() => props.open, () => props.defaultCategoryId], ([open]) => {
   if (open) reset()
 })
 </script>

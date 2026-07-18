@@ -46,9 +46,9 @@ const filtersOpen = ref(false)
   position: absolute;
   top: -1px;
   left: 18px;
-  width: 34px;
+  width: 48px;
   height: 2px;
-  background: var(--color-cau-gold);
+  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
   content: "";
 }
 

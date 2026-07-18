@@ -143,9 +143,7 @@ async function handleAccountCommand(command: string) {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, rgba(234, 245, 238, 0.5) 0%, rgba(245, 247, 246, 0.94) 230px),
-    var(--color-soft-gray);
+  background: var(--color-soft-gray);
 }
 
 .internal-sidebar {
@@ -153,13 +151,24 @@ async function handleAccountCommand(command: string) {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  border-top: 3px solid var(--color-cau-green);
+  border-top: 0;
   border-right: 1px solid var(--color-border);
   background: var(--surface-white-strong);
   padding: 20px 14px;
 }
 
+.internal-sidebar::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: var(--color-cau-green);
+  content: "";
+}
+
 .internal-brand {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -167,6 +176,17 @@ async function handleAccountCommand(command: string) {
   margin-bottom: 18px;
   padding: 0 10px 20px;
   color: var(--color-deep-green);
+}
+
+.internal-brand::after {
+  position: absolute;
+  right: auto;
+  bottom: -1px;
+  left: 10px;
+  height: 1px;
+  width: 42px;
+  background: var(--color-cau-green);
+  content: "";
 }
 
 .internal-emblem {
@@ -226,6 +246,8 @@ async function handleAccountCommand(command: string) {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
+  color: var(--color-cau-wisdom-blue);
+  opacity: 0.55;
 }
 
 .internal-menu a:hover,
@@ -240,6 +262,14 @@ async function handleAccountCommand(command: string) {
 .internal-menu a.router-link-active {
   box-shadow: inset 3px 0 0 var(--color-cau-green), inset 0 -1px 0 rgba(181, 139, 66, 0.12);
   font-weight: 650;
+}
+
+.internal-menu a:hover svg,
+.internal-menu a.router-link-active svg,
+.mobile-menu a:hover svg,
+.mobile-menu a.router-link-active svg {
+  color: var(--color-cau-green);
+  opacity: 1;
 }
 
 .internal-main {
@@ -257,7 +287,7 @@ async function handleAccountCommand(command: string) {
   border-bottom: 1px solid var(--color-border);
   padding: 0 28px;
   background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 1px 0 rgba(31, 61, 43, 0.03);
+  box-shadow: 0 1px 0 rgba(31, 61, 43, 0.04), 0 5px 16px rgba(31, 61, 43, 0.018);
 }
 
 .topbar-title {
@@ -296,7 +326,8 @@ async function handleAccountCommand(command: string) {
   gap: 10px;
 }
 
-.account-trigger { display: flex; align-items: center; gap: 9px; min-height: 46px; border: 0; border-left: 1px solid var(--color-line); padding: 4px 0 4px 16px; background: transparent; color: var(--color-text); cursor: pointer; }
+.account-trigger { display: flex; align-items: center; gap: 9px; min-height: 46px; border: 0; border-left: 1px solid var(--color-line); border-radius: var(--radius-sm); padding: 4px 8px 4px 16px; background: transparent; color: var(--color-text); cursor: pointer; transition: background 160ms ease; }
+.account-trigger:hover { background: rgba(234, 245, 238, 0.7); }
 .topbar-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; overflow: hidden; border: 1px solid rgba(0, 135, 60, .16); border-radius: 50%; background: var(--color-eco-green); color: var(--color-deep-green); font-size: 14px; font-weight: 700; }
 .topbar-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .account-trigger-copy { display: grid; min-width: 0; row-gap: 3px; text-align: left; }

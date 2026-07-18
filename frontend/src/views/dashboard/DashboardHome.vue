@@ -2,7 +2,7 @@
   <InternalLayout title="内部工作台">
     <section class="dashboard-page">
       <section class="quick-grid">
-        <RouterLink v-for="item in quickLinks" :key="item.title" class="card quick-card" :to="item.to">
+        <RouterLink v-for="item in quickLinks" :key="item.title" :class="['card', 'quick-card', `tone-${item.tone}`]" :to="item.to">
           <span class="quick-kicker">{{ item.kicker }}</span>
           <strong class="quick-title">{{ item.title }}</strong>
           <div v-if="item.value !== null" class="quick-metric"><b>{{ item.value }}</b><small>{{ item.unit }}</small></div>
@@ -11,7 +11,7 @@
       </section>
 
       <section class="panel-grid">
-        <article class="card panel">
+        <article class="card panel panel-documents">
           <div class="panel-heading">
             <div>
               <h2>近期资料</h2>
@@ -29,7 +29,7 @@
           <EmptyState v-else compact title="暂无近期资料" description="资料上传后会显示在这里。" />
         </article>
 
-        <article class="card panel">
+        <article class="card panel panel-instruments">
           <div class="panel-heading">
             <div>
               <h2>设备状态</h2>
@@ -47,7 +47,7 @@
           <EmptyState v-else compact title="设备状态正常" description="当前没有维护中或停用的设备。" />
         </article>
 
-        <article class="card panel wide-panel">
+        <article class="card panel wide-panel panel-students">
           <div class="panel-heading">
             <div>
               <h2>学生归档</h2>
@@ -96,22 +96,22 @@ const dashboard = reactive<DashboardData>({
 const canEditPortal = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin', 'editor'])))
 const canManageMembers = computed(() => Boolean(session.user?.is_superuser || session.hasAnyRole(['admin'])))
 const pendingUserCount = computed(() => dashboard.summary.find((item) => item.label === '待审核账号')?.value || 0)
-type QuickLink = { title: string; kicker: string; value: number | null; unit: string; to: string }
+type QuickLink = { title: string; kicker: string; value: number | null; unit: string; to: string; tone: 'green' | 'blue' | 'gold' | 'deep' }
 
 function summaryValue(...labels: string[]) {
   return dashboard.summary.find((item) => labels.includes(item.label))?.value || 0
 }
 const quickLinks = computed(() => {
   const links: QuickLink[] = [
-    { title: '内部资料', kicker: '资料库', value: summaryValue('资料数量', '可查阅资料'), unit: '份', to: '/documents' },
-    { title: '仪器平台', kicker: '设备', value: summaryValue('设备数量'), unit: '台', to: '/instruments' },
-    { title: '学生档案', kicker: '归档', value: summaryValue('学生档案数量', '归档数量', '学生资料'), unit: '份', to: '/students' },
+    { title: '内部资料', kicker: '资料库', value: summaryValue('资料数量', '可查阅资料'), unit: '份', to: '/documents', tone: 'green' },
+    { title: '仪器平台', kicker: '设备', value: summaryValue('设备数量'), unit: '台', to: '/instruments', tone: 'blue' },
+    { title: '学生档案', kicker: '归档', value: summaryValue('学生档案数量', '归档数量', '学生资料'), unit: '份', to: '/students', tone: 'gold' },
   ]
   if (canEditPortal.value) {
-    links.push({ title: '门户内容', kicker: '网站', value: null, unit: '', to: '/cms' })
+    links.push({ title: '门户内容', kicker: '网站', value: null, unit: '', to: '/cms', tone: 'deep' })
   }
   if (canManageMembers.value && pendingUserCount.value > 0) {
-    links.push({ title: '成员审核', kicker: '账号', value: pendingUserCount.value, unit: '个待审核', to: '/members' })
+    links.push({ title: '成员审核', kicker: '账号', value: pendingUserCount.value, unit: '个待审核', to: '/members', tone: 'gold' })
   }
   return links
 })
@@ -179,6 +179,7 @@ function degreeText(degree: string) {
 }
 
 .quick-card {
+  --quick-accent: var(--color-cau-green);
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -187,19 +188,19 @@ function degreeText(degree: string) {
   min-height: 104px;
   overflow: hidden;
   padding: 18px 17px 15px;
-  background: linear-gradient(135deg, #fff, rgba(234, 245, 238, 0.28));
+  background: #fff;
   color: inherit;
   box-shadow: none;
 }
 
 .quick-card:hover {
-  border-color: rgba(0, 135, 60, 0.28);
+  border-color: color-mix(in srgb, var(--quick-accent) 28%, var(--color-border));
   transform: translateY(-1px);
 }
 
 .quick-kicker {
   grid-column: 1 / -1;
-  color: var(--color-cau-green);
+  color: var(--quick-accent);
   font-size: 13px;
   font-weight: 700;
 }
@@ -215,17 +216,29 @@ function degreeText(degree: string) {
   align-items: baseline;
   justify-content: flex-end;
   gap: 4px;
-  color: var(--color-cau-green);
+  color: var(--quick-accent);
 }
 
 .quick-card::before {
   position: absolute;
   top: 0;
-  right: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-cau-green) 0 74%, var(--color-cau-gold) 74% 82%, transparent 82%);
+  left: 17px;
+  width: 52px;
+  height: 2px;
+  background: var(--quick-accent);
   content: "";
+}
+
+.quick-card.tone-blue {
+  --quick-accent: var(--color-cau-wisdom-blue);
+}
+
+.quick-card.tone-gold {
+  --quick-accent: var(--color-cau-gold);
+}
+
+.quick-card.tone-deep {
+  --quick-accent: var(--color-cau-heavy-green);
 }
 
 .quick-metric b {
@@ -244,7 +257,7 @@ function degreeText(degree: string) {
 
 .quick-entry {
   justify-self: end;
-  color: var(--color-cau-green);
+  color: var(--quick-accent);
 }
 
 .panel:hover {
@@ -258,6 +271,7 @@ function degreeText(degree: string) {
 }
 
 .panel {
+  --panel-accent: var(--color-cau-green);
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-lg);
@@ -270,9 +284,16 @@ function degreeText(degree: string) {
   left: 20px;
   width: 42px;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%);
+  background: var(--panel-accent);
   content: "";
 }
+
+.panel-instruments { --panel-accent: var(--color-cau-wisdom-blue); }
+.panel-students { --panel-accent: var(--color-cau-gold); }
+
+.panel-instruments .panel-heading a { color: var(--color-cau-wisdom-blue); }
+.panel-students .panel-heading a,
+.panel-students .archive-count { color: var(--color-cau-gold); }
 
 .wide-panel {
   grid-column: 1 / -1;

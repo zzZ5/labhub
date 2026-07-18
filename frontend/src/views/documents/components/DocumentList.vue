@@ -8,7 +8,7 @@
         @click="$emit('preview', document)"
       >
         <CompactDataRow :title="document.title" :description="document.description || '暂无资料说明。'">
-          <template #leading><span class="file-type">{{ fileTypeLabel(document) }}</span></template>
+          <template #leading><span :class="['file-type', `type-${fileTypeKind(document)}`]">{{ fileTypeLabel(document) }}</span></template>
           <template #meta>
             <dl>
               <div><dt>分类</dt><dd>{{ categoryName(document.category) }}</dd></div>
@@ -35,7 +35,7 @@
 import AppPagination from '../../../components/AppPagination.vue'
 import CompactDataRow from '../../../components/CompactDataRow.vue'
 import type { LabDocument } from '../../../api/documents'
-import { categoryName, currentFileSizeLabel, fileTypeLabel, formatDate } from '../documentPresentation'
+import { categoryName, currentFileSizeLabel, fileTypeKind, fileTypeLabel, formatDate } from '../documentPresentation'
 
 defineProps<{
   documents: LabDocument[]
@@ -90,6 +90,13 @@ defineEmits<{
   font-size: 12px;
   font-weight: 700;
 }
+
+.file-type.type-pdf { border-left-color: #9f312f; background: #fff5f5; color: #8d2f2d; }
+.file-type.type-word { border-left-color: var(--color-cau-wisdom-blue); background: rgba(173, 200, 202, 0.18); color: var(--color-cau-wisdom-blue); }
+.file-type.type-ppt { border-left-color: var(--color-cau-gold); background: var(--color-cau-gold-soft); color: var(--color-cau-gold); }
+.file-type.type-excel { border-left-color: var(--color-cau-green); background: var(--color-eco-green); color: var(--color-cau-green-dark); }
+.file-type.type-video { border-left-color: var(--color-cau-rational-blue); background: rgba(173, 200, 202, 0.2); color: var(--color-cau-wisdom-blue); }
+.file-type.type-text { border-left-color: var(--color-muted); }
 
 .document-card dl {
   display: flex;
