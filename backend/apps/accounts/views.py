@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.system.uploads import validate_spreadsheet_upload
 
 from .importers import import_accounts_from_excel
+from .ordering import annotate_member_order
 from .models import Role, UserRole
 from .permissions import CanManageAccounts
 from .serializers import (
@@ -98,7 +99,9 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserAdminViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = User.objects.select_related("profile").prefetch_related("user_roles__role").all().order_by("-date_joined")
+    queryset = annotate_member_order(
+        User.objects.select_related("profile").prefetch_related("user_roles__role").all()
+    ).order_by("_membership_rank", "_identity_rank", "profile__real_name", "username")
     serializer_class = UserSerializer
     permission_classes = [CanManageAccounts]
     parser_classes = [JSONParser, FormParser, MultiPartParser]

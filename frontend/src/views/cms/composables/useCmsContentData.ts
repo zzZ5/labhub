@@ -57,7 +57,7 @@ export function useCmsContentData(onBaseContentLoaded?: BaseContentLoaded) {
     })),
   )
   const memberRows = computed<CmsListRow<Member>[]>(() =>
-    prioritizeSortedItems(memberItems.value).map((item) => ({
+    memberItems.value.map((item) => ({
       key: item.id,
       title: item.name,
       meta: compactMeta([item.sort_order ? `排序 ${item.sort_order}` : '不展示', roleText(item.role_type), item.research_direction]),

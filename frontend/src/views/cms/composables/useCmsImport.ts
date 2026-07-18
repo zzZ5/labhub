@@ -30,12 +30,16 @@ export function useCmsImport(reload: () => Promise<void>) {
         if (event.total) importProgress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
       })
       importProgress.value = 100
-      await reload()
       ElMessage.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条${result.images ? `，图片 ${result.images} 张` : ''}。`)
+      try {
+        await reload()
+      } catch {
+        ElMessage.warning('导入数据已经保存，但列表刷新失败，请手动刷新页面查看。')
+      }
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.detail || '导入失败，请检查模板列名、日期格式和必填字段。')
     } finally {
-      window.setTimeout(() => {
+      globalThis.setTimeout(() => {
         if (importingKind.value === kind) {
           importingKind.value = ''
           importProgress.value = 0

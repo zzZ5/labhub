@@ -100,6 +100,29 @@ def test_pi_can_view_supervised_students(client, pi_user, student_profile):
 
 
 @pytest.mark.django_db
+def test_student_directory_prioritizes_active_then_degree(client, other_user):
+    fixtures = [
+        ("former-phd", "历史博士", UserProfile.SchoolIdentity.PHD, UserProfile.MembershipStatus.FORMER, StudentProfile.DegreeType.PHD),
+        ("active-master", "在组硕士", UserProfile.SchoolIdentity.MASTER, UserProfile.MembershipStatus.ACTIVE, StudentProfile.DegreeType.MASTER),
+        ("active-phd", "在组博士", UserProfile.SchoolIdentity.PHD, UserProfile.MembershipStatus.ACTIVE, StudentProfile.DegreeType.PHD),
+        ("active-undergraduate", "在组本科", UserProfile.SchoolIdentity.UNDERGRADUATE, UserProfile.MembershipStatus.ACTIVE, StudentProfile.DegreeType.UNDERGRADUATE),
+    ]
+    for username, name, identity, membership, degree in fixtures:
+        user = User.objects.create_user(username=username)
+        user.profile.is_approved = True
+        user.profile.school_identity = identity
+        user.profile.membership_status = membership
+        user.profile.save(update_fields=["is_approved", "school_identity", "membership_status"])
+        StudentProfile.objects.create(user=user, name=name, degree_type=degree)
+
+    client.login(username="other", password="pass12345")
+    response = client.get(reverse("student-profile-list"))
+
+    assert response.status_code == 200
+    assert [item["name"] for item in response.json()] == ["在组博士", "在组硕士", "在组本科", "历史博士"]
+
+
+@pytest.mark.django_db
 def test_pi_account_cannot_be_bound_to_student_profile(client, pi_user):
     client.login(username="pi", password="pass12345")
 

@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from apps.documents.responses import protected_file_response
 from apps.documents.views import docx_to_html, is_docx_file
 from apps.accounts.permissions import ApprovedMemberAccess
+from apps.accounts.ordering import annotate_member_order
 
 from .models import StudentArchiveFile, StudentProfile
 from .preview import is_office_preview_candidate, refresh_archive_preview_pdf
@@ -35,7 +36,10 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = StudentProfile.objects.select_related("user", "supervisor", "supervisor__profile").prefetch_related("advisors", "advisors__profile", "archive_files")
-        return visible_students_for_user(self.request.user, queryset).distinct()
+        queryset = visible_students_for_user(self.request.user, queryset).distinct()
+        return annotate_member_order(queryset, "user__profile").order_by(
+            "_membership_rank", "_identity_rank", "-grade", "name"
+        )
 
     def perform_create(self, serializer):
         target_user = serializer.validated_data.get("user")

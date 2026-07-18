@@ -397,7 +397,10 @@ async function handleAccountImport(file: File) {
     await reload()
     memberPage.value = 1
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.detail || '导入失败，请确认模板列名和账号内容。')
+    const fallback = error?.code === 'ECONNABORTED'
+      ? '导入处理等待超时，后端可能仍在继续。请先刷新账号列表确认结果，不要立即重复导入。'
+      : '导入失败，请确认模板列名和账号内容。'
+    ElMessage.error(error?.response?.data?.detail || fallback)
   } finally {
     accountImporting.value = false
     setTimeout(() => {

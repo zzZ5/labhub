@@ -13,6 +13,7 @@ from apps.accounts.permissions import CanManagePortalContent
 from apps.instruments.models import Instrument, InstrumentCategory
 from apps.instruments.serializers import InstrumentCategorySerializer
 from apps.members.models import Member
+from apps.members.ordering import ordered_members
 from apps.members.serializers import MemberSerializer
 from apps.news.models import NewsArticle, NewsCategory, NewsImage
 from apps.news.serializers import (
@@ -93,7 +94,7 @@ class CmsHomeBannerViewSet(CmsParserMixin, viewsets.ModelViewSet):
 
 
 class CmsMemberViewSet(CmsParserMixin, viewsets.ModelViewSet):
-    queryset = Member.objects.all().prefetch_related("educations", "experiences")
+    queryset = ordered_members(Member.objects.all().prefetch_related("educations", "experiences"))
     serializer_class = MemberSerializer
     permission_classes = [CanManagePortalContent]
 

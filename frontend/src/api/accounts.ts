@@ -139,7 +139,10 @@ export async function createUser(payload: AdminUserCreatePayload) {
 export async function importAccountsExcel(file: File, onUploadProgress?: (event: AxiosProgressEvent) => void) {
   const body = new FormData()
   body.append('file', file)
-  const response = await http.post<AccountImportResult>('/accounts/users/import-excel/', body, { onUploadProgress })
+  const response = await http.post<AccountImportResult>('/accounts/users/import-excel/', body, {
+    timeout: 5400000,
+    onUploadProgress,
+  })
   return response.data
 }
 
