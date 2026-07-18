@@ -115,6 +115,7 @@ defineEmits<{
   color: var(--color-muted);
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .category-tree > button.active,
@@ -140,9 +141,12 @@ defineEmits<{
 }
 
 .category-tree > button strong {
+  overflow: hidden;
+  overflow-wrap: anywhere;
   color: inherit;
   font-size: 14px;
   line-height: 1.35;
+  text-overflow: ellipsis;
 }
 
 .category-tree > button span {
@@ -195,5 +199,11 @@ defineEmits<{
   .category-tree:not(.is-reading) .side-heading h2 { margin: 0; font-size: 15px; }
   .category-tree:not(.is-reading) > button { flex: 0 0 auto; width: auto; min-height: 34px; margin: 0; padding: 6px 11px; white-space: nowrap; }
   .category-tree.is-reading { max-height: 300px; }
+
+  .category-tree.is-reading > button strong {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
 </style>

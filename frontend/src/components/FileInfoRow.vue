@@ -65,7 +65,9 @@ function formatDate(value: string) {
 .file-kind-icon.image { background: var(--color-eco-green); color: var(--color-cau-green); }
 .file-kind-icon.video { background: rgba(173, 200, 202, 0.22); color: var(--color-cau-wisdom-blue); }
 .file-info-copy { min-width: 0; }
-.file-title-line, .file-meta, .file-info-actions { display: flex; align-items: center; gap: 8px; }
+.file-title-line, .file-meta, .file-info-actions { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.file-title-line strong { min-width: 0; }
+.file-title-line > span { flex: 0 0 auto; }
 .file-title-line strong, .file-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-title-line strong { color: var(--color-deep-green); font-size: 14px; }
 .file-title-line span, .file-meta { color: var(--color-muted); font-size: 12px; }
@@ -76,5 +78,8 @@ function formatDate(value: string) {
 @media (max-width: 760px) {
   .file-info-row { grid-template-columns: 36px minmax(0, 1fr); }
   .file-info-actions { grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-start; }
+  .file-info-actions :deep(.el-button),
+  .file-info-actions :deep(a),
+  .file-info-actions :deep(button) { min-width: 0; flex: 1 1 96px; margin: 0; }
 }
 </style>

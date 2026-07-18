@@ -81,6 +81,10 @@ defineEmits<{
   padding-bottom: 10px;
 }
 
+.reader-heading > div:first-child {
+  min-width: 0;
+}
+
 .reader-actions {
   display: flex;
   flex: 0 0 auto;
@@ -90,6 +94,7 @@ defineEmits<{
 }
 
 .reader-heading h2 {
+  overflow-wrap: anywhere;
   margin: 0;
   color: var(--color-deep-green);
   font-size: 20px;

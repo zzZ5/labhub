@@ -95,5 +95,13 @@ defineProps<{
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
+
+  .compact-data-row__title {
+    display: -webkit-box;
+    line-height: 1.45;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
 </style>

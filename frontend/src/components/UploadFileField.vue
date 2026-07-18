@@ -140,6 +140,7 @@ watch(() => props.modelValue, (file) => {
 .selected-file > div {
   display: grid;
   min-width: 0;
+  overflow: hidden;
   gap: 2px;
 }
 
@@ -163,5 +164,18 @@ watch(() => props.modelValue, (file) => {
 
 .selected-file button:hover {
   color: #9f312f;
+}
+
+@media (max-width: 480px) {
+  .selected-file {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .selected-file strong,
+  .selected-file span {
+    max-width: 100%;
+  }
 }
 </style>

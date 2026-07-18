@@ -148,6 +148,6 @@ defineEmits<{
   }
 
   .document-actions { width: 100%; }
-  .document-actions :deep(.el-button) { flex: 1 1 120px; margin: 0; }
+  .document-actions :deep(.el-button) { min-width: 0; flex: 1 1 0; margin: 0; }
 }
 </style>
