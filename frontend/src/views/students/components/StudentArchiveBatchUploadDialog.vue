@@ -1,10 +1,16 @@
 <template>
   <el-dialog :model-value="open" title="批量上传个人归档资料" width="760px" @update:model-value="$emit('update:open', $event)">
     <div class="batch-upload">
-      <div class="batch-toolbar">
+      <div
+        :class="['batch-toolbar', { dragging, disabled: saving }]"
+        @dragenter.prevent="handleDragEnter"
+        @dragover.prevent
+        @dragleave.prevent="handleDragLeave"
+        @drop.prevent="handleDrop"
+      >
         <div>
-          <strong>选择多份资料</strong>
-          <span>支持 PDF、Word 和 PowerPoint，单个文件不超过 200 MB，单次最多 30 份。</span>
+          <strong>{{ dragging ? '松开即可添加文件' : '选择或拖入多份资料' }}</strong>
+          <span>可将文件直接拖入此区域；支持 PDF、Word 和 PowerPoint，单个文件不超过 200 MB，单次最多 30 份。</span>
         </div>
         <label :class="['file-picker', { disabled: saving }]">
           选择文件
@@ -80,6 +86,8 @@ const typeOptions = [
   { label: '其它', value: 'other' },
 ]
 const defaultType = ref('other')
+const dragging = ref(false)
+let dragDepth = 0
 const items = reactive<BatchItem[]>([])
 
 function titleFromFilename(filename: string) {
@@ -90,10 +98,22 @@ function selectFiles(event: Event) {
   const input = event.target as HTMLInputElement
   const selected = Array.from(input.files || [])
   input.value = ''
+  addFiles(selected)
+}
+
+function addFiles(selected: File[]) {
   if (!selected.length) return
   const remaining = Math.max(0, 30 - items.length)
+  if (!remaining) {
+    ElMessage.warning('单次最多上传 30 份资料。')
+    return
+  }
   if (selected.length > remaining) ElMessage.warning(`单次最多上传 30 份资料，本次已选择前 ${remaining} 份。`)
   selected.slice(0, remaining).forEach((file) => {
+    if (!/\.(pdf|docx?|pptx?)$/i.test(file.name)) {
+      ElMessage.warning(`${file.name}：仅支持 PDF、Word 和 PowerPoint 文件。`)
+      return
+    }
     const message = validateUploadFile(file, UPLOAD_LIMIT.document)
     if (message) {
       ElMessage.warning(`${file.name}：${message}`)
@@ -109,6 +129,24 @@ function selectFiles(event: Event) {
       description: '',
     })
   })
+}
+
+function handleDragEnter() {
+  if (props.saving) return
+  dragDepth += 1
+  dragging.value = true
+}
+
+function handleDragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (!dragDepth) dragging.value = false
+}
+
+function handleDrop(event: DragEvent) {
+  dragDepth = 0
+  dragging.value = false
+  if (props.saving) return
+  addFiles(Array.from(event.dataTransfer?.files || []))
 }
 
 function applyDefaultType(value: string) {
@@ -132,13 +170,17 @@ function submit() {
 watch(() => props.open, (open) => {
   if (!open) return
   defaultType.value = 'other'
+  dragDepth = 0
+  dragging.value = false
   items.splice(0)
 })
 </script>
 
 <style scoped>
 .batch-upload { display: grid; gap: 12px; }
-.batch-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--color-line); border-radius: var(--radius-sm); padding: 13px 14px; background: var(--color-panel); }
+.batch-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px dashed #b9c9bf; border-radius: var(--radius-sm); padding: 13px 14px; background: var(--color-panel); transition: border-color 150ms ease, background-color 150ms ease; }
+.batch-toolbar.dragging { border-color: var(--color-cau-green); background: var(--color-eco-green); }
+.batch-toolbar.disabled { opacity: .68; }
 .batch-toolbar > div { display: grid; gap: 3px; min-width: 0; }
 .batch-toolbar strong { color: var(--color-deep-green); font-size: 14px; }
 .batch-toolbar span, .batch-defaults small { color: var(--color-muted); font-size: 12px; line-height: 1.5; }
