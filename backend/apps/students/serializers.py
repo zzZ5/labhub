@@ -6,12 +6,13 @@ from apps.system.uploads import validate_avatar_upload as validate_avatar_size
 from apps.system.uploads import validate_document_upload
 
 from .models import StudentArchiveFile, StudentProfile
-from .services import can_delete_archive_file, can_delete_student_profile, can_edit_student_profile
+from .services import can_delete_archive_file, can_delete_student_profile, can_edit_archive_file, can_edit_student_profile
 
 
 class StudentArchiveFileSerializer(serializers.ModelSerializer):
     file_type_label = serializers.CharField(source="get_file_type_display", read_only=True)
     file_size = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +32,7 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
             "uploaded_by",
             "uploaded_at",
             "description",
+            "can_edit",
             "can_delete",
         ]
         read_only_fields = ["uploaded_by", "uploaded_at", "original_filename", "preview_pdf", "preview_status", "preview_error"]
@@ -42,7 +44,18 @@ class StudentArchiveFileSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return can_delete_archive_file(getattr(request, "user", None), obj)
 
+    def get_can_edit(self, obj):
+        request = self.context.get("request")
+        return can_edit_archive_file(getattr(request, "user", None), obj)
+
+    def validate_student(self, student):
+        if self.instance and student.pk != self.instance.student_id:
+            raise serializers.ValidationError("归档资料不能转移到其他学生档案。")
+        return student
+
     def validate_file(self, file_obj):
+        if self.instance:
+            raise serializers.ValidationError("编辑资料信息时不能替换原文件。")
         return validate_document_upload(file_obj)
 
 

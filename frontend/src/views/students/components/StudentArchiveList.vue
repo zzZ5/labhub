@@ -22,6 +22,7 @@
           <a class="file-secondary-action" :href="downloadStudentArchiveFileUrl(file)">
             <el-icon><Download /></el-icon>下载原文件
           </a>
+          <button v-if="file.can_edit" class="file-edit-action" type="button" @click="$emit('edit', file)">编辑信息</button>
           <ActionMenu v-if="file.can_delete" :items="deleteItems" @command="$emit('delete', file)" />
         </template>
       </FileInfoRow>
@@ -41,7 +42,7 @@ import {
 } from '../../../api/students'
 
 defineProps<{ files: StudentArchiveFile[] }>()
-defineEmits<{ delete: [file: StudentArchiveFile] }>()
+defineEmits<{ edit: [file: StudentArchiveFile]; delete: [file: StudentArchiveFile] }>()
 const deleteItems: ActionMenuItem[] = [{ command: 'delete', label: '删除资料', danger: true }]
 
 function archiveFilename(file: StudentArchiveFile) {
@@ -140,6 +141,17 @@ function archivePreviewStatusLabel(file: StudentArchiveFile) {
 
 .file-secondary-action {
   color: var(--color-muted) !important;
+}
+
+.file-edit-action {
+  border: 0;
+  padding: 3px 0;
+  background: transparent;
+  color: var(--color-cau-green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .empty-note {

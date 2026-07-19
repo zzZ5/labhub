@@ -23,6 +23,7 @@ from .services import (
     can_delete_archive_file,
     can_delete_student_profile,
     can_edit_student_profile,
+    can_edit_archive_file,
     can_manage_student_archives,
     can_view_archive_file,
     visible_students_for_user,
@@ -88,6 +89,12 @@ class StudentArchiveFileViewSet(viewsets.ModelViewSet):
         if not can_view_archive_file(request.user, archive_file):
             return Response({"detail": "无权查看该材料。"}, status=status.HTTP_403_FORBIDDEN)
         return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        archive_file = self.get_object()
+        if not can_edit_archive_file(request.user, archive_file):
+            return Response({"detail": "无权修改该学生材料。"}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"], url_path="preview")
     def preview(self, request, pk=None):

@@ -15,6 +15,7 @@ export interface StudentArchiveFile {
   original_filename: string
   uploaded_at: string
   description: string
+  can_edit: boolean
   can_delete: boolean
 }
 
@@ -66,6 +67,12 @@ export interface StudentArchiveUploadPayload {
   title: string
   description: string
   file: File
+}
+
+export interface StudentArchiveMetadataPayload {
+  file_type: string
+  title: string
+  description: string
 }
 
 function studentAvatarBody(file: File) {
@@ -125,6 +132,11 @@ export async function uploadStudentArchiveFile(
 
 export async function deleteStudentArchiveFile(id: number) {
   await http.delete(`/students/archive-files/${id}/`)
+}
+
+export async function updateStudentArchiveFile(id: number, payload: StudentArchiveMetadataPayload) {
+  const response = await http.patch<StudentArchiveFile>(`/students/archive-files/${id}/`, payload)
+  return response.data
 }
 
 export function previewStudentArchiveFileUrl(file: StudentArchiveFile) {

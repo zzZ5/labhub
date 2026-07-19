@@ -407,6 +407,51 @@ def test_student_can_delete_own_archive_file(client, student_user, student_profi
 
 
 @pytest.mark.django_db
+def test_student_can_edit_own_archive_file_metadata(client, student_user, student_profile):
+    archive = StudentArchiveFile.objects.create(
+        student=student_profile,
+        file_type=StudentArchiveFile.FileType.PROPOSAL_REPORT,
+        title="开题报告",
+        file=ContentFile(b"proposal", name="proposal.txt"),
+    )
+    client.login(username="student", password="pass12345")
+
+    response = client.patch(
+        reverse("student-archive-file-detail", args=[archive.id]),
+        {"file_type": StudentArchiveFile.FileType.MIDTERM_REPORT, "title": "中期报告", "description": "修改后的说明"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    archive.refresh_from_db()
+    assert archive.file_type == StudentArchiveFile.FileType.MIDTERM_REPORT
+    assert archive.title == "中期报告"
+    assert archive.description == "修改后的说明"
+    assert archive.original_filename == "proposal.txt"
+
+
+@pytest.mark.django_db
+def test_other_member_cannot_edit_archive_file(client, other_user, student_profile):
+    archive = StudentArchiveFile.objects.create(
+        student=student_profile,
+        file_type=StudentArchiveFile.FileType.PROPOSAL_REPORT,
+        title="开题报告",
+        file=ContentFile(b"proposal", name="proposal.txt"),
+    )
+    client.login(username="other", password="pass12345")
+
+    response = client.patch(
+        reverse("student-archive-file-detail", args=[archive.id]),
+        {"title": "不应修改"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    archive.refresh_from_db()
+    assert archive.title == "开题报告"
+
+
+@pytest.mark.django_db
 def test_supervisor_cannot_delete_archive_file(client, pi_user, student_profile):
     archive = StudentArchiveFile.objects.create(
         student=student_profile,

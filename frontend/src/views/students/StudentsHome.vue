@@ -30,7 +30,7 @@
             @delete="confirmDeleteProfile"
             @upload="openUpload"
           />
-          <StudentArchiveList v-if="selectedStudent" :files="displayFiles" @delete="confirmDeleteArchiveFile" />
+          <StudentArchiveList v-if="selectedStudent" :files="displayFiles" @edit="openArchiveEdit" @delete="confirmDeleteArchiveFile" />
         </main>
 
         <StudentProfileForm
@@ -53,6 +53,7 @@
 
       <StudentArchiveUploadDialog
         v-model:open="uploadVisible"
+        :archive="editingArchive"
         :saving="uploading"
         :progress="uploadProgress"
         @save="submitArchiveFile"
@@ -73,10 +74,12 @@ import {
   deleteStudentProfile,
   fetchStudentProfiles,
   type StudentArchiveFile,
+  type StudentArchiveMetadataPayload,
   type StudentArchiveUploadPayload,
   type StudentProfile,
   type StudentProfilePayload,
   updateStudentProfile,
+  updateStudentArchiveFile,
   uploadStudentArchiveFile,
 } from '../../api/students'
 import InternalLayout from '../../layouts/InternalLayout.vue'
@@ -112,6 +115,7 @@ const {
 const uploadVisible = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const editingArchive = ref<StudentArchiveFile | null>(null)
 const formVisible = ref(false)
 const savingProfile = ref(false)
 const editingStudent = ref<StudentProfile | null>(null)
@@ -181,28 +185,43 @@ async function saveProfile(payload: StudentProfilePayload) {
 }
 
 function openUpload() {
+  editingArchive.value = null
   uploadProgress.value = 0
   uploadVisible.value = true
 }
 
-async function submitArchiveFile(payload: StudentArchiveUploadPayload) {
+function openArchiveEdit(file: StudentArchiveFile) {
+  if (!file.can_edit) return
+  editingArchive.value = file
+  uploadProgress.value = 0
+  uploadVisible.value = true
+}
+
+async function submitArchiveFile(payload: StudentArchiveUploadPayload | StudentArchiveMetadataPayload) {
   if (!selectedStudent.value || uploading.value) return
   uploading.value = true
   uploadProgress.value = 0
   try {
-    await uploadStudentArchiveFile({
-      student: selectedStudent.value.id,
-      ...payload,
-    }, (event) => {
-      if (!event.total) return
-      uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
-    })
-    uploadProgress.value = 100
-    ElMessage.success('学生资料已上传。')
+    if (editingArchive.value) {
+      await updateStudentArchiveFile(editingArchive.value.id, payload)
+      ElMessage.success('资料信息已更新。')
+    } else {
+      if (!('file' in payload)) return
+      await uploadStudentArchiveFile({
+        student: selectedStudent.value.id,
+        ...payload,
+      }, (event) => {
+        if (!event.total) return
+        uploadProgress.value = Math.min(100, Math.round((event.loaded / event.total) * 100))
+      })
+      uploadProgress.value = 100
+      ElMessage.success('学生资料已上传。')
+    }
     uploadVisible.value = false
+    editingArchive.value = null
     await loadStudents(selectedStudent.value.id)
   } catch (error: any) {
-    ElMessage.error(requestErrorMessage(error, '上传失败，请确认权限和表单内容。'))
+    ElMessage.error(requestErrorMessage(error, editingArchive.value ? '修改失败，请确认权限和填写内容。' : '上传失败，请确认权限和表单内容。'))
   } finally {
     uploading.value = false
     setTimeout(() => {

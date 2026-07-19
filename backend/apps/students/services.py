@@ -46,5 +46,9 @@ def can_delete_archive_file(user, archive_file) -> bool:
     return can_delete_student_profile(user, archive_file.student)
 
 
+def can_edit_archive_file(user, archive_file) -> bool:
+    return can_edit_student_profile(user, archive_file.student)
+
+
 def visible_students_for_user(user, queryset):
     return queryset if is_approved_member(user) else queryset.none()
