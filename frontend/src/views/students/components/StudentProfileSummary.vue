@@ -11,6 +11,7 @@
       </div>
       <div class="profile-actions">
         <el-button v-if="student.can_edit" type="primary" @click="$emit('upload')">上传资料</el-button>
+        <el-button v-if="student.can_edit" plain @click="$emit('batchUpload')">批量上传</el-button>
         <el-button v-if="student.can_edit" plain @click="$emit('edit', student)">编辑档案</el-button>
         <ActionMenu v-if="student.can_delete" :items="dangerItems" @command="$emit('delete', student)" />
       </div>
@@ -34,6 +35,7 @@ defineEmits<{
   edit: [student: StudentProfile]
   delete: [student: StudentProfile]
   upload: []
+  batchUpload: []
 }>()
 
 const advisorText = computed(() => {

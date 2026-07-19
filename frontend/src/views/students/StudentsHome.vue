@@ -29,6 +29,7 @@
             @edit="startEdit"
             @delete="confirmDeleteProfile"
             @upload="openUpload"
+            @batch-upload="openBatchUpload"
           />
           <StudentArchiveList v-if="selectedStudent" :files="displayFiles" @edit="openArchiveEdit" @delete="confirmDeleteArchiveFile" />
         </main>
@@ -57,6 +58,13 @@
         :saving="uploading"
         :progress="uploadProgress"
         @save="submitArchiveFile"
+      />
+      <StudentArchiveBatchUploadDialog
+        v-model:open="batchUploadVisible"
+        :saving="batchUploading"
+        :progress="batchUploadProgress"
+        :status-text="batchUploadStatus"
+        @save="submitBatchArchiveFiles"
       />
     </section>
   </InternalLayout>
@@ -87,6 +95,7 @@ import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import ListSkeleton from '../../components/ListSkeleton.vue'
 import { useSessionStore } from '../../stores/session'
 import StudentArchiveList from './components/StudentArchiveList.vue'
+import StudentArchiveBatchUploadDialog from './components/StudentArchiveBatchUploadDialog.vue'
 import StudentArchiveUploadDialog from './components/StudentArchiveUploadDialog.vue'
 import StudentList from './components/StudentList.vue'
 import StudentProfileForm from './components/StudentProfileForm.vue'
@@ -116,6 +125,10 @@ const uploadVisible = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const editingArchive = ref<StudentArchiveFile | null>(null)
+const batchUploadVisible = ref(false)
+const batchUploading = ref(false)
+const batchUploadProgress = ref(0)
+const batchUploadStatus = ref('')
 const formVisible = ref(false)
 const savingProfile = ref(false)
 const editingStudent = ref<StudentProfile | null>(null)
@@ -195,6 +208,55 @@ function openArchiveEdit(file: StudentArchiveFile) {
   editingArchive.value = file
   uploadProgress.value = 0
   uploadVisible.value = true
+}
+
+function openBatchUpload() {
+  batchUploadProgress.value = 0
+  batchUploadStatus.value = ''
+  batchUploadVisible.value = true
+}
+
+async function submitBatchArchiveFiles(items: StudentArchiveUploadPayload[]) {
+  if (!selectedStudent.value || batchUploading.value || !items.length) return
+  batchUploading.value = true
+  batchUploadProgress.value = 0
+  batchUploadStatus.value = ''
+  const studentId = selectedStudent.value.id
+  const failed: string[] = []
+  let succeeded = 0
+  try {
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index]
+      try {
+        batchUploadStatus.value = `正在上传第 ${index + 1}/${items.length} 份：${item.file.name}`
+        await uploadStudentArchiveFile({ student: studentId, ...item }, (event) => {
+          const fileProgress = event.total ? event.loaded / event.total : 0
+          batchUploadProgress.value = Math.min(100, Math.round(((index + fileProgress) / items.length) * 100))
+          if (event.total && event.loaded >= event.total && index < items.length - 1) {
+            batchUploadStatus.value = `第 ${index + 1}/${items.length} 份传输完成，服务器处理中。`
+          }
+        })
+        succeeded += 1
+      } catch {
+        failed.push(item.file.name)
+      }
+      batchUploadProgress.value = Math.round(((index + 1) / items.length) * 100)
+    }
+    batchUploadVisible.value = false
+    await loadStudents(studentId)
+    if (failed.length) {
+      const names = failed.slice(0, 3).join('、')
+      ElMessage.warning(`已上传 ${succeeded} 份，${failed.length} 份失败：${names}${failed.length > 3 ? '等' : ''}。`)
+    } else {
+      ElMessage.success(`已上传 ${succeeded} 份个人归档资料。`)
+    }
+  } finally {
+    batchUploading.value = false
+    setTimeout(() => {
+      if (!batchUploading.value) batchUploadProgress.value = 0
+      if (!batchUploading.value) batchUploadStatus.value = ''
+    }, 800)
+  }
 }
 
 async function submitArchiveFile(payload: StudentArchiveUploadPayload | StudentArchiveMetadataPayload) {
