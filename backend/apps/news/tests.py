@@ -74,6 +74,33 @@ def test_public_news_filters_visibility_and_status(client):
 
 
 @pytest.mark.django_db
+def test_public_news_detail_tracks_views_without_counting_list_requests(client):
+    article = NewsArticle.objects.create(
+        title="浏览统计新闻",
+        slug="view-count-news",
+        content="content",
+        visibility=Visibility.PUBLIC,
+        status=NewsArticle.Status.PUBLISHED,
+    )
+
+    list_response = client.get(reverse("public-news-article-list"))
+    article.refresh_from_db()
+    assert list_response.status_code == 200
+    assert article.view_count == 0
+    assert article.published_at is not None
+
+    first_response = client.get(reverse("public-news-article-detail", args=[article.slug]))
+    second_response = client.get(reverse("public-news-article-detail", args=[article.slug]))
+    article.refresh_from_db()
+
+    assert first_response.status_code == 200
+    assert first_response.json()["view_count"] == 1
+    assert first_response.json()["published_at"]
+    assert second_response.json()["view_count"] == 2
+    assert article.view_count == 2
+
+
+@pytest.mark.django_db
 def test_school_lab_news_categories_are_complete(client):
     response = client.get(reverse("public-news-category-list"))
 

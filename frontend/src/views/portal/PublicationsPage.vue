@@ -44,7 +44,7 @@
                   <span>{{ paper.journal || '期刊信息待补充' }}</span>
                   <span v-if="paper.doi">DOI: {{ paper.doi }}</span>
                 </div>
-                <p v-if="paper.abstract" class="abstract">{{ paper.abstract }}</p>
+                <p v-if="paper.abstract" class="abstract">{{ richTextToPlainText(paper.abstract) }}</p>
               </div>
             </RouterLink>
             <div v-if="!papers.length" class="empty-note">没有找到匹配的论文。</div>
@@ -66,7 +66,7 @@
             <RouterLink v-for="project in projects" :key="project.id" class="simple-card project-card" :to="{ path: `/publications/projects/${project.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ project.title }}</h3>
-                <p>{{ project.description || project.funding_source || '项目说明待补充' }}</p>
+                <p>{{ richTextToPlainText(project.description) || project.funding_source || '项目说明待补充' }}</p>
               </div>
               <dl>
                 <div>
@@ -138,7 +138,7 @@
             <RouterLink v-for="award in awards" :key="award.id" class="simple-card award-card" :to="{ path: `/publications/awards/${award.id}`, query: { from: route.fullPath } }">
               <div>
                 <h3>{{ award.title }}</h3>
-                <p>{{ award.description || award.participants || '奖项说明待补充' }}</p>
+                <p>{{ richTextToPlainText(award.description) || award.participants || '奖项说明待补充' }}</p>
               </div>
               <dl>
                 <div>
@@ -176,6 +176,7 @@ import {
   type Publication,
   type PublicationStats,
 } from '../../api/publicPortal'
+import { richTextToPlainText } from '../../utils/richText'
 import AppPagination from '../../components/AppPagination.vue'
 import PortalPageHeader from '../../components/PortalPageHeader.vue'
 import PortalLayout from '../../layouts/PortalLayout.vue'

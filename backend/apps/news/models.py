@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Visibility(models.TextChoices):
@@ -57,6 +58,8 @@ class NewsArticle(models.Model):
     is_pinned = models.BooleanField("置顶", default=False)
     status = models.CharField("状态", max_length=20, choices=Status.choices, default=Status.DRAFT)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="news_articles", verbose_name="作者", null=True, blank=True)
+    published_at = models.DateTimeField("发布时间", null=True, blank=True)
+    view_count = models.PositiveBigIntegerField("浏览次数", default=0)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 
@@ -67,6 +70,11 @@ class NewsArticle(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.PUBLISHED and not self.published_at:
+            self.published_at = timezone.now()
+        super().save(*args, **kwargs)
 
 
 class NewsImage(models.Model):

@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -14,6 +15,12 @@ class ResearchDirectionViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return ResearchDirection.objects.filter(is_active=True)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        ResearchDirection.objects.filter(pk=instance.pk).update(view_count=F("view_count") + 1)
+        instance.refresh_from_db(fields=["view_count"])
+        return Response(self.get_serializer(instance).data)
 
 
 class HomeBannerViewSet(ReadOnlyModelViewSet):

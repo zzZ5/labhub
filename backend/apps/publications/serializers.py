@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.rich_text import sanitize_rich_text_html
 from apps.system.uploads import validate_document_upload, validate_image_upload
 
 from .models import Award, Book, Patent, Project, Publication, SoftwareCopyright, Standard
@@ -19,11 +20,27 @@ class PublicationSerializer(serializers.ModelSerializer):
     def validate_pdf_file(self, value):
         return validate_document_upload(value)
 
+    def validate_abstract(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["abstract"] = sanitize_rich_text_html(data.get("abstract"))
+        return data
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = "__all__"
+
+    def validate_description(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["description"] = sanitize_rich_text_html(data.get("description"))
+        return data
 
 
 class PatentSerializer(serializers.ModelSerializer):
@@ -38,6 +55,14 @@ class PatentSerializer(serializers.ModelSerializer):
 
     def validate_pdf_file(self, value):
         return validate_document_upload(value)
+
+    def validate_description(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["description"] = sanitize_rich_text_html(data.get("description"))
+        return data
 
 
 class SoftwareCopyrightSerializer(serializers.ModelSerializer):
@@ -65,6 +90,14 @@ class AwardSerializer(serializers.ModelSerializer):
 
     def validate_attachment(self, value):
         return validate_document_upload(value)
+
+    def validate_description(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["description"] = sanitize_rich_text_html(data.get("description"))
+        return data
 
 
 class StandardSerializer(serializers.ModelSerializer):

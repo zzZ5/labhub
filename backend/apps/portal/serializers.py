@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.rich_text import sanitize_rich_text_html
 from apps.system.uploads import validate_favicon_upload, validate_image_upload, validate_logo_upload
 
 from .models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
@@ -39,13 +40,21 @@ class ResearchDirectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ResearchDirection
-        fields = ["id", "title", "slug", "summary", "content", "cover_image", "cover_image_size", "sort_order", "updated_at"]
+        fields = ["id", "title", "slug", "summary", "content", "cover_image", "cover_image_size", "sort_order", "view_count", "created_at", "updated_at"]
 
     def get_cover_image_size(self, obj):
         return file_field_size(obj.cover_image)
 
     def validate_cover_image(self, value):
         return validate_image_upload(value)
+
+    def validate_content(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["content"] = sanitize_rich_text_html(data.get("content"))
+        return data
 
 
 class HomeBannerSerializer(serializers.ModelSerializer):

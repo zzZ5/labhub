@@ -5,12 +5,12 @@
       return-label="返回新闻活动"
       :kicker="article?.category?.name || '新闻活动'"
       :title="article?.title || '新闻活动'"
-      aside-title="活动信息"
+      aside-title="新闻信息"
     >
-      <template #meta>
+      <template v-if="article" #meta>
         <p class="meta-list">
-          <span>{{ article?.event_date || '近期' }}</span>
-          <span v-if="article?.location">{{ article.location }}</span>
+          <span>发布于 {{ publishedAtLabel }}</span>
+          <span>{{ article.view_count || 0 }} 次浏览</span>
         </p>
       </template>
 
@@ -33,8 +33,9 @@
       <template #aside>
         <dl>
           <div><dt>分类</dt><dd>{{ article?.category?.name || '新闻活动' }}</dd></div>
-          <div><dt>日期</dt><dd>{{ article?.event_date || '近期' }}</dd></div>
+          <div v-if="article?.event_date"><dt>活动日期</dt><dd>{{ article.event_date }}</dd></div>
           <div v-if="article?.location"><dt>地点</dt><dd>{{ article.location }}</dd></div>
+          <div v-if="article?.updated_at"><dt>最近更新</dt><dd>{{ formatDate(article.updated_at) }}</dd></div>
         </dl>
         <div v-if="article?.tags?.length" class="tag-row">
           <span v-for="tag in article.tags" :key="tag.id">{{ tag.name }}</span>
@@ -66,6 +67,21 @@ const detailGalleryImages = computed(() => {
 const articleHtml = computed(() => article.value?.word_html || article.value?.content || '')
 const hasRichBody = computed(() => /<[a-z][\s\S]*>/i.test(articleHtml.value))
 const paragraphs = computed(() => (articleHtml.value || article.value?.summary || '').split(/\n+/).map((line) => line.trim()).filter(Boolean))
+const publishedAtLabel = computed(() => formatDateTime(article.value?.published_at || article.value?.created_at || ''))
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value ? value.slice(0, 16).replace('T', ' ') : '时间待补充'
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date)
+}
 
 onMounted(async () => {
   try {

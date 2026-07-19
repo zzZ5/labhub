@@ -25,7 +25,7 @@
           <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
         </div>
         <div class="form-section-label"><strong>摘要与附件</strong><span>论文摘要和可公开查看的 PDF</span></div>
-        <el-form-item label="摘要"><el-input v-model="form.abstract" type="textarea" :rows="4" /></el-form-item>
+        <el-form-item label="摘要"><CmsRichTextField v-model="form.abstract" placeholder="撰写论文摘要，可插入图示…" /></el-form-item>
         <el-form-item label="PDF 附件"><UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :max-size-mb="200" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" /></el-form-item>
       </el-form>
       <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="savePublication" @delete="deletePublication" />
@@ -45,6 +45,7 @@ import CmsImportStrip from './CmsImportStrip.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import FeedbackPanel from '../../../components/FeedbackPanel.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 

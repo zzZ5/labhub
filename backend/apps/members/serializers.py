@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.system.serializer_fields import file_field_size
+from apps.system.rich_text import sanitize_rich_text_html
 from apps.system.uploads import validate_avatar_upload
 
 from .models import Member, MemberEducation, MemberExperience
@@ -43,6 +44,14 @@ class MemberSerializer(serializers.ModelSerializer):
     def validate_avatar(self, value):
         return validate_avatar_upload(value)
 
+    def validate_profile(self, value):
+        return sanitize_rich_text_html(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["profile"] = sanitize_rich_text_html(data.get("profile"))
+        return data
+
     class Meta:
         model = Member
         fields = [
@@ -61,6 +70,9 @@ class MemberSerializer(serializers.ModelSerializer):
             "graduation_date",
             "destination",
             "sort_order",
+            "view_count",
+            "created_at",
+            "updated_at",
             "educations",
             "experiences",
         ]

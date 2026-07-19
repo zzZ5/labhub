@@ -14,7 +14,7 @@
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" :rows="3" /></el-form-item>
         <div class="form-section-label"><strong>正文</strong><span>研究方向的详细介绍</span></div>
-        <el-form-item label="详细内容"><el-input v-model="form.content" type="textarea" :rows="5" /></el-form-item>
+        <el-form-item label="详细内容"><CmsRichTextField v-model="form.content" placeholder="撰写研究内容、方法与阶段成果…" /></el-form-item>
         <div class="form-section-label"><strong>媒体与展示</strong><span>封面与首页展示顺序</span></div>
         <el-form-item label="封面图">
           <ImageCropField
@@ -46,6 +46,7 @@ import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 

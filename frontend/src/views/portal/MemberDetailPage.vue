@@ -11,6 +11,7 @@
         <p class="meta-list">
           <span>{{ member.role_label || '团队成员' }}</span>
           <span v-if="member.research_direction">{{ member.research_direction }}</span>
+          <span>{{ member.view_count || 0 }} 次浏览</span>
         </p>
       </template>
 
@@ -20,18 +21,13 @@
             <img v-if="member.avatar && !avatarFailed" :src="member.avatar" :alt="member.name" @error="avatarFailed = true" />
             <ImagePlaceholder v-else :label="`${member.name}暂无头像`" :initial="member.name" />
           </div>
-          <p>{{ member.research_direction || member.profile || '研究方向暂未补充。' }}</p>
+          <p>{{ member.research_direction || '研究方向暂未补充。' }}</p>
         </div>
 
         <div class="member-content">
           <section>
             <h2>个人简介</h2>
-            <template v-if="profileSections.length">
-              <div v-for="section in profileSections" :key="section.title" class="profile-section">
-                <h3 v-if="section.title">{{ section.title }}</h3>
-                <p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p>
-              </div>
-            </template>
+            <RichContent v-if="member.profile" :html="member.profile" />
             <p v-else class="muted">个人简介暂未补充。</p>
           </section>
 
@@ -59,6 +55,7 @@
           <div><dt>身份头衔</dt><dd>{{ member.role_label || '团队成员' }}</dd></div>
           <div v-if="member.email"><dt>邮箱</dt><dd><a :href="`mailto:${member.email}`">{{ member.email }}</a></dd></div>
           <div v-if="member.destination"><dt>去向</dt><dd>{{ member.destination }}</dd></div>
+          <div v-if="member.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(member.updated_at) }}</dd></div>
         </dl>
       </template>
     </PortalDetailLayout>
@@ -66,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchMember, type Member } from '../../api/publicPortal'
@@ -74,23 +71,13 @@ import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import PortalDetailLayout from '../../components/PortalDetailLayout.vue'
 import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
+import RichContent from '../../components/RichContent.vue'
+import { formatPortalDateTime } from '../../utils/date'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/team')
 const member = ref<Member | null>(null)
 const avatarFailed = ref(false)
-const sectionHeadings = new Set(['工作经历', '教育经历', '学术与社会服务', '人才与团队项目', '教学工作', '教改项目与论文', '出版书籍与教材', '国际会议报告', '团队与研究生指导'])
-
-const profileSections = computed(() => {
-  const blocks = (member.value?.profile || '').split(/\n{2,}/).map((item) => item.trim()).filter(Boolean)
-  return blocks.map((block, index) => {
-    const lines = block.split(/\n+/).map((item) => item.trim()).filter(Boolean)
-    const first = lines[0] || ''
-    if (sectionHeadings.has(first)) return { title: first, paragraphs: lines.slice(1) }
-    return { title: index === 0 ? '' : first, paragraphs: index === 0 ? lines : lines.slice(1) }
-  }).filter((section) => section.paragraphs.length)
-})
-
 function dateRange(start?: string | null, end?: string | null) {
   if (!start && !end) return '时间未填写'
   return `${start || '开始'} - ${end || '至今'}`
@@ -128,8 +115,6 @@ onMounted(async () => {
 .member-content h2 { position: relative; margin: 0 0 16px; padding-left: 13px; color: var(--color-deep-green); font-size: 22px; }
 .member-content h2::before { position: absolute; top: 0.16em; bottom: 0.16em; left: 0; width: 3px; background: linear-gradient(180deg, var(--color-cau-green) 0 72%, var(--color-cau-gold) 72% 100%); content: ""; }
 .member-content p { margin: 0 0 14px; color: var(--color-text); line-height: 1.85; }
-.profile-section + .profile-section { border-top: 1px solid var(--color-line); margin-top: 16px; padding-top: 16px; }
-.profile-section h3 { margin: 0 0 10px; color: var(--color-deep-green); font-size: 17px; }
 .muted,
 .empty-panel { color: var(--color-muted) !important; }
 .empty-panel { padding: 28px; }

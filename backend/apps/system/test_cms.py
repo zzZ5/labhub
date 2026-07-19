@@ -13,10 +13,67 @@ from apps.accounts.models import Role, RoleCode, UserRole
 from apps.instruments.models import Instrument
 from apps.members.models import Member
 from apps.portal.models import ResearchDirection
-from apps.publications.models import Publication
+from apps.publications.models import Award, Patent, Project, Publication
 from apps.system.cms_importers import import_members, import_publications, parse_publication_citation, read_rows_from_excel
+from apps.system.models import PortalContentImage
+from apps.system.rich_text import sanitize_rich_text_html
 
 User = get_user_model()
+
+
+def test_rich_text_sanitizer_preserves_media_and_removes_scripts():
+    cleaned = sanitize_rich_text_html(
+        '<h2>研究内容</h2><p>正文</p><img src="/media/portal/content/test.jpg" alt="图示">'
+        '<script>alert(1)</script><a href="javascript:alert(1)">危险链接</a>'
+    )
+
+    assert '<h2>研究内容</h2>' in cleaned
+    assert '<img src="/media/portal/content/test.jpg" alt="图示">' in cleaned
+    assert '<script>' not in cleaned
+    assert 'javascript:' not in cleaned
+
+
+@pytest.mark.django_db
+def test_editor_can_upload_portal_content_image(client, tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    make_user("content-image-editor", RoleCode.EDITOR)
+    client.login(username="content-image-editor", password="pass12345")
+    image = SimpleUploadedFile(
+        "content.gif",
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        content_type="image/gif",
+    )
+
+    response = client.post(reverse("cms-content-image-list"), {"image": image})
+
+    assert response.status_code == 201
+    assert PortalContentImage.objects.count() == 1
+    assert response.json()["image"].startswith("http")
+
+
+@pytest.mark.django_db
+def test_public_detail_requests_increment_view_counts(client):
+    member = Member.objects.create(name="浏览成员", sort_order=1)
+    research = ResearchDirection.objects.create(title="浏览方向", slug="view-research")
+    publication = Publication.objects.create(title="浏览论文", authors="团队", year=2026)
+    project = Project.objects.create(title="浏览项目")
+    patent = Patent.objects.create(title="浏览专利")
+    award = Award.objects.create(title="浏览获奖")
+    cases = [
+        ("public-member-detail", member, [member.pk]),
+        ("public-research-direction-detail", research, [research.slug]),
+        ("public-publication-detail", publication, [publication.pk]),
+        ("public-project-detail", project, [project.pk]),
+        ("public-patent-detail", patent, [patent.pk]),
+        ("public-award-detail", award, [award.pk]),
+    ]
+
+    for route_name, instance, args in cases:
+        response = client.get(reverse(route_name, args=args))
+        instance.refresh_from_db()
+        assert response.status_code == 200
+        assert response.json()["view_count"] == 1
+        assert instance.view_count == 1
 
 
 def test_parse_publication_citation_with_trailing_year():

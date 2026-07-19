@@ -11,6 +11,8 @@
         <el-form-item label="专利名称"><el-input v-model="form.title" /></el-form-item>
         <div class="form-two-col"><el-form-item label="专利号"><el-input v-model="form.patent_number" /></el-form-item><el-form-item label="状态"><el-input v-model="form.status" /></el-form-item></div>
         <el-form-item label="发明人"><el-input v-model="form.inventors" type="textarea" :rows="2" /></el-form-item>
+        <div class="form-section-label"><strong>成果说明</strong><span>用于专利详情页的补充内容</span></div>
+        <el-form-item label="说明"><CmsRichTextField v-model="form.description" placeholder="撰写专利成果说明，可插入图示…" /></el-form-item>
         <div class="form-section-label"><strong>媒体与附件</strong><span>公开查看的专利文件</span></div>
         <el-form-item label="PDF 附件">
           <UploadFileField v-model="form.pdf_file" :disabled="saving" accept="application/pdf,.pdf" :max-size-mb="200" :existing-label="currentPdf ? displayFileLabel(currentPdf) : ''" />
@@ -36,6 +38,7 @@ import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 
@@ -49,6 +52,7 @@ type PatentForm = Record<string, unknown> & {
   application_date: string
   authorization_date: string
   status: string
+  description: string
   pdf_file?: File
   visibility: string
   sort_order: number
@@ -56,13 +60,13 @@ type PatentForm = Record<string, unknown> & {
 const editingId = ref<number | null>(null)
 const mobileEditorOpen = ref(false)
 const currentPdf = ref('')
-const form = reactive<PatentForm>({ title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
+const form = reactive<PatentForm>({ title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', description: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
 const { saving, progress, save, remove } = useCmsEditorMutation(async () => emit('changed'))
 
 function resetPatent() {
   editingId.value = null
   currentPdf.value = ''
-  Object.assign(form, { title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
+  Object.assign(form, { title: '', patent_number: '', inventors: '', application_date: '', authorization_date: '', status: '', description: '', pdf_file: undefined, visibility: 'public', sort_order: 0 })
 }
 
 function createPatent() {
@@ -85,6 +89,7 @@ function editPatent(item: Patent) {
     application_date: item.application_date || '',
     authorization_date: item.authorization_date || '',
     status: item.status || '',
+    description: item.description || '',
     pdf_file: undefined,
     visibility: item.visibility || 'public',
     sort_order: item.sort_order || 0,

@@ -1,4 +1,5 @@
 from rest_framework import filters
+from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -33,7 +34,15 @@ class PublicResultsPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class PublicationViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
+class PublicDetailTrackingMixin:
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        type(instance).objects.filter(pk=instance.pk).update(view_count=F("view_count") + 1)
+        instance.refresh_from_db(fields=["view_count"])
+        return Response(self.get_serializer(instance).data)
+
+
+class PublicationViewSet(PublicDetailTrackingMixin, PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
     pagination_class = PublicResultsPagination
@@ -44,7 +53,7 @@ class PublicationViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     ordering = ["-year", "-created_at"]
 
 
-class ProjectViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
+class ProjectViewSet(PublicDetailTrackingMixin, PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     pagination_class = PublicResultsPagination
@@ -54,12 +63,12 @@ class ProjectViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     ordering = ["-start_date", "-end_date", "title"]
 
 
-class PatentViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
+class PatentViewSet(PublicDetailTrackingMixin, PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Patent.objects.all()
     serializer_class = PatentSerializer
     pagination_class = PublicResultsPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "patent_number", "inventors", "status"]
+    search_fields = ["title", "patent_number", "inventors", "status", "description"]
     ordering_fields = ["sort_order", "application_date", "authorization_date", "title"]
     ordering = ["-application_date", "-authorization_date", "title"]
 
@@ -69,7 +78,7 @@ class SoftwareCopyrightViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
     serializer_class = SoftwareCopyrightSerializer
 
 
-class AwardViewSet(PublicVisibilityMixin, ReadOnlyModelViewSet):
+class AwardViewSet(PublicDetailTrackingMixin, PublicVisibilityMixin, ReadOnlyModelViewSet):
     queryset = Award.objects.all()
     serializer_class = AwardSerializer
     pagination_class = PublicResultsPagination

@@ -1,10 +1,12 @@
 <template>
   <PortalLayout>
     <PortalResultDetail :return-to="returnTo" type-label="获奖成果" :title="award?.title || '获奖成果'" info-title="获奖信息">
+      <template #meta><p class="meta-list"><span v-if="award?.award_date">{{ award.award_date.slice(0, 4) }}</span><span>{{ award?.view_count || 0 }} 次浏览</span></p></template>
       <img v-if="award?.image" class="award-image" :src="award.image" :alt="award.title" />
       <section>
         <h2>成果说明</h2>
-        <p>{{ award?.description || '成果说明待补充。' }}</p>
+        <RichContent v-if="award?.description" :html="award.description" />
+        <p v-else>成果说明待补充。</p>
       </section>
       <section v-if="award?.participants">
         <h2>参与人员</h2>
@@ -16,6 +18,7 @@
           <div><dt>获奖日期</dt><dd>{{ award?.award_date || '-' }}</dd></div>
           <div v-if="award?.image"><dt>图片大小</dt><dd>{{ imageSizeLabel }}</dd></div>
           <div v-if="award?.attachment"><dt>附件大小</dt><dd>{{ attachmentSizeLabel }}</dd></div>
+          <div v-if="award?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(award.updated_at) }}</dd></div>
         </dl>
       </template>
       <template #actions>
@@ -35,7 +38,9 @@ import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import PortalResultDetail from '../../components/PortalResultDetail.vue'
 import FileActionLinks from '../../components/FileActionLinks.vue'
+import RichContent from '../../components/RichContent.vue'
 import { formatOptionalFileSize } from '../../utils/files'
+import { formatPortalDateTime } from '../../utils/date'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/publications')

@@ -10,6 +10,8 @@ export interface ResearchDirection {
   cover_image_size?: number
   sort_order?: number
   updated_at?: string
+  created_at?: string
+  view_count?: number
 }
 
 export interface SiteSetting {
@@ -76,6 +78,9 @@ export interface Member {
   graduation_date?: string | null
   destination?: string
   sort_order?: number
+  created_at?: string
+  updated_at?: string
+  view_count?: number
   educations?: { school: string; degree: string; major: string; start_date: string | null; end_date: string | null; description: string }[]
   experiences?: { organization: string; position: string; start_date: string | null; end_date: string | null; description: string }[]
 }
@@ -96,6 +101,8 @@ export interface NewsArticle {
   category: { name: string } | null
   tags?: { id: number; name: string; slug: string }[]
   images?: { id: number; image: string; image_size?: number; caption: string; sort_order: number }[]
+  published_at?: string | null
+  view_count?: number
   created_at?: string
   updated_at?: string
 }
@@ -129,6 +136,7 @@ export interface Publication {
   sort_order?: number
   created_at?: string
   updated_at?: string
+  view_count?: number
 }
 
 export interface PublicationStats {
@@ -158,6 +166,9 @@ export interface Project {
   visibility?: string
   description: string
   sort_order?: number
+  created_at?: string
+  updated_at?: string
+  view_count?: number
 }
 
 export interface Patent {
@@ -168,10 +179,14 @@ export interface Patent {
   application_date: string | null
   authorization_date: string | null
   status: string
+  description?: string
   pdf_file?: string
   pdf_file_size?: number
   visibility?: string
   sort_order?: number
+  created_at?: string
+  updated_at?: string
+  view_count?: number
 }
 
 export interface Award {
@@ -187,6 +202,9 @@ export interface Award {
   attachment_size?: number
   visibility?: string
   sort_order?: number
+  created_at?: string
+  updated_at?: string
+  view_count?: number
 }
 
 function unwrapList<T>(data: T[] | PaginatedResult<T>) {

@@ -60,9 +60,10 @@ import StarterKit from '@tiptap/starter-kit'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
-const props = withDefaults(defineProps<{ modelValue: string; uploading?: boolean; uploadProgress?: number }>(), {
+const props = withDefaults(defineProps<{ modelValue: string; uploading?: boolean; uploadProgress?: number; placeholder?: string }>(), {
   uploading: false,
   uploadProgress: 0,
+  placeholder: '开始撰写正文…',
 })
 const emit = defineEmits<{ 'update:modelValue': [value: string]; imageSelected: [file: File] }>()
 const imageInput = ref<HTMLInputElement | null>(null)
@@ -76,7 +77,7 @@ const editor = useEditor({
     Underline,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Image.configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy' } }),
-    Placeholder.configure({ placeholder: '开始撰写新闻正文…' }),
+    Placeholder.configure({ placeholder: props.placeholder }),
   ],
   editorProps: {
     attributes: { class: 'news-prose', spellcheck: 'true' },

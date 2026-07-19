@@ -1,9 +1,11 @@
 <template>
   <PortalLayout>
     <PortalResultDetail :return-to="returnTo" type-label="科研项目" :title="project?.title || '科研项目'" info-title="项目信息">
+      <template #meta><p class="meta-list"><span v-if="project?.start_date">{{ project.start_date.slice(0, 4) }}</span><span>{{ project?.view_count || 0 }} 次浏览</span></p></template>
       <section>
         <h2>项目说明</h2>
-        <p>{{ project?.description || '项目说明待补充。' }}</p>
+        <RichContent v-if="project?.description" :html="project.description" />
+        <p v-else>项目说明待补充。</p>
       </section>
       <template #info>
         <dl>
@@ -13,6 +15,7 @@
           <div><dt>状态</dt><dd>{{ project?.status || '-' }}</dd></div>
           <div v-if="project?.amount && Number(project.amount) > 0"><dt>经费</dt><dd>{{ amountLabel }}</dd></div>
           <div v-if="project?.start_date || project?.end_date"><dt>周期</dt><dd>{{ [project?.start_date, project?.end_date].filter(Boolean).join(' 至 ') }}</dd></div>
+          <div v-if="project?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(project.updated_at) }}</dd></div>
         </dl>
       </template>
     </PortalResultDetail>
@@ -27,6 +30,8 @@ import { fetchProject, type Project } from '../../api/publicPortal'
 import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import PortalResultDetail from '../../components/PortalResultDetail.vue'
+import RichContent from '../../components/RichContent.vue'
+import { formatPortalDateTime } from '../../utils/date'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/publications')

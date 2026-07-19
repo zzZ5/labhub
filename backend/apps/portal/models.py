@@ -34,6 +34,7 @@ class ResearchDirection(models.Model):
     cover_image = models.ImageField("封面图", upload_to="portal/research/", blank=True)
     sort_order = models.PositiveIntegerField("排序", default=0)
     is_active = models.BooleanField("是否启用", default=True)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 

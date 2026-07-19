@@ -18,7 +18,7 @@
         </div>
         <div class="form-section-label"><strong>说明与展示</strong><span>公开说明、权限和首页顺序</span></div>
         <el-form-item label="可见范围"><el-select v-model="form.visibility"><el-option label="公开" value="public" /><el-option label="成员可见" value="members" /><el-option label="管理员可见" value="admins" /></el-select></el-form-item>
-        <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
+        <el-form-item label="说明"><CmsRichTextField v-model="form.description" placeholder="撰写获奖成果说明…" /></el-form-item>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>
       <CmsFormActions :saving="saving" :progress="progress" :deletable="Boolean(editingId)" @save="saveAward" @delete="deleteAward" />
@@ -38,6 +38,7 @@ import CmsImportStrip from './CmsImportStrip.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
 import UploadFileField from '../../../components/UploadFileField.vue'
 import ImageCropField from '../../../components/ImageCropField.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 

@@ -26,7 +26,7 @@
           <el-form-item label="结束日期"><el-date-picker v-model="form.end_date" type="date" value-format="YYYY-MM-DD" clearable /></el-form-item>
         </div>
         <div class="form-section-label"><strong>项目说明</strong><span>公开展示的简要内容</span></div>
-        <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
+        <el-form-item label="说明"><CmsRichTextField v-model="form.description" placeholder="撰写适合公开展示的项目说明…" /></el-form-item>
         <div class="form-section-label"><strong>展示设置</strong><span>控制首页展示顺序</span></div>
         <el-form-item label="首页排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>
@@ -45,6 +45,7 @@ import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'
 import CmsMobileEditorBack from './CmsMobileEditorBack.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import type { CmsListRow } from '../composables/useCmsContentData'
 import { useCmsEditorMutation } from '../composables/useCmsEditorMutation'
 

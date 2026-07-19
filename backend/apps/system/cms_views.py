@@ -25,18 +25,45 @@ from apps.news.serializers import (
     sanitize_news_html,
 )
 from apps.system.uploads import validate_document_upload, validate_image_upload, validate_spreadsheet_upload
+from apps.system.serializer_fields import file_field_size
 from apps.portal.models import ContactInfo, HomeBanner, ResearchDirection, SiteSetting
 from apps.portal.serializers import ContactInfoSerializer, HomeBannerSerializer, ResearchDirectionSerializer, SiteSettingSerializer
 from apps.publications.models import Award, Patent, Project, Publication
 from apps.publications.serializers import AwardSerializer, PatentSerializer, ProjectSerializer, PublicationSerializer
 
 from .cms_importers import import_rows, parse_publication_citation
+from .models import PortalContentImage
 
 logger = logging.getLogger(__name__)
 
 
 class CmsParserMixin:
     parser_classes = [JSONParser, FormParser, MultiPartParser]
+
+
+class CmsPortalContentImageSerializer(serializers.ModelSerializer):
+    image_size = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PortalContentImage
+        fields = ["id", "image", "image_size", "created_at"]
+        read_only_fields = ["id", "image_size", "created_at"]
+
+    def validate_image(self, value):
+        return validate_image_upload(value)
+
+    def get_image_size(self, obj):
+        return file_field_size(obj.image)
+
+
+class CmsPortalContentImageViewSet(CmsParserMixin, viewsets.ModelViewSet):
+    queryset = PortalContentImage.objects.all()
+    serializer_class = CmsPortalContentImageSerializer
+    permission_classes = [CanManagePortalContent]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
 
 
 def unique_slug(model, title, current_slug="", prefix="item"):
@@ -155,10 +182,12 @@ class CmsNewsArticleSerializer(serializers.ModelSerializer):
             "visibility",
             "is_pinned",
             "status",
+            "published_at",
+            "view_count",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "word_html", "created_at", "updated_at"]
+        read_only_fields = ["id", "word_html", "published_at", "view_count", "created_at", "updated_at"]
 
     def validate_content(self, value):
         return sanitize_news_html(value)

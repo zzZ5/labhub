@@ -20,6 +20,7 @@ export type CmsResource =
   | 'news-categories'
   | 'news-articles'
   | 'news-images'
+  | 'content-images'
   | 'publications'
   | 'projects'
   | 'patents'
@@ -116,6 +117,13 @@ export interface CmsNewsImage {
   sort_order: number
 }
 
+export interface CmsContentImage {
+  id: number
+  image: string
+  image_size: number
+  created_at: string
+}
+
 export const cmsApi = {
   listSiteSettings: () => list<SiteSetting>('site-settings'),
   createSiteSetting: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<SiteSetting>('site-settings', payload, onUploadProgress),
@@ -152,6 +160,8 @@ export const cmsApi = {
   deleteNews: (slug: string) => remove('news-articles', slug),
   createNewsImage: (payload: Record<string, unknown>, onUploadProgress?: (event: AxiosProgressEvent) => void) => create<CmsNewsImage>('news-images', payload, onUploadProgress),
   deleteNewsImage: (id: number) => remove('news-images', id),
+  createContentImage: (image: File, onUploadProgress?: (event: AxiosProgressEvent) => void) =>
+    create<CmsContentImage>('content-images', { image }, onUploadProgress),
 
   listPublications: () => list<Publication>('publications'),
   parsePublicationCitation: async (citation: string) => {

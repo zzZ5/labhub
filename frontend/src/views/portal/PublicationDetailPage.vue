@@ -6,6 +6,7 @@
           <span>{{ paper?.year || '年份待补充' }}</span>
           <span v-if="paper?.journal">{{ paper.journal }}</span>
           <span v-if="paper?.doi">DOI: {{ paper.doi }}</span>
+          <span>{{ paper?.view_count || 0 }} 次浏览</span>
         </p>
       </template>
       <section>
@@ -14,7 +15,8 @@
       </section>
       <section>
         <h2>摘要</h2>
-        <p>{{ paper?.abstract || '摘要待补充。' }}</p>
+        <RichContent v-if="paper?.abstract" :html="paper.abstract" />
+        <p v-else>摘要待补充。</p>
       </section>
       <template #info>
         <dl>
@@ -24,6 +26,7 @@
           <div v-if="paper?.jcr_partition || paper?.cas_partition"><dt>分区</dt><dd>{{ [paper?.jcr_partition, paper?.cas_partition].filter(Boolean).join(' / ') }}</dd></div>
           <div v-if="Number(paper?.impact_factor) > 0"><dt>影响因子</dt><dd>{{ paper?.impact_factor }}</dd></div>
           <div v-if="paper?.pdf_file"><dt>文件大小</dt><dd>{{ pdfSizeLabel }}</dd></div>
+          <div v-if="paper?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(paper.updated_at) }}</dd></div>
         </dl>
       </template>
       <template #actions>
@@ -43,7 +46,9 @@ import { usePortalReturn } from '../../composables/usePortalReturn'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import PortalResultDetail from '../../components/PortalResultDetail.vue'
 import FileActionLinks from '../../components/FileActionLinks.vue'
+import RichContent from '../../components/RichContent.vue'
 import { formatOptionalFileSize } from '../../utils/files'
+import { formatPortalDateTime } from '../../utils/date'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/publications')

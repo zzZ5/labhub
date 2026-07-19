@@ -20,7 +20,7 @@
         <el-form-item label="头像">
           <ImageCropField v-model="form.avatar" :disabled="saving" :existing-url="currentAvatar" :existing-size="currentAvatarSize" :aspect-ratio="4 / 5" :output-width="800" :output-height="1000" :max-size-mb="10" hint="按团队成员照片比例裁剪，人物面部尽量居中" />
         </el-form-item>
-        <el-form-item label="简介"><el-input v-model="form.profile" type="textarea" :rows="4" /></el-form-item>
+        <el-form-item label="个人简介"><CmsRichTextField v-model="form.profile" placeholder="撰写个人简介、研究经历与代表工作…" /></el-form-item>
         <div class="form-section-label"><strong>展示设置</strong><span>控制公开网站的顺序</span></div>
         <el-form-item label="展示排序">
           <el-input-number v-model="form.sort_order" :min="0" />
@@ -39,6 +39,7 @@ import { ElMessage } from 'element-plus'
 import { cmsApi } from '../../../api/cms'
 import type { Member } from '../../../api/publicPortal'
 import ImageCropField from '../../../components/ImageCropField.vue'
+import CmsRichTextField from './CmsRichTextField.vue'
 import CmsContentList from './CmsContentList.vue'
 import CmsFormActions from './CmsFormActions.vue'
 import CmsImportStrip from './CmsImportStrip.vue'

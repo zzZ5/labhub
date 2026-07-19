@@ -22,6 +22,7 @@ class Publication(models.Model):
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
     is_representative = models.BooleanField("代表性成果", default=False)
     sort_order = models.PositiveIntegerField("排序", default=0)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 
@@ -46,6 +47,9 @@ class Project(models.Model):
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
     description = models.TextField("说明", blank=True)
     sort_order = models.PositiveIntegerField("排序", default=0)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
 
     class Meta:
         verbose_name = "项目"
@@ -63,9 +67,13 @@ class Patent(models.Model):
     application_date = models.DateField("申请日期", null=True, blank=True)
     authorization_date = models.DateField("授权日期", null=True, blank=True)
     status = models.CharField("状态", max_length=80, blank=True)
+    description = models.TextField("说明", blank=True)
     pdf_file = models.FileField("PDF 文件", upload_to="publications/patents/", blank=True)
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
     sort_order = models.PositiveIntegerField("排序", default=0)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
 
     class Meta:
         verbose_name = "专利"
@@ -101,6 +109,9 @@ class Award(models.Model):
     attachment = models.FileField("获奖附件", upload_to="publications/awards/files/", blank=True)
     visibility = models.CharField("可见性", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC)
     sort_order = models.PositiveIntegerField("排序", default=0)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
 
     class Meta:
         verbose_name = "奖励"

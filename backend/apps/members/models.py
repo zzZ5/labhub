@@ -15,6 +15,7 @@ class Member(models.Model):
     destination = models.CharField("毕业去向", max_length=200, blank=True)
     is_public = models.BooleanField("公开展示", default=True)
     sort_order = models.PositiveIntegerField("排序", default=0)
+    view_count = models.PositiveIntegerField("浏览次数", default=0)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 

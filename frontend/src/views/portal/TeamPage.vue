@@ -27,7 +27,7 @@
                 <ArrowRight />
               </div>
               <span class="member-role">{{ member.role_label || '团队成员' }}</span>
-              <p>{{ member.research_direction || member.profile || '研究方向待补充' }}</p>
+              <p>{{ member.research_direction || richTextToPlainText(member.profile) || '研究方向待补充' }}</p>
             </div>
           </RouterLink>
         </div>
@@ -44,6 +44,7 @@ import { ArrowRight, Search } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { fetchMembers, type Member } from '../../api/publicPortal'
+import { richTextToPlainText } from '../../utils/richText'
 import AppPagination from '../../components/AppPagination.vue'
 import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
 import PortalPageHeader from '../../components/PortalPageHeader.vue'
@@ -84,7 +85,7 @@ const filteredMembers = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   return displayMembers.value.filter((member) => {
     const roleKey = member.role_label || member.role_type || '团队成员'
-    const haystack = `${member.name} ${roleKey} ${member.research_direction} ${member.profile} ${member.email}`.toLowerCase()
+    const haystack = `${member.name} ${roleKey} ${member.research_direction} ${richTextToPlainText(member.profile)} ${member.email}`.toLowerCase()
     return (!roleFilter.value || roleKey === roleFilter.value) && (!q || haystack.includes(q))
   })
 })

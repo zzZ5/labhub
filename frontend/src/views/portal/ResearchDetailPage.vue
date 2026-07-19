@@ -7,7 +7,7 @@
       :title="direction?.title || '研究方向'"
       aside-title="方向信息"
     >
-      <template v-if="direction?.summary" #meta><p class="meta-list"><span>{{ direction.summary }}</span></p></template>
+      <template v-if="direction" #meta><p class="meta-list"><span v-if="direction.summary">{{ direction.summary }}</span><span>{{ direction.view_count || 0 }} 次浏览</span></p></template>
 
       <div v-if="loading" class="detail-state" role="status" aria-label="正在加载研究方向">
         <ListSkeleton :rows="4" thumbnail />
@@ -22,8 +22,8 @@
         </div>
         <div class="detail-body">
           <h2>研究内容</h2>
-          <p v-for="paragraph in contentParagraphs" :key="paragraph">{{ paragraph }}</p>
-          <p v-if="!contentParagraphs.length" class="muted">详细内容暂未补充。</p>
+          <RichContent v-if="direction.content" :html="direction.content" />
+          <p v-else class="muted">详细内容暂未补充。</p>
         </div>
       </template>
       <EmptyState v-else title="未找到研究方向" description="该内容可能已调整或暂未公开。">
@@ -33,7 +33,7 @@
       <template v-if="direction" #aside>
         <dl>
           <div><dt>内容类型</dt><dd>研究方向</dd></div>
-          <div v-if="direction.updated_at"><dt>更新时间</dt><dd>{{ direction.updated_at.slice(0, 10) }}</dd></div>
+          <div v-if="direction.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(direction.updated_at) }}</dd></div>
         </dl>
       </template>
     </PortalDetailLayout>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchResearchDirection, type ResearchDirection } from '../../api/publicPortal'
@@ -53,6 +53,8 @@ import EmptyState from '../../components/EmptyState.vue'
 import ImagePlaceholder from '../../components/ImagePlaceholder.vue'
 import ListSkeleton from '../../components/ListSkeleton.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import RichContent from '../../components/RichContent.vue'
+import { formatPortalDateTime } from '../../utils/date'
 
 const route = useRoute()
 const returnTo = usePortalReturn('/research')
@@ -60,8 +62,6 @@ const direction = ref<ResearchDirection | null>(null)
 const loading = ref(true)
 const loadError = ref('')
 const imageFailed = ref(false)
-
-const contentParagraphs = computed(() => (direction.value?.content || '').split(/\n+/).map((item) => item.trim()).filter(Boolean))
 
 async function loadDirection() {
   loading.value = true
