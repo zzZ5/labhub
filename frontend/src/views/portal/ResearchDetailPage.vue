@@ -7,7 +7,7 @@
       :title="direction?.title || '研究方向'"
       aside-title="方向信息"
     >
-      <template v-if="direction" #meta><p class="meta-list"><span v-if="direction.summary">{{ direction.summary }}</span><span>{{ direction.view_count || 0 }} 次浏览</span></p></template>
+      <template v-if="direction" #meta><p class="meta-list"><span v-if="direction.summary">{{ direction.summary }}</span></p></template>
 
       <div v-if="loading" class="detail-state" role="status" aria-label="正在加载研究方向">
         <ListSkeleton :rows="4" thumbnail />
@@ -34,6 +34,7 @@
         <dl>
           <div><dt>内容类型</dt><dd>研究方向</dd></div>
           <div v-if="direction.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(direction.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ direction?.view_count || 0 }}</dd></div>
         </dl>
       </template>
     </PortalDetailLayout>

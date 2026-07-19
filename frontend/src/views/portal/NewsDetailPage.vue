@@ -10,7 +10,6 @@
       <template v-if="article" #meta>
         <p class="meta-list">
           <span>发布于 {{ publishedAtLabel }}</span>
-          <span>{{ article.view_count || 0 }} 次浏览</span>
         </p>
       </template>
 
@@ -36,6 +35,7 @@
           <div v-if="article?.event_date"><dt>活动日期</dt><dd>{{ article.event_date }}</dd></div>
           <div v-if="article?.location"><dt>地点</dt><dd>{{ article.location }}</dd></div>
           <div v-if="article?.updated_at"><dt>最近更新</dt><dd>{{ formatDate(article.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ article?.view_count || 0 }}</dd></div>
         </dl>
         <div v-if="article?.tags?.length" class="tag-row">
           <span v-for="tag in article.tags" :key="tag.id">{{ tag.name }}</span>

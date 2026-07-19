@@ -1,7 +1,7 @@
 <template>
   <PortalLayout>
     <PortalResultDetail :return-to="returnTo" type-label="科研项目" :title="project?.title || '科研项目'" info-title="项目信息">
-      <template #meta><p class="meta-list"><span v-if="project?.start_date">{{ project.start_date.slice(0, 4) }}</span><span>{{ project?.view_count || 0 }} 次浏览</span></p></template>
+      <template #meta><p class="meta-list"><span v-if="project?.start_date">{{ project.start_date.slice(0, 4) }}</span></p></template>
       <section>
         <h2>项目说明</h2>
         <RichContent v-if="project?.description" :html="project.description" />
@@ -16,6 +16,7 @@
           <div v-if="project?.amount && Number(project.amount) > 0"><dt>经费</dt><dd>{{ amountLabel }}</dd></div>
           <div v-if="project?.start_date || project?.end_date"><dt>周期</dt><dd>{{ [project?.start_date, project?.end_date].filter(Boolean).join(' 至 ') }}</dd></div>
           <div v-if="project?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(project.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ project?.view_count || 0 }}</dd></div>
         </dl>
       </template>
     </PortalResultDetail>

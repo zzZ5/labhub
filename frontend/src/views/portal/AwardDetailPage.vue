@@ -1,7 +1,7 @@
 <template>
   <PortalLayout>
     <PortalResultDetail :return-to="returnTo" type-label="获奖成果" :title="award?.title || '获奖成果'" info-title="获奖信息">
-      <template #meta><p class="meta-list"><span v-if="award?.award_date">{{ award.award_date.slice(0, 4) }}</span><span>{{ award?.view_count || 0 }} 次浏览</span></p></template>
+      <template #meta><p class="meta-list"><span v-if="award?.award_date">{{ award.award_date.slice(0, 4) }}</span></p></template>
       <img v-if="award?.image" class="award-image" :src="award.image" :alt="award.title" />
       <section>
         <h2>成果说明</h2>
@@ -19,6 +19,7 @@
           <div v-if="award?.image"><dt>图片大小</dt><dd>{{ imageSizeLabel }}</dd></div>
           <div v-if="award?.attachment"><dt>附件大小</dt><dd>{{ attachmentSizeLabel }}</dd></div>
           <div v-if="award?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(award.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ award?.view_count || 0 }}</dd></div>
         </dl>
       </template>
       <template #actions>

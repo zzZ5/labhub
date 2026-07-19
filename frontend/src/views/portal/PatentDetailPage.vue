@@ -1,7 +1,7 @@
 <template>
   <PortalLayout>
     <PortalResultDetail :return-to="returnTo" type-label="专利成果" :title="patent?.title || '专利成果'" info-title="专利信息">
-      <template #meta><p class="meta-list"><span v-if="patent?.authorization_date || patent?.application_date">{{ (patent.authorization_date || patent.application_date)?.slice(0, 4) }}</span><span>{{ patent?.view_count || 0 }} 次浏览</span></p></template>
+      <template #meta><p class="meta-list"><span v-if="patent?.authorization_date || patent?.application_date">{{ (patent.authorization_date || patent.application_date)?.slice(0, 4) }}</span></p></template>
       <section>
         <h2>发明人</h2>
         <p>{{ patent?.inventors || '发明人信息待补充。' }}</p>
@@ -18,6 +18,7 @@
           <div v-if="patent?.authorization_date"><dt>授权日期</dt><dd>{{ patent.authorization_date }}</dd></div>
           <div v-if="patent?.pdf_file"><dt>文件大小</dt><dd>{{ pdfSizeLabel }}</dd></div>
           <div v-if="patent?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(patent.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ patent?.view_count || 0 }}</dd></div>
         </dl>
       </template>
       <template #actions>

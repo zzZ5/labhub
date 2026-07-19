@@ -6,7 +6,6 @@
           <span>{{ paper?.year || '年份待补充' }}</span>
           <span v-if="paper?.journal">{{ paper.journal }}</span>
           <span v-if="paper?.doi">DOI: {{ paper.doi }}</span>
-          <span>{{ paper?.view_count || 0 }} 次浏览</span>
         </p>
       </template>
       <section>
@@ -27,6 +26,7 @@
           <div v-if="Number(paper?.impact_factor) > 0"><dt>影响因子</dt><dd>{{ paper?.impact_factor }}</dd></div>
           <div v-if="paper?.pdf_file"><dt>文件大小</dt><dd>{{ pdfSizeLabel }}</dd></div>
           <div v-if="paper?.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(paper.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ paper?.view_count || 0 }}</dd></div>
         </dl>
       </template>
       <template #actions>

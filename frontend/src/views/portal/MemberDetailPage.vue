@@ -11,7 +11,6 @@
         <p class="meta-list">
           <span>{{ member.role_label || '团队成员' }}</span>
           <span v-if="member.research_direction">{{ member.research_direction }}</span>
-          <span>{{ member.view_count || 0 }} 次浏览</span>
         </p>
       </template>
 
@@ -56,6 +55,7 @@
           <div v-if="member.email"><dt>邮箱</dt><dd><a :href="`mailto:${member.email}`">{{ member.email }}</a></dd></div>
           <div v-if="member.destination"><dt>去向</dt><dd>{{ member.destination }}</dd></div>
           <div v-if="member.updated_at"><dt>最近更新</dt><dd>{{ formatPortalDateTime(member.updated_at) }}</dd></div>
+          <div><dt>浏览量</dt><dd>{{ member?.view_count || 0 }}</dd></div>
         </dl>
       </template>
     </PortalDetailLayout>
