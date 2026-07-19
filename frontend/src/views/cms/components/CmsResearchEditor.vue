@@ -17,7 +17,17 @@
         <el-form-item label="详细内容"><el-input v-model="form.content" type="textarea" :rows="5" /></el-form-item>
         <div class="form-section-label"><strong>媒体与展示</strong><span>封面与首页展示顺序</span></div>
         <el-form-item label="封面图">
-          <ImageCropField v-model="form.cover_image" :disabled="saving" :existing-url="currentCover" :existing-size="currentCoverSize" :aspect-ratio="4 / 3" :output-width="1600" :output-height="1200" :max-size-mb="20" />
+          <ImageCropField
+            v-model="form.cover_image"
+            :disabled="saving"
+            :existing-url="currentCover"
+            :existing-size="currentCoverSize"
+            :aspect-ratio="16 / 9"
+            :output-width="1600"
+            :output-height="900"
+            :max-size-mb="20"
+            hint="按官网列表和详情页的 16:9 比例裁剪，原图不超过 20 MB"
+          />
         </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sort_order" :min="0" /></el-form-item>
       </el-form>

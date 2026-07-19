@@ -84,7 +84,7 @@ onMounted(loadDirection)
 .detail-state { padding: 28px; }
 
 .detail-media {
-  aspect-ratio: 16 / 7;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: var(--color-panel-strong);
 }
