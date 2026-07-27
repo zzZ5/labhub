@@ -21,6 +21,7 @@ import PatentDetailPage from '../views/portal/PatentDetailPage.vue'
 import AwardDetailPage from '../views/portal/AwardDetailPage.vue'
 import NewsPage from '../views/portal/NewsPage.vue'
 import NewsDetailPage from '../views/portal/NewsDetailPage.vue'
+import WechatArticlesPage from '../views/portal/WechatArticlesPage.vue'
 import StudentsHome from '../views/students/StudentsHome.vue'
 import AccountSettings from '../views/account/AccountSettings.vue'
 import { useSessionStore } from '../stores/session'
@@ -118,6 +119,11 @@ const router = createRouter({
       path: '/news/:slug',
       name: 'news-detail',
       component: NewsDetailPage,
+    },
+    {
+      path: '/literature-digest',
+      name: 'wechat-articles',
+      component: WechatArticlesPage,
     },
     {
       path: '/platform',

@@ -23,6 +23,7 @@
         <RouterLink to="/team" @click="closeMenu">团队成员</RouterLink>
         <RouterLink to="/publications" @click="closeMenu">科研成果</RouterLink>
         <RouterLink to="/news" @click="closeMenu">新闻活动</RouterLink>
+        <RouterLink to="/literature-digest" @click="closeMenu">公众号速递</RouterLink>
         <RouterLink class="internal-entry" to="/dashboard" @click="closeMenu">内部平台</RouterLink>
       </nav>
       <button v-if="menuOpen" class="portal-menu-backdrop" type="button" aria-label="关闭导航菜单" @click="closeMenu"></button>

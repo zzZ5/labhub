@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/portal/", include("apps.portal.urls")),
     path("api/members/", include("apps.members.urls")),
     path("api/news/", include("apps.news.urls")),
+    path("api/wechat/", include("apps.wechat_articles.urls")),
     path("api/publications/", include("apps.publications.urls")),
     path("api/documents/", include("apps.documents.urls")),
     path("api/instruments/", include("apps.instruments.urls")),

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -15,6 +16,8 @@ env = environ.Env(
     IMAGE_COMPRESSION_MIN_BYTES=(int, 204800),
     MAX_UPLOAD_SIZE=(int, 209715200),
     PROTECTED_MEDIA_ACCEL_PREFIX=(str, ""),
+    WECHAT_SYNC_INTERVAL_MINUTES=(int, 30),
+    WECHAT_SYNC_TIMEOUT_SECONDS=(int, 30),
 )
 environ.Env.read_env(ROOT_DIR / ".env")
 
@@ -38,6 +41,7 @@ INSTALLED_APPS = [
     "apps.portal",
     "apps.members",
     "apps.news",
+    "apps.wechat_articles.apps.WechatArticlesConfig",
     "apps.publications",
     "apps.documents",
     "apps.instruments",
@@ -136,3 +140,11 @@ REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/1")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://redis:6379/2")
 CELERY_TIMEZONE = TIME_ZONE
+WECHAT_SYNC_INTERVAL_MINUTES = max(5, env("WECHAT_SYNC_INTERVAL_MINUTES"))
+WECHAT_SYNC_TIMEOUT_SECONDS = max(5, env("WECHAT_SYNC_TIMEOUT_SECONDS"))
+CELERY_BEAT_SCHEDULE = {
+    "sync-wechat-articles": {
+        "task": "apps.wechat_articles.tasks.sync_all_wechat_accounts",
+        "schedule": timedelta(minutes=WECHAT_SYNC_INTERVAL_MINUTES),
+    },
+}

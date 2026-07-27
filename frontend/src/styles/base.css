@@ -141,6 +141,26 @@ a {
   box-shadow: inset 0 -2px 0 rgba(0, 70, 31, 0.16);
 }
 
+.el-button--primary.is-text,
+.el-button--primary.is-link {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+  --el-button-text-color: var(--color-cau-green);
+  --el-button-hover-bg-color: var(--color-eco-green);
+  --el-button-hover-border-color: transparent;
+  --el-button-hover-text-color: var(--color-primary-hover);
+  --el-button-active-bg-color: var(--color-eco-green);
+  --el-button-active-border-color: transparent;
+  --el-button-active-text-color: var(--color-primary-active);
+  color: var(--color-cau-green);
+  box-shadow: none;
+}
+
+.el-button--primary.is-text span,
+.el-button--primary.is-link span {
+  color: inherit;
+}
+
 .el-button + .el-button {
   margin-left: 0;
 }

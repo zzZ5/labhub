@@ -55,12 +55,6 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane label="新闻活动" name="news">
-          <CmsNewsEditor
-            :rows="newsRows" :categories="newsCategories" :display-file-label="displayFileLabel" @changed="loadAll"
-          />
-        </el-tab-pane>
-
         <el-tab-pane label="论文成果" name="publications">
           <CmsPublicationEditor
             :rows="publicationRows" :importing="importingKind === 'publications'" :import-progress="importProgress"
@@ -93,6 +87,23 @@
           />
         </el-tab-pane>
 
+        <el-tab-pane label="新闻活动" name="news">
+          <CmsNewsEditor
+            :rows="newsRows" :categories="newsCategories" :display-file-label="displayFileLabel" @changed="loadAll"
+          />
+        </el-tab-pane>
+
+        <el-tab-pane label="公众号速递" name="wechat" lazy>
+          <el-tabs v-model="wechatTab" class="wechat-cms-tabs">
+            <el-tab-pane label="公众号" name="accounts">
+              <WechatAccountManager :accounts="wechatAccounts" :loading="wechatLoading" @reload="loadWechatAccounts" />
+            </el-tab-pane>
+            <el-tab-pane label="文章" name="articles">
+              <WechatArticleManager :accounts="wechatAccounts" />
+            </el-tab-pane>
+          </el-tabs>
+        </el-tab-pane>
+
 
       </el-tabs>
     </section>
@@ -101,8 +112,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { fetchManagedWechatAccounts, type ManagedWechatAccount } from '../../api/wechatArticles'
 import InternalLayout from '../../layouts/InternalLayout.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
+import WechatAccountManager from '../wechat/components/WechatAccountManager.vue'
+import WechatArticleManager from '../wechat/components/WechatArticleManager.vue'
 import CmsBannerEditor from './components/CmsBannerEditor.vue'
 import CmsAwardEditor from './components/CmsAwardEditor.vue'
 import CmsFooterEditor from './components/CmsFooterEditor.vue'
@@ -118,17 +132,21 @@ import { useCmsImport } from './composables/useCmsImport'
 import { useCmsSiteSettings } from './composables/useCmsSiteSettings'
 
 const activeTab = ref('site')
+const wechatTab = ref('accounts')
+const wechatAccounts = ref<ManagedWechatAccount[]>([])
+const wechatLoading = ref(false)
 const cmsSections = [
   { value: 'site', label: '站点首页' },
   { value: 'footer', label: '页脚设置' },
   { value: 'banners', label: '首页横幅' },
   { value: 'research', label: '研究方向' },
   { value: 'members', label: '团队成员' },
-  { value: 'news', label: '新闻活动' },
   { value: 'publications', label: '论文成果' },
   { value: 'projects', label: '科研项目' },
   { value: 'patents', label: '专利成果' },
   { value: 'awards', label: '获奖成果' },
+  { value: 'news', label: '新闻活动' },
+  { value: 'wechat', label: '公众号速递' },
 ]
 const {
   siteForm, contactForm, externalLinks,
@@ -160,7 +178,17 @@ const {
   resetCompletedImport,
 } = useCmsImport(loadAll)
 
+async function loadWechatAccounts() {
+  wechatLoading.value = true
+  try {
+    wechatAccounts.value = await fetchManagedWechatAccounts()
+  } finally {
+    wechatLoading.value = false
+  }
+}
+
 onMounted(loadAll)
+onMounted(loadWechatAccounts)
 </script>
 
 <style>
@@ -236,6 +264,26 @@ onMounted(loadAll)
 
 .cms-mobile-nav { display: none; }
 
+.wechat-cms-tabs {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 16px 16px;
+  background: var(--color-white);
+}
+
+.wechat-cms-tabs > .el-tabs__header {
+  border: 0;
+  border-radius: 0;
+  margin-bottom: 14px;
+  padding: 0;
+  box-shadow: none;
+}
+
+.wechat-cms-tabs > .el-tabs__header::before {
+  display: none;
+}
+
 .site-form-panel {
   min-height: 100%;
 }
@@ -284,8 +332,8 @@ onMounted(loadAll)
   padding-bottom: 10px;
 }
 
-.cms-page .el-button--primary,
-.cms-page .el-button--primary span {
+.cms-page .el-button--primary:not(.is-text):not(.is-link),
+.cms-page .el-button--primary:not(.is-text):not(.is-link) span {
   color: #fff !important;
 }
 
@@ -869,6 +917,12 @@ onMounted(loadAll)
 
   .cms-tabs .el-tabs__header {
     display: none;
+  }
+
+  .cms-tabs .wechat-cms-tabs > .el-tabs__header {
+    display: block;
+    overflow: visible;
+    margin-bottom: 10px;
   }
 
   .editor-grid:not(.mobile-editor-open) > .form-panel {
