@@ -214,8 +214,9 @@ onMounted(async () => {
 
 .digest-item {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
-  min-height: 150px;
+  grid-template-columns: 270px minmax(0, 1fr);
+  height: 168px;
+  min-height: 168px;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -232,9 +233,9 @@ onMounted(async () => {
 }
 
 .digest-cover {
-  min-height: 150px;
+  align-self: stretch;
   overflow: hidden;
-  background: var(--color-panel-strong);
+  background: var(--color-panel);
 }
 
 .digest-cover img,
@@ -242,15 +243,16 @@ onMounted(async () => {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 150px;
   object-fit: cover;
+  object-position: center;
 }
 
 .digest-copy {
-  display: flex;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   min-width: 0;
-  flex-direction: column;
-  padding: 14px 16px;
+  overflow: hidden;
+  padding: 12px 14px;
 }
 
 .digest-meta {
@@ -268,7 +270,7 @@ onMounted(async () => {
 
 .digest-item h2 {
   display: -webkit-box;
-  margin: 8px 0 6px;
+  margin: 5px 0 3px;
   overflow: hidden;
   color: var(--color-deep-green);
   font-size: 17px;
@@ -279,6 +281,7 @@ onMounted(async () => {
 
 .digest-item p {
   display: -webkit-box;
+  min-height: 0;
   margin: 0;
   overflow: hidden;
   color: var(--color-muted);
@@ -292,14 +295,15 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: auto;
-  padding-top: 8px;
+  align-self: end;
+  margin-top: 0;
+  padding-top: 4px;
   color: var(--color-cau-green);
   font-size: 12px;
   font-weight: 650;
 }
 
-@media (max-width: 1020px) {
+@media (max-width: 1120px) {
   .digest-list {
     grid-template-columns: 1fr;
   }
@@ -325,14 +329,15 @@ onMounted(async () => {
   }
 
   .digest-item {
-    grid-template-columns: 116px minmax(0, 1fr);
+    grid-template-columns: 132px minmax(0, 1fr);
+    height: 132px;
     min-height: 132px;
   }
 
   .digest-cover,
   .digest-cover img,
   .digest-cover :deep(.image-placeholder) {
-    min-height: 132px;
+    min-height: 0;
   }
 
   .digest-copy {
