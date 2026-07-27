@@ -18,6 +18,8 @@ env = environ.Env(
     PROTECTED_MEDIA_ACCEL_PREFIX=(str, ""),
     WECHAT_SYNC_INTERVAL_MINUTES=(int, 30),
     WECHAT_SYNC_TIMEOUT_SECONDS=(int, 30),
+    WECHAT_SYNC_MAX_FEED_MB=(int, 24),
+    WECHAT_SYNC_RSS_ITEM_LIMIT=(int, 5),
 )
 environ.Env.read_env(ROOT_DIR / ".env")
 
@@ -142,6 +144,8 @@ CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://redis:6379
 CELERY_TIMEZONE = TIME_ZONE
 WECHAT_SYNC_INTERVAL_MINUTES = max(5, env("WECHAT_SYNC_INTERVAL_MINUTES"))
 WECHAT_SYNC_TIMEOUT_SECONDS = max(5, env("WECHAT_SYNC_TIMEOUT_SECONDS"))
+WECHAT_SYNC_MAX_FEED_MB = max(1, env("WECHAT_SYNC_MAX_FEED_MB"))
+WECHAT_SYNC_RSS_ITEM_LIMIT = max(1, env("WECHAT_SYNC_RSS_ITEM_LIMIT"))
 CELERY_BEAT_SCHEDULE = {
     "sync-wechat-articles": {
         "task": "apps.wechat_articles.tasks.sync_all_wechat_accounts",

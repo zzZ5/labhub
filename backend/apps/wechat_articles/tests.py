@@ -2,14 +2,14 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import Role, RoleCode, UserRole
 
 from .models import WechatAccount, WechatArticle
-from .services import parse_json_payload, parse_rss_payload, store_feed_articles
+from .services import parse_json_payload, parse_rss_payload, source_request_url, store_feed_articles
 
 
 class FeedParsingTests(TestCase):
@@ -45,6 +45,14 @@ class FeedParsingTests(TestCase):
         articles = parse_json_payload(payload)
         self.assertEqual(articles[0].source_guid, "a-1")
         self.assertEqual(articles[0].title, "Article")
+
+    @override_settings(WECHAT_SYNC_RSS_ITEM_LIMIT=5)
+    def test_rss_request_adds_item_limit_without_replacing_existing_query(self):
+        self.account.source_url = "https://example.com/feed.xml?token=abc"
+        self.assertEqual(source_request_url(self.account), "https://example.com/feed.xml?token=abc&limit=5")
+
+        self.account.source_url = "https://example.com/feed.xml?limit=2"
+        self.assertEqual(source_request_url(self.account), "https://example.com/feed.xml?limit=2")
 
 
 class WechatArticleApiTests(TestCase):

@@ -48,7 +48,11 @@ apps.wechat_articles.tasks.sync_all_wechat_accounts
 ```dotenv
 WECHAT_SYNC_INTERVAL_MINUTES=30
 WECHAT_SYNC_TIMEOUT_SECONDS=30
+WECHAT_SYNC_MAX_FEED_MB=24
+WECHAT_SYNC_RSS_ITEM_LIMIT=5
 ```
+
+LabHub 会在 RSS 地址未提供 `limit` 参数时自动请求最新 5 篇，避免全文型 RSS 每次传输全部历史正文。使用 WeRSS 时，建议同时设置 `RSS_FULL_CONTEXT=False`，因为本站只展示标题、摘要、封面和原文链接。
 
 修改后重启 `celery_worker` 和 `celery_beat`。手动点击“同步”或“同步全部”也会把任务提交给 Celery。
 

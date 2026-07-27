@@ -7,6 +7,7 @@ from email.utils import parsedate_to_datetime
 from html import unescape
 from html.parser import HTMLParser
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -18,7 +19,6 @@ from django.utils.dateparse import parse_datetime
 from .models import WechatAccount, WechatArticle, article_dedupe_key
 
 
-MAX_FEED_BYTES = 8 * 1024 * 1024
 IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)", re.IGNORECASE)
 
 
@@ -163,6 +163,16 @@ def parse_json_payload(payload):
     return articles
 
 
+def source_request_url(account):
+    if account.source_type != WechatAccount.SourceType.RSS:
+        return account.source_url
+    parts = urlsplit(account.source_url)
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    if not any(key == "limit" for key, _ in query):
+        query.append(("limit", str(settings.WECHAT_SYNC_RSS_ITEM_LIMIT)))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+
 def fetch_source_payload(account):
     headers = {
         "Accept": "application/rss+xml, application/atom+xml, application/xml, application/json, text/xml;q=0.9",
@@ -173,17 +183,19 @@ def fetch_source_payload(account):
         if not token:
             raise ValueError(f"服务器未配置环境变量：{account.api_token_env}")
         headers["Authorization"] = f"Bearer {token}"
-    request = Request(account.source_url, headers=headers)
+    request = Request(source_request_url(account), headers=headers)
     timeout = int(getattr(settings, "WECHAT_SYNC_TIMEOUT_SECONDS", 30))
+    max_feed_bytes = int(getattr(settings, "WECHAT_SYNC_MAX_FEED_MB", 24)) * 1024 * 1024
     try:
         with urlopen(request, timeout=timeout) as response:
-            payload = response.read(MAX_FEED_BYTES + 1)
+            payload = response.read(max_feed_bytes + 1)
     except HTTPError as exc:
         raise ValueError(f"来源地址返回 HTTP {exc.code}") from exc
     except URLError as exc:
         raise ValueError(f"无法连接来源地址：{exc.reason}") from exc
-    if len(payload) > MAX_FEED_BYTES:
-        raise ValueError("来源返回内容超过 8 MB，已停止处理。")
+    if len(payload) > max_feed_bytes:
+        max_feed_mb = max_feed_bytes // (1024 * 1024)
+        raise ValueError(f"来源返回内容超过 {max_feed_mb} MB，已停止处理。")
     return payload
 
 
