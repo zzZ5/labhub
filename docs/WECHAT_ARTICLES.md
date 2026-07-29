@@ -62,3 +62,20 @@ LabHub 会在 RSS 地址未提供 `limit` 参数时自动请求最新 5 篇，�
 - 不处理微信登录、验证码或反爬限制。
 - 不配置来源地址时，可一直使用后台手动录入。
 - RSS 或开放接口未提供封面、摘要时，页面显示占位图或默认提示。
+
+## 生产环境同步
+
+- `celery_beat` 默认每 30 分钟投递同步任务，`celery_worker` 执行任务。
+- 生产容器会在服务器重启或进程异常后自动恢复。
+- 每次运行 `deploy/scripts/deploy.sh` 都会额外投递一次公众号同步。
+- 需要立即同步并查看每个公众号的结果时，运行：
+
+```bash
+bash deploy/scripts/sync-wechat.sh
+```
+
+查看最近两小时的自动同步日志：
+
+```bash
+docker compose -f docker-compose.prod.yml logs --since 2h celery_beat celery_worker
+```

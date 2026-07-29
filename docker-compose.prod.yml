@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-labhub}
       POSTGRES_USER: ${POSTGRES_USER:-labhub}
@@ -15,6 +16,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -23,6 +25,7 @@ services:
 
   backend:
     image: labhub-backend:prod
+    restart: unless-stopped
     build:
       context: ./backend
       target: prod
@@ -44,6 +47,7 @@ services:
         condition: service_healthy
   celery_worker:
     image: labhub-backend:prod
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -58,12 +62,13 @@ services:
 
   celery_beat:
     image: labhub-backend:prod
+    restart: unless-stopped
     env_file:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       POSTGRES_HOST: db
-    command: celery -A config beat -l info
+    command: celery -A config beat -l info --schedule=/tmp/celerybeat-schedule
     volumes:
       - media:/app/media
       - protected_media:/app/protected_media
@@ -71,6 +76,7 @@ services:
       - backend
 
   frontend:
+    restart: unless-stopped
     build:
       context: ./frontend
       target: prod
@@ -80,6 +86,7 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
+    restart: unless-stopped
     ports:
       - "${NGINX_HTTP_PORT:-8088}:80"
       - "${NGINX_HTTPS_PORT:-8443}:443"

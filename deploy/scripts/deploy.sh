@@ -16,5 +16,7 @@ docker compose -f "$COMPOSE_FILE" up -d frontend backend
 docker compose -f "$COMPOSE_FILE" exec -T backend python manage.py migrate
 docker compose -f "$COMPOSE_FILE" exec -T backend python manage.py collectstatic --noinput
 docker compose -f "$COMPOSE_FILE" up -d celery_worker celery_beat
+docker compose -f "$COMPOSE_FILE" exec -T backend python manage.py shell -c \
+  "from apps.wechat_articles.tasks import sync_all_wechat_accounts; task = sync_all_wechat_accounts.delay(); print(f'Wechat sync queued: {task.id}')"
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate nginx
 docker compose -f "$COMPOSE_FILE" ps
