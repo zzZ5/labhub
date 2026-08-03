@@ -83,3 +83,28 @@ class ManageWechatArticleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return WechatArticle.objects.select_related("account")
+
+    @action(detail=False, methods=["post"], url_path="bulk")
+    def bulk(self, request):
+        article_ids = request.data.get("ids")
+        operation = request.data.get("operation")
+        if not isinstance(article_ids, list) or not article_ids:
+            return Response({"detail": "请选择需要操作的文章。"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(article_ids) > 500:
+            return Response({"detail": "单次最多操作 500 篇文章。"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            normalized_ids = {int(article_id) for article_id in article_ids}
+        except (TypeError, ValueError):
+            return Response({"detail": "文章编号格式不正确。"}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = self.get_queryset().filter(pk__in=normalized_ids)
+        if operation == "show":
+            affected = queryset.update(is_visible=True)
+        elif operation == "hide":
+            affected = queryset.update(is_visible=False)
+        elif operation == "delete":
+            affected = queryset.count()
+            queryset.delete()
+        else:
+            return Response({"detail": "不支持的批量操作。"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"affected": affected})

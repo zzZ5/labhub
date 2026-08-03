@@ -5,14 +5,45 @@
       <el-select v-model="accountFilter" clearable placeholder="全部公众号">
         <el-option v-for="account in accounts" :key="account.id" :label="account.name" :value="account.id" />
       </el-select>
-      <el-button type="primary" :icon="Plus" @click="openCreate">手动添加文章</el-button>
+      <div class="toolbar-actions">
+        <el-button :type="selectionMode ? 'primary' : 'default'" plain @click="toggleSelectionMode">
+          {{ selectionMode ? '退出批量' : '批量管理' }}
+        </el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate">手动添加文章</el-button>
+      </div>
     </div>
 
     <LoadErrorNotice v-if="loadError" :description="loadError" :retrying="loading" @retry="loadArticles" />
     <ListSkeleton v-if="loading" :rows="6" />
     <template v-else-if="articles.length">
+      <div v-if="selectionMode" class="bulk-toolbar">
+        <div class="bulk-selection">
+          <el-checkbox
+            :model-value="allPageSelected"
+            :indeterminate="somePageSelected"
+            @change="togglePageSelection"
+          >
+            本页全选
+          </el-checkbox>
+          <span>已选 {{ selectedIds.size }} 篇</span>
+        </div>
+        <div class="bulk-actions">
+          <el-button size="small" :disabled="!selectedIds.size || Boolean(bulkOperation)" :loading="bulkOperation === 'show'" @click="handleBulk('show')">公开</el-button>
+          <el-button size="small" :disabled="!selectedIds.size || Boolean(bulkOperation)" :loading="bulkOperation === 'hide'" @click="handleBulk('hide')">隐藏</el-button>
+          <el-button size="small" type="danger" plain :disabled="!selectedIds.size || Boolean(bulkOperation)" :loading="bulkOperation === 'delete'" @click="handleBulk('delete')">
+            删除
+          </el-button>
+        </div>
+      </div>
       <div class="article-list">
-        <article v-for="article in articles" :key="article.id" class="article-row">
+        <article v-for="article in articles" :key="article.id" class="article-row" :class="{ 'is-selecting': selectionMode }">
+          <el-checkbox
+            v-if="selectionMode"
+            class="article-select"
+            :model-value="selectedIds.has(article.id)"
+            :aria-label="`选择文章：${article.title}`"
+            @change="(checked: boolean | string | number) => toggleSelection(article.id, Boolean(checked))"
+          />
           <div class="article-copy">
             <div class="article-meta">
               <span>{{ article.account_name }}</span>
@@ -83,6 +114,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { MoreFilled, Plus, Search } from '@element-plus/icons-vue'
 
 import {
+  bulkUpdateWechatArticles,
   createWechatArticle,
   deleteWechatArticle,
   fetchManagedWechatArticles,
@@ -113,6 +145,15 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const dialogOpen = ref(false)
 const editing = ref<ManagedWechatArticle | null>(null)
 const saving = ref(false)
+const selectionMode = ref(false)
+const bulkOperation = ref<'show' | 'hide' | 'delete' | null>(null)
+const selectedIds = ref(new Set<number>())
+const allPageSelected = computed(
+  () => articles.value.length > 0 && articles.value.every((article) => selectedIds.value.has(article.id)),
+)
+const somePageSelected = computed(
+  () => !allPageSelected.value && articles.value.some((article) => selectedIds.value.has(article.id)),
+)
 
 function nowValue() {
   const date = new Date()
@@ -132,6 +173,7 @@ const blankForm = (): WechatArticlePayload => ({
 const form = reactive<WechatArticlePayload>(blankForm())
 
 async function loadArticles() {
+  selectedIds.value = new Set()
   loading.value = true
   loadError.value = ''
   try {
@@ -199,6 +241,55 @@ async function save() {
   }
 }
 
+function toggleSelection(articleId: number, checked: boolean) {
+  const next = new Set(selectedIds.value)
+  if (checked) next.add(articleId)
+  else next.delete(articleId)
+  selectedIds.value = next
+}
+
+function toggleSelectionMode() {
+  selectionMode.value = !selectionMode.value
+  selectedIds.value = new Set()
+}
+
+function togglePageSelection(checked: boolean | string | number) {
+  selectedIds.value = checked ? new Set(articles.value.map((article) => article.id)) : new Set()
+}
+
+async function handleBulk(operation: 'show' | 'hide' | 'delete') {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  if (operation === 'delete') {
+    try {
+      await ElMessageBox.confirm(
+        `确定删除选中的 ${ids.length} 篇文章吗？由 RSS 同步的文章后续可能再次被同步，长期不展示建议使用“隐藏”。`,
+        '批量删除文章',
+        {
+          type: 'warning',
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+        },
+      )
+    } catch (error) {
+      if (error !== 'cancel' && error !== 'close') ElMessage.error(requestErrorMessage(error, '操作未完成。'))
+      return
+    }
+  }
+
+  bulkOperation.value = operation
+  try {
+    const result = await bulkUpdateWechatArticles(ids, operation)
+    const actionLabel = operation === 'show' ? '设为公开' : operation === 'hide' ? '隐藏' : '删除'
+    ElMessage.success(`已${actionLabel} ${result.affected} 篇文章。`)
+    await loadArticles()
+  } catch (error) {
+    ElMessage.error(requestErrorMessage(error, '批量操作失败。'))
+  } finally {
+    bulkOperation.value = null
+  }
+}
+
 async function handleDelete(article: ManagedWechatArticle) {
   try {
     await ElMessageBox.confirm(`确定删除“${article.title}”吗？`, '删除文章', {
@@ -245,9 +336,36 @@ onMounted(loadArticles)
   gap: 10px;
 }
 
+.toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.bulk-toolbar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-block: 1px solid var(--color-line);
+  padding: 6px 4px;
+}
+
+.bulk-selection,
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-selection > span {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
 .article-list {
   display: grid;
-  border-top: 1px solid var(--color-line);
 }
 
 .article-row {
@@ -258,6 +376,19 @@ onMounted(loadArticles)
   min-height: 112px;
   border-bottom: 1px solid var(--color-line);
   padding: 13px 4px;
+}
+
+.article-select {
+  align-self: start;
+  padding-top: 2px;
+}
+
+.article-select + .article-copy {
+  min-width: 0;
+}
+
+.article-row.is-selecting {
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .article-meta,
@@ -314,13 +445,40 @@ onMounted(loadArticles)
     grid-template-columns: 1fr;
   }
 
+  .toolbar-actions {
+    justify-content: stretch;
+  }
+
+  .toolbar-actions :deep(.el-button) {
+    flex: 1;
+  }
+
+  .bulk-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bulk-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .article-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+
+  .article-row.is-selecting {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .article-actions {
+    grid-column: 1;
     justify-content: flex-end;
+  }
+
+  .article-row.is-selecting .article-actions {
+    grid-column: 2;
   }
 
   .form-grid {

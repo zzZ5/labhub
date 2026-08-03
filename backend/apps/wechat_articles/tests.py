@@ -79,6 +79,42 @@ class WechatArticleApiTests(TestCase):
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["title"], "较新文章")
 
+    def test_editor_can_bulk_hide_show_and_delete_articles(self):
+        user = get_user_model().objects.create_user(username="bulk-editor", password="password")
+        user.profile.is_approved = True
+        user.profile.save(update_fields=["is_approved", "updated_at"])
+        role = Role.objects.get(code=RoleCode.EDITOR)
+        UserRole.objects.create(user=user, role=role)
+        client = APIClient()
+        client.force_authenticate(user)
+        article_ids = list(WechatArticle.objects.values_list("id", flat=True))
+
+        response = client.post(
+            "/api/wechat/manage/articles/bulk/",
+            {"ids": article_ids, "operation": "hide"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["affected"], 2)
+        self.assertFalse(WechatArticle.objects.filter(is_visible=True).exists())
+
+        response = client.post(
+            "/api/wechat/manage/articles/bulk/",
+            {"ids": [article_ids[0]], "operation": "show"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(WechatArticle.objects.get(pk=article_ids[0]).is_visible)
+
+        response = client.post(
+            "/api/wechat/manage/articles/bulk/",
+            {"ids": [article_ids[1]], "operation": "delete"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["affected"], 1)
+        self.assertFalse(WechatArticle.objects.filter(pk=article_ids[1]).exists())
+
     @patch("apps.wechat_articles.views.sync_all_wechat_accounts.delay")
     def test_editor_can_trigger_sync(self, delay):
         user = get_user_model().objects.create_user(username="editor", password="password")

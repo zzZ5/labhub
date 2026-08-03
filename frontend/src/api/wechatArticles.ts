@@ -137,3 +137,7 @@ export async function deleteWechatArticle(id: number) {
   await http.delete(`/wechat/manage/articles/${id}/`)
 }
 
+export async function bulkUpdateWechatArticles(ids: number[], operation: 'show' | 'hide' | 'delete') {
+  const response = await http.post<{ affected: number }>('/wechat/manage/articles/bulk/', { ids, operation })
+  return response.data
+}
