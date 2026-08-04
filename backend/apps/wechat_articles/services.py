@@ -16,7 +16,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from .models import WechatAccount, WechatArticle, article_dedupe_key
+from .models import WechatAccount, WechatArticle, article_dedupe_key, is_wechat_article_url
 
 
 IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)", re.IGNORECASE)
@@ -88,6 +88,13 @@ def first_link(element, atom=False):
     return first_text(element, ["link", "{*}link"])
 
 
+def preferred_article_url(link, source_guid):
+    for candidate in (source_guid, link):
+        if is_wechat_article_url(candidate):
+            return str(candidate).strip()
+    return str(link or source_guid or "").strip()
+
+
 def extract_cover(element, html_content=""):
     for node in list(element):
         tag = node.tag.rsplit("}", 1)[-1].lower()
@@ -114,8 +121,9 @@ def parse_rss_payload(payload):
     articles = []
     for entry in entries:
         title = first_text(entry, ["title", "{*}title"])
-        source_url = first_link(entry, atom=atom)
+        source_link = first_link(entry, atom=atom)
         source_guid = first_text(entry, ["guid", "{*}id"])
+        source_url = preferred_article_url(source_link, source_guid)
         published = first_text(entry, ["pubDate", "{*}published", "{*}updated", "date", "{*}date"])
         content = first_text(entry, ["description", "{*}summary", "{*}content", "{*}encoded"])
         if not title or not source_url:

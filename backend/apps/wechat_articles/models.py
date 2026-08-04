@@ -39,6 +39,15 @@ def canonicalize_article_url(value):
     )
 
 
+def is_wechat_article_url(value):
+    parts = urlsplit(str(value or "").strip())
+    return (
+        parts.scheme.lower() in {"http", "https"}
+        and (parts.hostname or "").lower() == "mp.weixin.qq.com"
+        and (parts.path == "/s" or parts.path.startswith("/s/"))
+    )
+
+
 def article_dedupe_key(account_id, source_guid="", source_url="", title="", published_at=None):
     identity = str(source_guid or "").strip() or canonicalize_article_url(source_url)
     if not identity:
@@ -126,4 +135,3 @@ class WechatArticle(models.Model):
         if not self.synced_at:
             self.synced_at = timezone.now()
         super().save(*args, **kwargs)
-

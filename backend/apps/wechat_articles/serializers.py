@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import WechatAccount, WechatArticle, article_dedupe_key
+from .models import WechatAccount, WechatArticle, article_dedupe_key, is_wechat_article_url
 
 
 class WechatAccountPublicSerializer(serializers.ModelSerializer):
@@ -51,6 +51,12 @@ class WechatAccountManageSerializer(serializers.ModelSerializer):
 
 class WechatArticleSerializer(serializers.ModelSerializer):
     account = WechatAccountPublicSerializer(read_only=True)
+    source_url = serializers.SerializerMethodField()
+
+    def get_source_url(self, obj):
+        if is_wechat_article_url(obj.source_guid):
+            return obj.source_guid.strip()
+        return obj.source_url
 
     class Meta:
         model = WechatArticle

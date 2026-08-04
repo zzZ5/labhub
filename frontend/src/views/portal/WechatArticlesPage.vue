@@ -28,19 +28,21 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            <div class="digest-cover">
-              <img
-                v-if="article.cover_url && !imageErrors.has(article.id)"
-                :src="article.cover_url"
-                :alt="article.title"
-                referrerpolicy="no-referrer"
-                @error="imageErrors.add(article.id)"
-              />
-              <ImagePlaceholder v-else :label="article.account.name" text="暂无封面" />
+            <div class="digest-media">
+              <div class="digest-cover">
+                <img
+                  v-if="article.cover_url && !imageErrors.has(article.id)"
+                  :src="article.cover_url"
+                  :alt="article.title"
+                  referrerpolicy="no-referrer"
+                  @error="imageErrors.add(article.id)"
+                />
+                <ImagePlaceholder v-else :label="article.account.name" text="暂无封面" />
+              </div>
+              <span class="digest-source">{{ article.account.name }}</span>
             </div>
             <div class="digest-copy">
               <div class="digest-meta">
-                <span>{{ article.account.name }}</span>
                 <time :datetime="article.published_at">{{ formatPortalDateTime(article.published_at) }}</time>
               </div>
               <h2>{{ article.title }}</h2>
@@ -215,8 +217,8 @@ onMounted(async () => {
 .digest-item {
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
-  height: 168px;
-  min-height: 168px;
+  height: 156px;
+  min-height: 156px;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -232,10 +234,33 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
+.digest-media {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  border-right: 1px solid var(--color-line);
+  background: var(--color-panel);
+}
+
 .digest-cover {
-  align-self: stretch;
+  align-self: start;
+  aspect-ratio: 900 / 383;
   overflow: hidden;
   background: var(--color-panel);
+}
+
+.digest-source {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 12px;
+  color: var(--color-cau-green);
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .digest-cover img,
@@ -243,7 +268,7 @@ onMounted(async () => {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -252,20 +277,15 @@ onMounted(async () => {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   min-width: 0;
   overflow: hidden;
-  padding: 12px 14px;
+  padding: 9px 13px;
 }
 
 .digest-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   color: var(--color-muted);
   font-size: 12px;
-}
-
-.digest-meta span {
-  color: var(--color-cau-green);
-  font-weight: 650;
 }
 
 .digest-item h2 {
@@ -273,8 +293,8 @@ onMounted(async () => {
   margin: 5px 0 3px;
   overflow: hidden;
   color: var(--color-deep-green);
-  font-size: 17px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -286,7 +306,7 @@ onMounted(async () => {
   overflow: hidden;
   color: var(--color-muted);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -303,7 +323,7 @@ onMounted(async () => {
   font-weight: 650;
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1200px) {
   .digest-list {
     grid-template-columns: 1fr;
   }
@@ -329,18 +349,27 @@ onMounted(async () => {
   }
 
   .digest-item {
-    grid-template-columns: 132px minmax(0, 1fr);
-    height: 132px;
-    min-height: 132px;
-  }
-
-  .digest-cover,
-  .digest-cover img,
-  .digest-cover :deep(.image-placeholder) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
     min-height: 0;
   }
 
+  .digest-media {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .digest-source {
+    min-height: 36px;
+  }
+
+  .digest-cover {
+    width: 100%;
+  }
+
   .digest-copy {
+    min-height: 138px;
     padding: 11px 12px;
   }
 

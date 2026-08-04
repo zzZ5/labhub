@@ -6,7 +6,7 @@
         <el-option v-for="account in accounts" :key="account.id" :label="account.name" :value="account.id" />
       </el-select>
       <div class="toolbar-actions">
-        <el-button :type="selectionMode ? 'primary' : 'default'" plain @click="toggleSelectionMode">
+        <el-button class="selection-mode-button" :class="{ 'is-active': selectionMode }" @click="toggleSelectionMode">
           {{ selectionMode ? '退出批量' : '批量管理' }}
         </el-button>
         <el-button type="primary" :icon="Plus" @click="openCreate">手动添加文章</el-button>
@@ -340,6 +340,18 @@ onMounted(loadArticles)
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.selection-mode-button.is-active,
+.selection-mode-button.is-active:hover,
+.selection-mode-button.is-active:focus {
+  border-color: var(--color-cau-green);
+  background: var(--color-cau-green);
+  color: var(--color-white);
+}
+
+.selection-mode-button.is-active :deep(span) {
+  color: var(--color-white);
 }
 
 .bulk-toolbar {

@@ -46,6 +46,18 @@ class FeedParsingTests(TestCase):
         self.assertEqual(articles[0].source_guid, "a-1")
         self.assertEqual(articles[0].title, "Article")
 
+    def test_rss_prefers_wechat_guid_over_local_archive_link(self):
+        payload = b"""<?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0"><channel><item>
+          <title>Wechat article</title>
+          <link>https://werss.example.com/api/articles/serve-file/article.html</link>
+          <guid isPermaLink="false">https://mp.weixin.qq.com/s/wechat-article-id</guid>
+          <description>Summary</description>
+          <pubDate>Mon, 20 Jul 2026 08:00:00 +0800</pubDate>
+        </item></channel></rss>"""
+        articles = parse_rss_payload(payload)
+        self.assertEqual(articles[0].source_url, "https://mp.weixin.qq.com/s/wechat-article-id")
+
     @override_settings(WECHAT_SYNC_RSS_ITEM_LIMIT=5)
     def test_rss_request_adds_item_limit_without_replacing_existing_query(self):
         self.account.source_url = "https://example.com/feed.xml?token=abc"
@@ -78,6 +90,21 @@ class WechatArticleApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["title"], "较新文章")
+
+    def test_public_article_prefers_wechat_guid_for_legacy_archive_url(self):
+        article = WechatArticle.objects.order_by("-published_at").first()
+        archive_url = "http://werss.example.com/api/articles/serve-file/article.html"
+        wechat_url = "https://mp.weixin.qq.com/s/wechat-article-id"
+        WechatArticle.objects.filter(pk=article.pk).update(
+            source_url=archive_url,
+            source_guid=wechat_url,
+        )
+
+        response = APIClient().get("/api/wechat/articles/")
+
+        self.assertEqual(response.status_code, 200)
+        result = next(item for item in response.data["results"] if item["id"] == article.pk)
+        self.assertEqual(result["source_url"], wechat_url)
 
     def test_editor_can_bulk_hide_show_and_delete_articles(self):
         user = get_user_model().objects.create_user(username="bulk-editor", password="password")
