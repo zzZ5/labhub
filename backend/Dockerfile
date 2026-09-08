@@ -3,10 +3,14 @@ FROM python:3.14-slim AS base
 
 ARG DEBIAN_MIRROR=http://mirrors.cloud.tencent.com/debian
 ARG DEBIAN_SECURITY_MIRROR=http://mirrors.cloud.tencent.com/debian-security
+ARG PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=5 \
+    PIP_INDEX_URL=${PIP_INDEX_URL}
 
 WORKDIR /app
 
@@ -24,7 +28,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/base.txt requirements/base.txt
-RUN pip install -r requirements/base.txt
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    pip install -r requirements/base.txt
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -33,10 +38,12 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 FROM base AS dev
 COPY requirements/dev.txt requirements/dev.txt
-RUN pip install -r requirements/dev.txt
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    pip install -r requirements/dev.txt
 COPY . /app
 
 FROM base AS prod
 COPY requirements/prod.txt requirements/prod.txt
-RUN pip install -r requirements/prod.txt
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    pip install -r requirements/prod.txt
 COPY . /app
