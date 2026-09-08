@@ -1,4 +1,8 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.14-slim AS base
+
+ARG DEBIAN_MIRROR=https://mirrors.cloud.tencent.com/debian
+ARG DEBIAN_SECURITY_MIRROR=https://mirrors.cloud.tencent.com/debian-security
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -6,11 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    sed -i \
+        -e "s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+        -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+        /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
         fonts-noto-cjk \
-        libpq-dev \
         libreoffice-impress \
         libreoffice-writer \
         netcat-openbsd \
