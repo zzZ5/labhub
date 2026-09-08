@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 FROM python:3.14-slim AS base
 
-ARG DEBIAN_MIRROR=https://mirrors.cloud.tencent.com/debian
-ARG DEBIAN_SECURITY_MIRROR=https://mirrors.cloud.tencent.com/debian-security
+ARG DEBIAN_MIRROR=http://mirrors.cloud.tencent.com/debian
+ARG DEBIAN_SECURITY_MIRROR=http://mirrors.cloud.tencent.com/debian-security
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -15,8 +15,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         -e "s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
         -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
         /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=60 update \
+    && apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=60 install -y --no-install-recommends \
         fonts-noto-cjk \
         libreoffice-impress \
         libreoffice-writer \
