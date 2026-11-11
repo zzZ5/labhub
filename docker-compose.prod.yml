@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17-alpine
+    image: docker.xuanyuan.run/library/postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-labhub}
@@ -15,7 +15,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: docker.xuanyuan.run/library/redis:7-alpine
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -85,7 +85,7 @@ services:
     command: sh -c "cp -r /app/dist/. /usr/share/nginx/html && tail -f /dev/null"
 
   nginx:
-    image: nginx:1.27-alpine
+    image: docker.xuanyuan.run/library/nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "${NGINX_HTTP_PORT:-8088}:80"

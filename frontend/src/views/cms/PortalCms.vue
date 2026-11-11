@@ -101,8 +101,12 @@
             <el-tab-pane label="文章" name="articles">
               <WechatArticleManager :accounts="wechatAccounts" />
             </el-tab-pane>
+            <el-tab-pane label="论文原文" name="papers" lazy>
+              <OriginalPaperManager />
+            </el-tab-pane>
           </el-tabs>
         </el-tab-pane>
+
 
 
       </el-tabs>
@@ -117,6 +121,7 @@ import InternalLayout from '../../layouts/InternalLayout.vue'
 import LoadErrorNotice from '../../components/LoadErrorNotice.vue'
 import WechatAccountManager from '../wechat/components/WechatAccountManager.vue'
 import WechatArticleManager from '../wechat/components/WechatArticleManager.vue'
+import OriginalPaperManager from '../wechat/components/OriginalPaperManager.vue'
 import CmsBannerEditor from './components/CmsBannerEditor.vue'
 import CmsAwardEditor from './components/CmsAwardEditor.vue'
 import CmsFooterEditor from './components/CmsFooterEditor.vue'

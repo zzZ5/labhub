@@ -4,6 +4,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
+
+from apps.documents.storage import ProtectedMediaStorage
 
 
 TRACKING_QUERY_KEYS = {
@@ -135,3 +138,51 @@ class WechatArticle(models.Model):
         if not self.synced_at:
             self.synced_at = timezone.now()
         super().save(*args, **kwargs)
+
+
+def original_paper_path(instance, filename):
+    import uuid
+
+    return f"original_papers/{uuid.uuid4().hex}.pdf"
+
+
+class OriginalPaper(models.Model):
+    class Topic(models.TextChoices):
+        COMPOST = "compost", "堆肥与腐殖化"
+        SOIL = "soil", "土壤碳氮循环"
+        NUTRIENTS = "nutrients", "养分回收利用"
+        BIOMASS = "biomass", "生物质转化"
+        ENVIRONMENT = "environment", "环境风险与减排"
+
+    class Sharing(models.TextChoices):
+        LINK_ONLY = "link_only", "仅提供原文入口"
+        OPEN_ACCESS = "open_access", "开放获取且许可允许分享"
+        AUTHORIZED = "authorized", "已获分享授权"
+
+    title = models.CharField("原文标题", max_length=500)
+    chinese_title = models.CharField("中文标题", max_length=500, blank=True)
+    authors = models.CharField("作者", max_length=1000, blank=True)
+    journal = models.CharField("期刊", max_length=200, blank=True)
+    year = models.PositiveSmallIntegerField("发表年份", null=True, blank=True)
+    doi = models.CharField("DOI", max_length=250, unique=True, null=True, blank=True)
+    topic = models.CharField("专题", max_length=20, choices=Topic.choices, blank=True)
+    publisher_url = models.URLField("出版社或开放获取原文链接", max_length=1500, blank=True)
+    wechat_url = models.URLField("公众号解读链接", max_length=1500, blank=True)
+    pdf = models.FileField(
+        "原文PDF", storage=ProtectedMediaStorage(), upload_to=original_paper_path,
+        validators=[FileExtensionValidator(["pdf"])], blank=True,
+    )
+    sharing = models.CharField("PDF分享方式", max_length=20, choices=Sharing.choices, default=Sharing.LINK_ONLY)
+    rights_note = models.TextField("分享许可或授权依据", blank=True)
+    is_visible = models.BooleanField("公开展示", default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = "论文原文"
+        verbose_name_plural = "论文原文"
+
+    @property
+    def can_share_pdf(self):
+        return bool(self.pdf and self.sharing in {self.Sharing.OPEN_ACCESS, self.Sharing.AUTHORIZED} and self.rights_note.strip())

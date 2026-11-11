@@ -1,8 +1,14 @@
 <template>
   <PortalLayout>
-    <PortalPageHeader title="公众号速递" description="汇集关注公众号发布的科研资讯与文献解读，点击条目可前往微信原文。" />
+    <PortalPageHeader title="公众号速递" description="浏览科研资讯与文献解读，查找相关论文原文。" />
     <section class="digest-section">
       <div class="container digest-layout">
+        <nav class="digest-tabs" aria-label="公众号速递栏目">
+          <RouterLink :to="{ name: 'wechat-articles' }" :class="{ selected: viewMode === 'articles' }" :aria-current="viewMode === 'articles' ? 'page' : undefined">文章解读</RouterLink>
+          <RouterLink :to="{ name: 'wechat-articles', query: { tab: 'papers' } }" :class="{ selected: viewMode === 'papers' }" :aria-current="viewMode === 'papers' ? 'page' : undefined">论文原文</RouterLink>
+        </nav>
+        <OriginalPaperList v-if="viewMode === 'papers'" />
+        <template v-else>
         <div class="digest-toolbar">
           <label class="digest-search">
             <el-icon><Search /></el-icon>
@@ -53,6 +59,7 @@
         </div>
         <EmptyState v-else title="暂无文章" description="当前筛选条件下没有可展示的公众号文章。" />
         <AppPagination :page="page" :total-pages="totalPages" @change="page = $event" />
+        </template>
       </div>
     </section>
   </PortalLayout>
@@ -74,9 +81,11 @@ import { useDebouncedValue } from '../../composables/useDebouncedValue'
 import PortalLayout from '../../layouts/PortalLayout.vue'
 import { formatPortalDateTime } from '../../utils/date'
 import { requestErrorMessage } from '../../utils/requestErrors'
+import OriginalPaperList from '../wechat/components/OriginalPaperList.vue'
 
 const route = useRoute()
 const router = useRouter()
+const viewMode = computed(() => route.query.tab === 'papers' ? 'papers' : 'articles')
 const accounts = ref<WechatAccount[]>([])
 const articles = ref<WechatArticle[]>([])
 const loading = ref(false)
@@ -112,6 +121,7 @@ async function loadArticles() {
 }
 
 function syncQuery() {
+  if (viewMode.value !== 'articles') return
   const query: Record<string, string> = {}
   if (keyword.value.trim()) query.q = keyword.value.trim()
   if (accountFilter.value) query.account = accountFilter.value
@@ -120,11 +130,13 @@ function syncQuery() {
 }
 
 watch([debouncedKeyword, accountFilter], () => {
+  if (viewMode.value !== 'articles') return
   page.value = 1
   syncQuery()
   void loadArticles()
 })
 watch(page, () => {
+  if (viewMode.value !== 'articles') return
   syncQuery()
   void loadArticles()
 })
@@ -137,8 +149,16 @@ onMounted(async () => {
     fetchWechatAccounts().then((data) => {
       accounts.value = data
     }),
-    loadArticles(),
+    viewMode.value === 'articles' ? loadArticles() : Promise.resolve(),
   ])
+})
+
+watch(viewMode, value => {
+  if (value !== 'articles') return
+  keyword.value = typeof route.query.q === 'string' ? route.query.q : ''
+  accountFilter.value = typeof route.query.account === 'string' ? route.query.account : ''
+  page.value = Math.max(1, Number.parseInt(String(route.query.page || ''), 10) || 1)
+  void loadArticles()
 })
 </script>
 
@@ -152,6 +172,28 @@ onMounted(async () => {
 .digest-layout {
   display: grid;
   gap: 18px;
+}
+
+.digest-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.digest-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 2px 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.digest-tabs a.selected {
+  border-bottom-color: var(--color-cau-green);
+  color: var(--color-cau-green-dark);
+  font-weight: 600;
 }
 
 .digest-toolbar {

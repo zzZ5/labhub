@@ -126,6 +126,11 @@ const router = createRouter({
       component: WechatArticlesPage,
     },
     {
+      path: '/papers',
+      name: 'original-papers',
+      redirect: to => ({ name: 'wechat-articles', query: { ...to.query, tab: 'papers' } }),
+    },
+    {
       path: '/platform',
       name: 'platform',
       redirect: '/instruments',

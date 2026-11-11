@@ -1,5 +1,5 @@
-# syntax=docker/dockerfile:1.7
-FROM python:3.14-slim AS base
+# syntax=docker.xuanyuan.run/docker/dockerfile:1.7
+FROM docker.xuanyuan.run/library/python:3.14-slim AS base
 
 ARG DEBIAN_MIRROR=http://mirrors.cloud.tencent.com/debian
 ARG DEBIAN_SECURITY_MIRROR=http://mirrors.cloud.tencent.com/debian-security
