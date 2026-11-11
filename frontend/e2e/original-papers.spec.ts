@@ -3,7 +3,7 @@ import { installMockApi } from './mockApi'
 
 const paper = {
   id: 1, title: 'Composting improves nutrient recovery from organic residues', chinese_title: '堆肥促进有机废弃物养分回收',
-  authors: 'Test Author', journal: 'Nature Sustainability', year: 2026, doi: '10.1234/test',
+  authors: 'Test Author; Second Author; Third Author; Fourth Author', journal: 'Nature Sustainability', year: 2026, doi: '10.1234/test',
   topic: 'compost', topic_label: '堆肥与腐殖化', publisher_url: 'https://doi.org/10.1234/test', wechat_url: '',
   preview_url: '/api/wechat/papers/1/preview/', download_url: '/api/wechat/papers/1/download/',
 }
@@ -18,8 +18,11 @@ test('论文原文支持搜索筛选及手机浏览', async ({ page }, testInfo)
   await page.goto('/papers')
   await expect(page).toHaveURL(/\/literature-digest\?tab=papers$/)
   await expect(page.getByRole('heading', { name: '公众号速递', exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: paper.chinese_title })).toBeVisible()
-  await expect(page.getByRole('link', { name: '在线阅读 PDF' })).toHaveAttribute('href', paper.preview_url)
+  await expect(page.getByRole('heading', { name: paper.title })).toBeVisible()
+  await expect(page.getByRole('link', { name: '阅读 PDF', exact: true })).toHaveAttribute('href', paper.preview_url)
+  await expect(page.locator('.paper-authors summary')).toContainText('et al.')
+  await page.getByText('作者详情', { exact: true }).click()
+  await expect(page.locator('.paper-authors p')).toContainText('Fourth Author')
   await expect(page.getByRole('link', { name: '下载 PDF' })).toHaveAttribute('href', paper.download_url)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
   await page.screenshot({ path: `test-results/original-papers-${testInfo.project.name}.png`, fullPage: true })
@@ -28,8 +31,8 @@ test('论文原文支持搜索筛选及手机浏览', async ({ page }, testInfo)
   await expect(page.getByText('暂无匹配的论文')).toBeVisible()
   await page.getByRole('searchbox').fill('')
   await page.getByRole('button', { name: '搜索', exact: true }).click()
-  await expect(page.getByRole('heading', { name: paper.chinese_title })).toBeVisible()
-  await page.getByRole('combobox').selectOption('soil')
+  await expect(page.getByRole('heading', { name: paper.title })).toBeVisible()
+  await page.getByRole('combobox', { name: '研究专题' }).selectOption('soil')
   await expect(page.getByText('暂无匹配的论文')).toBeVisible()
 })
 
@@ -58,9 +61,28 @@ test('公众号速递在解读和原文间切换且兼容旧入口参数', async
   await expect(page.getByRole('heading', { name: '最新堆肥文献解读' })).toBeVisible()
   await expect(page.getByRole('searchbox')).toHaveValue('')
   await tabs.getByRole('link', { name: '论文原文' }).click()
-  await expect(page.getByRole('heading', { name: paper.chinese_title })).toBeVisible()
+  await expect(page.getByRole('heading', { name: paper.title })).toBeVisible()
   await expect(page.getByRole('searchbox')).toHaveValue('')
   expect(await page.evaluate(() => document.querySelectorAll('.portal-shell').length)).toBe(1)
+})
+
+test('排序分页保留筛选，浏览器返回恢复原来位置', async ({ page }) => {
+  await installMockApi(page)
+  await page.route('**/api/wechat/papers/**', route => route.fulfill({ json: { count: 25, results: [paper] } }))
+  await page.goto('/literature-digest?tab=papers&q=compost&topic=compost&page=2')
+  await expect(page.getByText('第 2 / 3 页', { exact: false })).toBeVisible()
+  const request = page.waitForRequest(req => req.url().includes('/api/wechat/papers/') && new URL(req.url()).searchParams.get('sort') === 'title')
+  await page.getByRole('combobox', { name: '排序' }).selectOption('title')
+  const params = new URL((await request).url()).searchParams
+  expect(params.get('page')).toBe('1')
+  expect(params.get('search')).toBe('compost')
+  expect(params.get('topic')).toBe('compost')
+  await expect(page).toHaveURL(/sort=title/)
+  await page.goBack()
+  await expect(page.getByRole('combobox', { name: '排序' })).toHaveValue('added')
+  await expect(page.getByText('第 2 / 3 页', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: '堆肥与腐殖化', exact: true }).click()
+  await expect(page.getByText('第 1 / 3 页', { exact: false })).toBeVisible()
 })
 
 test('后台可录入原文并以默认不公开方式上传PDF', async ({ page }, testInfo) => {

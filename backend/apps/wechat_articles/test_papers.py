@@ -114,6 +114,24 @@ class OriginalPaperTests(TestCase):
         self.public.force_authenticate(user)
         self.assertEqual(self.public.post("/api/wechat/manage/papers/", self.payload()).status_code, 403)
 
+    def test_public_sorting_is_stable_and_missing_years_are_last(self):
+        for title, year in [("Unknown year", None), ("Older", 2025), ("Alpha", 2026), ("Zebra", 2026)]:
+            OriginalPaper.objects.create(title=title, year=year, is_visible=True)
+        OriginalPaper.objects.create(title="Hidden", year=2027)
+
+        def titles(**params):
+            response = self.public.get("/api/wechat/papers/", params)
+            self.assertEqual(response.status_code, 200)
+            return [item["title"] for item in response.data["results"]]
+
+        self.assertEqual(titles(), ["Zebra", "Alpha", "Older", "Unknown year"])
+        self.assertEqual(titles(sort="year_desc"), ["Alpha", "Zebra", "Older", "Unknown year"])
+        self.assertEqual(titles(sort="invalid"), titles())
+        self.assertEqual(titles(sort="year_asc"), ["Older", "Alpha", "Zebra", "Unknown year"])
+        self.assertEqual(titles(sort="title"), ["Alpha", "Older", "Unknown year", "Zebra"])
+        self.assertEqual(titles(sort="added"), ["Zebra", "Alpha", "Older", "Unknown year"])
+        self.assertEqual(titles(sort="year_asc", search="Alpha"), ["Alpha"])
+
     def test_metadata_patch_preserves_pdf_and_remove_unlinks_it(self):
         pk = self.upload().data["id"]
         name = OriginalPaper.objects.get(pk=pk).pdf.name

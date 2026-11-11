@@ -48,7 +48,7 @@ export async function lookupPaperMetadata(doi: string) {
   return (await http.post<PaperMetadata>('/wechat/manage/papers/lookup/', { doi }, { timeout: 15000 })).data
 }
 
-export async function fetchOriginalPapers(params: { search?: string; topic?: string; page?: number }, manage = false) {
+export async function fetchOriginalPapers(params: { search?: string; topic?: string; page?: number; sort?: string }, manage = false) {
   return (await http.get<PaperList<ManagedOriginalPaper>>(`/wechat/${manage ? 'manage/' : ''}papers/`, { params })).data
 }
 
