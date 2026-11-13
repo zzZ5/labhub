@@ -146,6 +146,8 @@ WECHAT_SYNC_INTERVAL_MINUTES = max(5, env("WECHAT_SYNC_INTERVAL_MINUTES"))
 WECHAT_SYNC_TIMEOUT_SECONDS = max(5, env("WECHAT_SYNC_TIMEOUT_SECONDS"))
 WECHAT_SYNC_MAX_FEED_MB = max(1, env("WECHAT_SYNC_MAX_FEED_MB"))
 WECHAT_SYNC_RSS_ITEM_LIMIT = max(1, env("WECHAT_SYNC_RSS_ITEM_LIMIT"))
+# Empty disables the machine credential; keep only its SHA-256 hash server-side.
+LABHUB_PAPER_UPLOAD_TOKEN_SHA256 = env("LABHUB_PAPER_UPLOAD_TOKEN_SHA256", default="").strip().lower()
 CELERY_BEAT_SCHEDULE = {
     "sync-wechat-articles": {
         "task": "apps.wechat_articles.tasks.sync_all_wechat_accounts",

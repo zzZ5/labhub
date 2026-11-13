@@ -3,6 +3,7 @@ from django.db.models import F
 from django.db.models.functions import Lower
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -10,13 +11,13 @@ from rest_framework import serializers
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from apps.accounts.permissions import CanManagePortalContent
 from apps.documents.responses import protected_file_response
 
 from .models import OriginalPaper
 from .paper_serializers import OriginalPaperManageSerializer, OriginalPaperSerializer
 from .views import WechatArticlePagination
 from .paper_metadata import MetadataError, fetch_paper_metadata
+from .paper_authentication import CanIngestOriginalPapers, PaperUploadTokenAuthentication
 
 
 class MetadataLookupThrottle(UserRateThrottle):
@@ -69,7 +70,8 @@ class PublicOriginalPaperViewSet(ReadOnlyModelViewSet):
 class ManageOriginalPaperViewSet(ModelViewSet):
     queryset = OriginalPaper.objects.all()
     serializer_class = OriginalPaperManageSerializer
-    permission_classes = [CanManagePortalContent]
+    authentication_classes = [PaperUploadTokenAuthentication, SessionAuthentication, BasicAuthentication]
+    permission_classes = [CanIngestOriginalPapers]
     pagination_class = WechatArticlePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["topic", "is_visible"]
